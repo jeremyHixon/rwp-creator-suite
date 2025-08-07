@@ -1,0 +1,193 @@
+# DEPLOY_PATH = Path to deploy on WP Engine (e.g., wp-content/plugins/your-plugin/)
+# DEVELOPMENT_URL = Development environment URL
+# PRODUCTION_URL = Production environment URL
+# STAGING_URL = Staging environment URL
+# WPE_ENV_DEVELOPMENT = WP Engine environment name for development
+# WPE_ENV_PRODUCTION = WP Engine environment name for production
+# WPE_ENV_STAGING = WP Engine environment name for staging
+# WPE_SSHG_KEY_PRIVATE = SSH private key for WP Engine
+
+name: Smart Deployment
+
+on:
+  push:
+    branches: [ development, staging, main ]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Deployment target'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+jobs:
+  determine-deployment:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.determine.outputs.environment }}
+      should-deploy: ${{ steps.determine.outputs.should-deploy }}
+      
+    steps:
+      - name: Determine Deployment Target
+        id: determine
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "environment=${{ github.event.inputs.target }}" >> $GITHUB_OUTPUT
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+          else
+            case "${{ github.ref_name }}" in
+              "development")
+                echo "environment=development" >> $GITHUB_OUTPUT
+                echo "should-deploy=true" >> $GITHUB_OUTPUT
+                ;;
+              "staging")
+                echo "environment=staging" >> $GITHUB_OUTPUT
+                echo "should-deploy=false" >> $GITHUB_OUTPUT
+                echo "::warning::Automatic staging deployment disabled. Use manual workflow."
+                ;;
+              "main")
+                echo "environment=production" >> $GITHUB_OUTPUT
+                echo "should-deploy=false" >> $GITHUB_OUTPUT
+                echo "::error::Automatic production deployment disabled. Use manual workflow with confirmation."
+                ;;
+            esac
+          fi
+  
+  deploy:
+    needs: determine-deployment
+    if: needs.determine-deployment.outputs.should-deploy == 'true'
+    runs-on: ubuntu-latest
+    environment: ${{ needs.determine-deployment.outputs.environment }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        if: hashFiles('package.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Setup PHP
+        if: hashFiles('composer.json') != ''
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+      
+      - name: Install production dependencies
+        run: |
+          # Install Composer dependencies (production only)
+          if [ -f "composer.json" ]; then
+            echo "📦 Installing Composer dependencies..."
+            composer install --no-dev --optimize-autoloader
+          else
+            echo "ℹ️ No composer.json found, skipping Composer install"
+          fi
+          
+          # Install npm dependencies (including dev for build process)
+          if [ -f "package.json" ]; then
+            echo "📦 Installing npm dependencies (including dev dependencies for build)..."
+            npm ci
+          else
+            echo "ℹ️ No package.json found, skipping npm install"
+          fi
+      
+      - name: Build assets
+        if: hashFiles('package.json') != ''
+        run: |
+          # Check if build script exists
+          if npm run | grep -q "build"; then
+            echo "🔨 Building assets..."
+            npm run build
+          else
+            echo "ℹ️ No build script found in package.json"
+          fi
+          
+          # Remove ALL node_modules after build
+          if [ -d "node_modules" ]; then
+            echo "🧹 Removing node_modules after build..."
+            rm -rf node_modules
+            echo "✅ node_modules removed successfully"
+          fi
+          
+          # Also remove any nested node_modules (sometimes in build tools)
+          echo "🧹 Checking for nested node_modules directories..."
+          find . -name "node_modules" -type d -prune -exec rm -rf {} \; 2>/dev/null || true
+          echo "✅ All node_modules directories removed"
+      
+      - name: Set deployment configuration
+        id: set-env
+        run: |
+          # Set deployment path from environment variable
+          echo "deploy_path=${{ secrets.DEPLOY_PATH }}" >> $GITHUB_OUTPUT
+          
+          # Set environment-specific values
+          case "${{ needs.determine-deployment.outputs.environment }}" in
+            "development")
+              echo "wpe_env=${{ secrets.WPE_ENV_DEVELOPMENT }}" >> $GITHUB_OUTPUT
+              echo "site_url=${{ secrets.DEVELOPMENT_URL }}" >> $GITHUB_OUTPUT
+              ;;
+            "staging")
+              echo "wpe_env=${{ secrets.WPE_ENV_STAGING }}" >> $GITHUB_OUTPUT
+              echo "site_url=${{ secrets.STAGING_URL }}" >> $GITHUB_OUTPUT
+              ;;
+            "production")
+              echo "wpe_env=${{ secrets.WPE_ENV_PRODUCTION }}" >> $GITHUB_OUTPUT
+              echo "site_url=${{ secrets.PRODUCTION_URL }}" >> $GITHUB_OUTPUT
+              ;;
+          esac
+      
+      - name: Deploy to WP Engine
+        uses: wpengine/github-action-wpe-site-deploy@v3
+        with:
+          WPE_SSHG_KEY_PRIVATE: ${{ secrets.WPE_SSHG_KEY_PRIVATE }}
+          WPE_ENV: ${{ steps.set-env.outputs.wpe_env }}
+          SRC_PATH: "."
+          REMOTE_PATH: ${{ steps.set-env.outputs.deploy_path }}
+          PHP_LINT: TRUE
+          FLAGS: -azvr --delete --exclude=node_modules --exclude=.git --exclude=.github --exclude=tests --exclude=.env --exclude=.env.* --exclude=*.log --exclude=.DS_Store --exclude=composer.json --exclude=composer.lock --exclude=package.json --exclude=package-lock.json --exclude=webpack.config.js --exclude=.eslintrc* --exclude=.prettierrc* --exclude=phpcs.xml --exclude=phpunit.xml --exclude=*.sql --exclude=*.zip
+      
+      - name: Clear WP Engine Cache
+        uses: wpengine/github-action-wpe-site-deploy@v3
+        with:
+          WPE_SSHG_KEY_PRIVATE: ${{ secrets.WPE_SSHG_KEY_PRIVATE }}
+          WPE_ENV: ${{ steps.set-env.outputs.wpe_env }}
+          CACHE_CLEAR: TRUE
+      
+      - name: Verify Deployment
+        if: steps.set-env.outputs.site_url != ''
+        run: |
+          echo "⏳ Waiting for deployment to propagate..."
+          sleep 30
+          
+          echo "🔍 Verifying deployment at ${{ steps.set-env.outputs.site_url }}"
+          response=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.set-env.outputs.site_url }}/wp-json/wp/v2/plugins" || echo "000")
+          
+          if [ "$response" = "200" ] || [ "$response" = "401" ]; then
+            echo "✅ Deployment verified successfully (HTTP $response)"
+          else
+            echo "⚠️ Could not verify deployment (HTTP $response)"
+            echo "This may be normal if the API is restricted"
+          fi
+      
+      - name: Create deployment summary
+        run: |
+          echo "## 🚀 Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ needs.determine-deployment.outputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployed by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Time**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deploy Path**: ${{ secrets.DEPLOY_PATH }}" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -n "${{ steps.set-env.outputs.site_url }}" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "[View Site](${{ steps.set-env.outputs.site_url }})" >> $GITHUB_STEP_SUMMARY
+          fi

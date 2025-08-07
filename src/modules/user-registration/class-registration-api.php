@@ -50,7 +50,7 @@ class RWP_Creator_Suite_Registration_API {
             array(
                 'methods'             => 'POST',
                 'callback'            => array( $this, 'handle_registration' ),
-                'permission_callback' => '__return_true',
+                'permission_callback' => array( $this, 'check_registration_enabled' ),
                 'args'                => array(
                     'email' => array(
                         'required'          => true,
@@ -272,6 +272,15 @@ class RWP_Creator_Suite_Registration_API {
         set_transient( $transient_key, $attempts + 1, HOUR_IN_SECONDS );
 
         return true;
+    }
+
+    /**
+     * Check if registration is enabled for the registration endpoint.
+     *
+     * @return bool Whether registration is enabled.
+     */
+    public function check_registration_enabled() {
+        return (bool) get_option( 'users_can_register', false );
     }
 
     /**

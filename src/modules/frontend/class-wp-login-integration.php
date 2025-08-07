@@ -61,8 +61,9 @@ class RWP_Creator_Suite_WP_Login_Integration {
         // Store original URL for redirects
         add_action( 'login_init', array( $this, 'store_original_url' ) );
         
-        // Handle automatic logout redirect
+        // Handle automatic logout
         add_action( 'login_init', array( $this, 'handle_automatic_logout' ) );
+        
     }
 
     /**
@@ -79,8 +80,11 @@ class RWP_Creator_Suite_WP_Login_Integration {
         add_user_meta( $user_id, 'rwp_creator_suite_registration_method', 'email_only' );
         add_user_meta( $user_id, 'rwp_creator_suite_auto_login', true );
         
-        // Get redirect URL from form data or stored redirect
-        $redirect_to = isset( $_POST['redirect_to'] ) ? sanitize_text_field( $_POST['redirect_to'] ) : '';
+        // Get redirect URL from form data or stored redirect (with nonce verification)
+        $redirect_to = '';
+        if ( isset( $_POST['redirect_to'] ) && isset( $_POST['_wpnonce'] ) && wp_verify_nonce( $_POST['_wpnonce'], 'user-registration' ) ) {
+            $redirect_to = sanitize_text_field( $_POST['redirect_to'] );
+        }
         
         // If no redirect_to from form, check for stored redirect URL
         if ( empty( $redirect_to ) ) {
@@ -322,23 +326,33 @@ class RWP_Creator_Suite_WP_Login_Integration {
     }
 
     /**
-     * Handle automatic logout redirect.
+     * Handle automatic logout without confirmation.
      */
     public function handle_automatic_logout() {
-        // Check if this is a logout request without nonce and user is logged in
-        if ( isset( $_GET['action'] ) && $_GET['action'] === 'logout' && ! isset( $_GET['_wpnonce'] ) && is_user_logged_in() ) {
-            // Create a nonce and validate the logout request
+        // Only handle logout action on wp-login.php
+        if ( ! isset( $_GET['action'] ) || $_GET['action'] !== 'logout' ) {
+            return;
+        }
+
+        // Check if user is logged in
+        if ( ! is_user_logged_in() ) {
+            return;
+        }
+
+        // If nonce is not present, create logout URL manually to avoid loop
+        if ( ! isset( $_GET['_wpnonce'] ) ) {
             $nonce = wp_create_nonce( 'log-out' );
-            
-            // Verify the nonce we just created (this allows the logout to proceed)
-            if ( wp_verify_nonce( $nonce, 'log-out' ) ) {
-                // Perform the logout
-                wp_logout();
-                
-                // Redirect to homepage
-                wp_safe_redirect( home_url() );
-                exit;
-            }
+            $logout_url = wp_login_url() . '?action=logout&_wpnonce=' . $nonce;
+            wp_safe_redirect( $logout_url );
+            exit;
+        }
+
+        // If nonce is present and valid, proceed with logout
+        if ( wp_verify_nonce( $_GET['_wpnonce'], 'log-out' ) ) {
+            wp_logout();
+            wp_safe_redirect( home_url() );
+            exit;
         }
     }
+
 }

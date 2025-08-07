@@ -27,7 +27,8 @@ class RWP_Creator_Suite_Redirect_Handler {
         }
 
         // Only store for GET requests
-        if ( $_SERVER['REQUEST_METHOD'] !== 'GET' ) {
+        $request_method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '';
+        if ( $request_method !== 'GET' ) {
             return;
         }
 
@@ -57,19 +58,6 @@ class RWP_Creator_Suite_Redirect_Handler {
         $ip_address = $this->get_client_ip();
         $transient_key = 'rwp_creator_suite_redirect_' . md5( $ip_address );
         set_transient( $transient_key, $current_url, 30 * MINUTE_IN_SECONDS );
-
-        // Also store in cookie as fallback
-        if ( ! headers_sent() ) {
-            setcookie(
-                'rwp_creator_suite_original_url',
-                $current_url,
-                time() + ( 30 * 60 ), // 30 minutes
-                COOKIEPATH,
-                COOKIE_DOMAIN,
-                is_ssl(),
-                true
-            );
-        }
     }
 
     /**
@@ -79,9 +67,7 @@ class RWP_Creator_Suite_Redirect_Handler {
      * @return string Redirect URL.
      */
     public function get_stored_redirect_url( $default = '' ) {
-        $stored_url = '';
-        
-        // Check transient first (by IP address)
+        // Check transient (by IP address)
         $ip_address = $this->get_client_ip();
         $transient_key = 'rwp_creator_suite_redirect_' . md5( $ip_address );
         $stored_url = get_transient( $transient_key );
@@ -89,27 +75,11 @@ class RWP_Creator_Suite_Redirect_Handler {
         if ( $stored_url ) {
             // Clean up the transient
             delete_transient( $transient_key );
-        }
-        
-        // Check cookie as fallback
-        if ( empty( $stored_url ) && isset( $_COOKIE['rwp_creator_suite_original_url'] ) ) {
-            $stored_url = $_COOKIE['rwp_creator_suite_original_url'];
             
-            // Clear the cookie
-            if ( ! headers_sent() ) {
-                setcookie(
-                    'rwp_creator_suite_original_url',
-                    '',
-                    time() - 3600,
-                    COOKIEPATH,
-                    COOKIE_DOMAIN
-                );
+            // Validate and sanitize
+            if ( $this->is_valid_redirect_url( $stored_url ) ) {
+                return esc_url_raw( $stored_url );
             }
-        }
-        
-        // Validate and sanitize
-        if ( $stored_url && $this->is_valid_redirect_url( $stored_url ) ) {
-            return esc_url_raw( $stored_url );
         }
         
         return $default ?: home_url();
@@ -122,8 +92,13 @@ class RWP_Creator_Suite_Redirect_Handler {
      */
     private function get_current_url() {
         $protocol = is_ssl() ? 'https://' : 'http://';
-        $host = $_SERVER['HTTP_HOST'];
-        $request_uri = $_SERVER['REQUEST_URI'];
+        $host = isset( $_SERVER['HTTP_HOST'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) : '';
+        $request_uri = isset( $_SERVER['REQUEST_URI'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+        
+        // Validate host
+        if ( empty( $host ) || ! preg_match( '/^[a-zA-Z0-9.-]+$/', $host ) ) {
+            return home_url();
+        }
         
         return $protocol . $host . $request_uri;
     }

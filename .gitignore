@@ -1,0 +1,28 @@
+# WordPress core files (if the plugin is developed within a full WordPress installation)
+# This section is generally not needed if you are only tracking the plugin itself.
+# /wp-admin/
+# /wp-includes/
+# /wp-content/uploads/
+# /wp-config.php
+# /.htaccess
+
+# Development artifacts
+.DS_Store
+.vscode/
+.idea/
+*.log
+*.bak
+*.tmp
+/node_modules/
+/vendor/
+/composer.lock
+
+# Build/distribution files
+/dist/
+/build/
+/release/
+
+# Specific plugin files to ignore (adjust as needed)
+# For example, if your plugin generates cache files or temporary data
+/cache/
+/tmp/

@@ -41,6 +41,7 @@ class RWP_Creator_Suite {
     private $subscriber_restrictions;
     private $redirect_handler;
     private $registration_api;
+    private $block_manager;
 
     /**
      * Get single instance of the plugin.
@@ -75,12 +76,14 @@ class RWP_Creator_Suite {
         $this->subscriber_restrictions = new RWP_Creator_Suite_Subscriber_Restrictions();
         $this->redirect_handler = new RWP_Creator_Suite_Redirect_Handler();
         $this->registration_api = new RWP_Creator_Suite_Registration_API();
+        $this->block_manager = new RWP_Creator_Suite_Block_Manager();
 
         // Initialize all components
         $this->wp_login_integration->init();
         $this->subscriber_restrictions->init();
         $this->redirect_handler->init();
         $this->registration_api->init();
+        $this->block_manager->init();
 
         // Load text domain
         load_plugin_textdomain( 'rwp-creator-suite', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
@@ -106,6 +109,12 @@ class RWP_Creator_Suite {
 
         // Frontend Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/frontend/class-wp-login-integration.php';
+
+        // Blocks Module
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/blocks/class-block-manager.php';
+
+        // Instagram Analyzer Module
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/instagram-analyzer/class-instagram-analyzer-api.php';
     }
 
     /**

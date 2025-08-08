@@ -1,0 +1,34 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "rwp-creator-suite/instagram-analyzer",
+    "version": "1.0.0",
+    "title": "Instagram Follower Analyzer",
+    "category": "common",
+    "icon": "chart-bar",
+    "description": "Analyze Instagram followers and identify accounts that don't follow back.",
+    "keywords": ["instagram", "followers", "social", "analytics"],
+    "textdomain": "rwp-creator-suite",
+    "editorScript": "file:./index.js",
+    "editorStyle": "file:./editor.css",
+    "style": "file:./style-style.css",
+    "supports": {
+        "html": false,
+        "align": ["wide", "full"],
+        "spacing": {
+            "padding": true,
+            "margin": true
+        }
+    },
+    "attributes": {
+        "alignment": {
+            "type": "string",
+            "default": "none"
+        }
+    },
+    "example": {
+        "attributes": {
+            "alignment": "center"
+        }
+    }
+}

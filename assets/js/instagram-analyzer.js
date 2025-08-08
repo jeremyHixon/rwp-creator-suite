@@ -41,211 +41,18 @@ class InstagramAnalyzer {
         this.createUploadInterface();
         this.bindEvents();
         this.restoreFormState();
-        this.checkForUserTransition();
         await this.loadStoredData();
         await this.loadServerData();
     }
 
-    checkForUserTransition() {
-        // Check if user just logged in and we need to migrate guest data
-        const wasGuest = this.stateManager.getItem('was_guest_user') !== null;
-        
-        if (wasGuest && this.config.isLoggedIn) {
-            this.migrateGuestDataToUser();
-        }
-        
-        // Set current guest status
-        if (!this.config.isLoggedIn) {
-            this.stateManager.setItem('was_guest_user', true);
-        } else {
-            this.stateManager.removeItem('was_guest_user');
-        }
-    }
 
-    async migrateGuestDataToUser() {
-        try {
-            // Get all guest data from localStorage
-            const guestData = {
-                analysisData: this.stateManager.getAnalysisData(),
-                whitelist: this.stateManager.getWhitelist(),
-                preferences: this.stateManager.getUserPreferences()
-            };
-            
-            // Only migrate if we have data
-            if (guestData.analysisData || guestData.whitelist.length > 0) {
-                this.showMigrationPrompt(guestData);
-            } else {
-                // Just clean up guest flag
-                this.stateManager.removeItem('was_guest_user');
-            }
-        } catch (error) {
-            console.error('Error checking guest data for migration:', error);
-        }
-    }
 
-    showMigrationPrompt(guestData) {
-        const migrationPrompt = document.createElement('div');
-        migrationPrompt.className = 'blk-migration-prompt';
-        migrationPrompt.innerHTML = `
-            <div class="blk-migration-content">
-                <h3>Welcome back! Migrate your data?</h3>
-                <p>We found Instagram analysis data from your previous session. Would you like to save it to your account?</p>
-                <div class="blk-migration-details">
-                    ${guestData.analysisData ? `<p>• Analysis results for ${guestData.analysisData.stats?.notFollowingBackCount || 0} accounts</p>` : ''}
-                    ${guestData.whitelist.length > 0 ? `<p>• ${guestData.whitelist.length} whitelisted accounts</p>` : ''}
-                </div>
-                <div class="blk-migration-actions">
-                    <button class="blk-button blk-button--primary" onclick="this.migratData()">
-                        Yes, Save to My Account
-                    </button>
-                    <button class="blk-button blk-button--secondary" onclick="this.dismissMigration()">
-                        No, Start Fresh
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        // Add event handlers
-        const migrateBtn = migrationPrompt.querySelector('.blk-button--primary');
-        const dismissBtn = migrationPrompt.querySelector('.blk-button--secondary');
-        
-        migrateBtn.onclick = () => this.performMigration(guestData, migrationPrompt);
-        dismissBtn.onclick = () => this.dismissMigration(migrationPrompt);
-        
-        this.container.insertBefore(migrationPrompt, this.container.firstChild);
-    }
 
-    async performMigration(guestData, promptElement) {
-        try {
-            // Show loading state
-            promptElement.querySelector('.blk-migration-content').innerHTML = `
-                <h3>Migrating your data...</h3>
-                <p>Please wait while we save your analysis data to your account.</p>
-                <div class="blk-migration-progress">
-                    <div class="blk-progress-bar">
-                        <div class="blk-progress-fill" style="width: 0%"></div>
-                    </div>
-                </div>
-            `;
-            
-            const progressFill = promptElement.querySelector('.blk-progress-fill');
-            
-            // Step 1: Migrate analysis data
-            progressFill.style.width = '33%';
-            if (guestData.analysisData) {
-                await this.migrateAnalysisData(guestData.analysisData);
-            }
-            
-            // Step 2: Migrate whitelist
-            progressFill.style.width = '66%';
-            if (guestData.whitelist.length > 0) {
-                await this.migrateWhitelist(guestData.whitelist);
-            }
-            
-            // Step 3: Migrate preferences
-            progressFill.style.width = '100%';
-            await this.migratePreferences(guestData.preferences);
-            
-            // Success message
-            promptElement.querySelector('.blk-migration-content').innerHTML = `
-                <h3>✅ Migration Complete!</h3>
-                <p>Your Instagram analysis data has been saved to your account.</p>
-                <button class="blk-button blk-button--primary" onclick="this.parentElement.parentElement.remove()">
-                    Continue
-                </button>
-            `;
-            
-            // Clean up guest data markers
-            this.stateManager.removeItem('was_guest_user');
-            
-        } catch (error) {
-            console.error('Migration failed:', error);
-            this.showMigrationError(promptElement, error);
-        }
-    }
 
-    async migrateAnalysisData(analysisData) {
-        const response = await fetch(this.config.ajaxUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                action: 'rwp_migrate_instagram_data',
-                nonce: this.config.nonce,
-                data_type: 'analysis',
-                data: JSON.stringify(analysisData)
-            })
-        });
-        
-        const result = await response.json();
-        if (!result.success) {
-            throw new Error(result.data || 'Failed to migrate analysis data');
-        }
-    }
 
-    async migrateWhitelist(whitelist) {
-        const response = await fetch(this.config.ajaxUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                action: 'rwp_migrate_instagram_data',
-                nonce: this.config.nonce,
-                data_type: 'whitelist',
-                data: JSON.stringify(whitelist)
-            })
-        });
-        
-        const result = await response.json();
-        if (!result.success) {
-            throw new Error(result.data || 'Failed to migrate whitelist');
-        }
-    }
 
-    async migratePreferences(preferences) {
-        const response = await fetch(this.config.ajaxUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                action: 'rwp_migrate_instagram_data',
-                nonce: this.config.nonce,
-                data_type: 'preferences',
-                data: JSON.stringify(preferences)
-            })
-        });
-        
-        const result = await response.json();
-        if (!result.success) {
-            throw new Error(result.data || 'Failed to migrate preferences');
-        }
-    }
 
-    showMigrationError(promptElement, error) {
-        promptElement.querySelector('.blk-migration-content').innerHTML = `
-            <h3>❌ Migration Failed</h3>
-            <p>We couldn't save your data to your account: ${error.message}</p>
-            <p>Your data is still available in this session.</p>
-            <div class="blk-migration-actions">
-                <button class="blk-button blk-button--primary" onclick="this.performMigration()">
-                    Try Again
-                </button>
-                <button class="blk-button blk-button--secondary" onclick="this.parentElement.parentElement.remove()">
-                    Continue Anyway
-                </button>
-            </div>
-        `;
-    }
 
-    dismissMigration(promptElement) {
-        // Clear guest data and remove prompt
-        this.stateManager.clear();
-        this.stateManager.removeItem('was_guest_user');
-        promptElement.remove();
-    }
 
     createUploadInterface() {
         const uploadInterface = `
@@ -705,17 +512,19 @@ class InstagramAnalyzer {
             <div class="blk-results-header">
                 <h2 class="blk-results-title">Analysis Complete</h2>
                 <div class="blk-stats-grid">
-                    <div class="blk-stat-card">
+                    <div class="blk-stat-card blk-stat-card--primary">
+                        <div class="blk-stat-number">${stats.notFollowingBackCount}</div>
+                        <div class="blk-stat-label">Not Following Back</div>
+                    </div>
+                </div>
+                <div class="blk-stats-secondary">
+                    <div class="blk-stat-card blk-stat-card--small">
                         <div class="blk-stat-number">${stats.totalFollowers}</div>
                         <div class="blk-stat-label">Followers</div>
                     </div>
-                    <div class="blk-stat-card">
+                    <div class="blk-stat-card blk-stat-card--small">
                         <div class="blk-stat-number">${stats.totalFollowing}</div>
                         <div class="blk-stat-label">Following</div>
-                    </div>
-                    <div class="blk-stat-card">
-                        <div class="blk-stat-number">${stats.notFollowingBackCount}</div>
-                        <div class="blk-stat-label">Not Following Back</div>
                     </div>
                 </div>
             </div>
@@ -733,7 +542,21 @@ class InstagramAnalyzer {
     }
 
     createFullResults(data) {
-        const nonMutualList = data.notFollowingBack
+        // Sort accounts alphabetically with whitelisted accounts at the bottom
+        const sortedAccounts = [...data.notFollowingBack].sort((a, b) => {
+            const aWhitelisted = this.state.whitelist.includes(a.username);
+            const bWhitelisted = this.state.whitelist.includes(b.username);
+            
+            // If whitelist status is different, non-whitelisted comes first
+            if (aWhitelisted !== bWhitelisted) {
+                return aWhitelisted ? 1 : -1;
+            }
+            
+            // If same whitelist status, sort alphabetically
+            return a.username.localeCompare(b.username);
+        });
+
+        const nonMutualList = sortedAccounts
             .map(account => this.createAccountItem(account))
             .join('');
 
@@ -768,24 +591,6 @@ class InstagramAnalyzer {
                     </div>
                 `}
                 
-                <div class="blk-additional-stats">
-                    <div class="blk-stat-row">
-                        <span>Mutual followers:</span>
-                        <strong>${data.stats.mutualCount}</strong>
-                    </div>
-                    <div class="blk-stat-row">
-                        <span>Following/Followers ratio:</span>
-                        <strong>${data.stats.followerToFollowingRatio}</strong>
-                    </div>
-                    ${this.config.isLoggedIn && this.state.whitelist.length > 0 ? `
-                    <div class="blk-stat-row">
-                        <span>Whitelisted accounts:</span>
-                        <strong>${this.state.whitelist.length}</strong>
-                    </div>
-                    ` : ''}
-                </div>
-                
-                ${this.config.isLoggedIn ? this.createWhitelistSection() : ''}
             </div>
         `;
     }
@@ -830,42 +635,6 @@ class InstagramAnalyzer {
         }
     }
 
-    createWhitelistSection() {
-        if (this.state.whitelist.length === 0) {
-            return '';
-        }
-
-        return `
-            <div class="blk-whitelist-section">
-                <div class="blk-section-header">
-                    <h3>Whitelisted Accounts (${this.state.whitelist.length})</h3>
-                    <button class="blk-button blk-button--small blk-button--secondary" id="clear-whitelist-btn">
-                        Clear All
-                    </button>
-                </div>
-                <div class="blk-whitelist-list">
-                    ${this.state.whitelist.map(username => `
-                        <div class="blk-whitelist-item">
-                            <span class="blk-whitelist-username">@${username}</span>
-                            <div class="blk-whitelist-actions">
-                                <a href="https://instagram.com/${username}" target="_blank" class="blk-button blk-button--small blk-button--secondary">
-                                    View
-                                </a>
-                                <button class="blk-button blk-button--small blk-remove-whitelist-btn" data-username="${username}">
-                                    Remove
-                                </button>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-                <div class="blk-whitelist-export">
-                    <button class="blk-button blk-button--secondary" id="export-whitelist-btn">
-                        Export Whitelist
-                    </button>
-                </div>
-            </div>
-        `;
-    }
 
     createTeaserResults(data) {
         const sampleCount = Math.min(data.stats.notFollowingBackCount, 5);
@@ -887,17 +656,9 @@ class InstagramAnalyzer {
                                 <span class="blk-benefit-icon">✅</span>
                                 <span>Create a custom whitelist</span>
                             </div>
-                            <div class="blk-benefit-item">
-                                <span class="blk-benefit-icon">✅</span>
-                                <span>Save your data across sessions</span>
-                            </div>
-                            <div class="blk-benefit-item">
-                                <span class="blk-benefit-icon">✅</span>
-                                <span>Export your whitelist</span>
-                            </div>
                         </div>
                         <div class="blk-teaser-cta">
-                            <a href="${this.getLoginUrl()}" class="blk-button blk-button--primary blk-button--large">
+                            <a href="${this.getRegistrationUrl()}" class="blk-button blk-button--primary blk-button--large">
                                 Create Free Account
                             </a>
                             <p class="blk-teaser-note">Already have an account? <a href="${this.getLoginUrl()}">Login here</a></p>
@@ -949,6 +710,10 @@ class InstagramAnalyzer {
 
     getLoginUrl() {
         return window.location.origin + '/wp-login.php?redirect_to=' + encodeURIComponent(window.location.href);
+    }
+
+    getRegistrationUrl() {
+        return window.location.origin + '/wp-login.php?action=register&redirect_to=' + encodeURIComponent(window.location.href);
     }
 
     saveDataLocally(data) {
@@ -1046,12 +811,6 @@ class InstagramAnalyzer {
             });
         }
 
-        const exportWhitelistBtn = this.container.querySelector('#export-whitelist-btn');
-        if (exportWhitelistBtn) {
-            exportWhitelistBtn.addEventListener('click', () => {
-                this.exportWhitelist();
-            });
-        }
 
         const removeWhitelistBtns = this.container.querySelectorAll('.blk-remove-whitelist-btn');
         removeWhitelistBtns.forEach(btn => {
@@ -1147,7 +906,7 @@ class InstagramAnalyzer {
         if (accountItem) {
             const btn = accountItem.querySelector('.blk-whitelist-btn');
             if (btn) {
-                btn.textContent = isWhitelisted ? 'Remove from Whitelist' : 'Whitelist';
+                btn.textContent = isWhitelisted ? 'Remove from Whitelist' : 'Add to Whitelist';
                 btn.classList.toggle('blk-button--secondary', isWhitelisted);
             }
             
@@ -1204,17 +963,33 @@ class InstagramAnalyzer {
         
         const sortedData = { ...this.state.analysisData };
         
+        // Always sort with whitelisted accounts at the bottom
+        const sortWithWhitelistAtBottom = (primarySort) => {
+            sortedData.notFollowingBack.sort((a, b) => {
+                const aWhitelisted = this.state.whitelist.includes(a.username);
+                const bWhitelisted = this.state.whitelist.includes(b.username);
+                
+                // If whitelist status is different, non-whitelisted comes first
+                if (aWhitelisted !== bWhitelisted) {
+                    return aWhitelisted ? 1 : -1;
+                }
+                
+                // If same whitelist status, apply primary sort
+                return primarySort(a, b);
+            });
+        };
+        
         switch (sortOrder) {
             case 'newest':
-                sortedData.notFollowingBack.sort((a, b) => 
+                sortWithWhitelistAtBottom((a, b) => 
                     new Date(b.timestamp) - new Date(a.timestamp));
                 break;
             case 'oldest':
-                sortedData.notFollowingBack.sort((a, b) => 
+                sortWithWhitelistAtBottom((a, b) => 
                     new Date(a.timestamp) - new Date(b.timestamp));
                 break;
             default: // username
-                sortedData.notFollowingBack.sort((a, b) => 
+                sortWithWhitelistAtBottom((a, b) => 
                     a.username.localeCompare(b.username));
         }
         
@@ -1269,30 +1044,6 @@ class InstagramAnalyzer {
         }
     }
 
-    exportWhitelist() {
-        if (this.state.whitelist.length === 0) {
-            alert('Your whitelist is empty. Nothing to export.');
-            return;
-        }
-
-        const data = {
-            whitelist: this.state.whitelist,
-            exportedAt: new Date().toISOString(),
-            totalAccounts: this.state.whitelist.length
-        };
-
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `instagram-whitelist-${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        
-        URL.revokeObjectURL(url);
-    }
 
     resetAnalyzer() {
         // Clear current state

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: RWP Creator Suite
  * Description: A suite of tools for content creators including streamlined user authentication.
- * Version: 1.1.0
+ * Version: 1.2.0
  * Author: Jeremy Hixon
  * Author URI: https://jeremyhixon.com
  * Text Domain: rwp-creator-suite
@@ -17,7 +17,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Define plugin constants
-define( 'RWP_CREATOR_SUITE_VERSION', '1.1.0' );
+define( 'RWP_CREATOR_SUITE_VERSION', '1.2.0' );
 define( 'RWP_CREATOR_SUITE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RWP_CREATOR_SUITE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'RWP_CREATOR_SUITE_PLUGIN_FILE', __FILE__ );

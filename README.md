@@ -11,6 +11,14 @@ A comprehensive WordPress plugin designed for content creators, providing stream
 - **Automatic logout**: Direct logout without confirmation page when accessing `/wp-login.php?action=logout`
 - **Subscriber-focused**: Optimized experience for subscriber-level users
 
+### Instagram Follower Analyzer
+- **WordPress Block**: Easy-to-use Gutenberg block for analyzing Instagram follower relationships
+- **Data Upload**: Secure client-side processing of Instagram data export ZIP files
+- **Follower Analysis**: Identifies accounts you follow that don't follow you back
+- **Whitelist Management**: Save accounts to a whitelist to exclude them from analysis results
+- **User Authentication Integration**: Full functionality for registered users, preview mode for guests
+- **Secure Data Handling**: All analysis is performed client-side for privacy protection
+
 ### Security & Performance
 - **Rate limiting**: Prevents spam registrations with configurable rate limits
 - **Secure redirects**: All redirects are validated for security
@@ -50,6 +58,27 @@ A comprehensive WordPress plugin designed for content creators, providing stream
 - `rwp_creator_suite_subscriber_redirect_url` - Filter for subscriber default redirect
 
 ## Changelog
+
+### Version 1.2.0 (2025-08-08)
+#### New Features
+- **Instagram Follower Analyzer Block**: Complete implementation of a Gutenberg block for analyzing Instagram follower relationships
+  - Client-side ZIP file processing for Instagram data exports
+  - Real-time analysis of followers vs following to identify accounts that don't follow back
+  - Secure local data processing to protect user privacy
+  - Whitelist management system for saving preferred accounts
+  - Integration with user authentication system (full access for registered users, preview for guests)
+  - AJAX API endpoints for whitelist synchronization across devices
+  - Responsive design with professional styling
+  - Support for drag-and-drop file uploads with progress indicators
+  - Search and filtering capabilities for analysis results
+
+#### Technical Improvements  
+- Added `RWP_Creator_Suite_Instagram_Analyzer_API` class for handling AJAX endpoints
+- Implemented secure nonce-based authentication for API calls
+- Added Instagram username sanitization and validation
+- Created comprehensive JavaScript application with state management
+- Enhanced block manager to register the Instagram Analyzer block
+- Added JSZip integration for client-side ZIP file processing
 
 ### Version 1.1.0 (2025-08-07)
 #### New Features

@@ -6,9 +6,7 @@
     
     // Basic container styling
     background: white;
-    border-radius: 0.5rem;
     padding: 1.5rem;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
     
     // Ensure isolation from theme styles
     font-family: system-ui, -apple-system, sans-serif;
@@ -40,9 +38,6 @@
             align-items: stretch !important;
         }
 
-        .blk-migration-actions {
-            flex-direction: column !important;
-        }
 
         .blk-teaser-content {
             padding: 1rem !important;
@@ -63,8 +58,7 @@
         }
 
         .blk-stats-grid {
-            grid-template-columns: repeat(3, 1fr);
-            max-width: 500px;
+            max-width: 600px;
         }
     }
 
@@ -203,14 +197,10 @@
 
         .blk-stats-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: 1fr;
             gap: 1rem;
-            max-width: 400px;
+            max-width: 600px;
             margin: 0 auto;
-
-            @media (max-width: 640px) {
-                grid-template-columns: 1fr;
-            }
 
             .blk-stat-card {
                 background: #f9fafb;
@@ -218,18 +208,66 @@
                 border-radius: 0.5rem;
                 text-align: center;
 
+                &--primary {
+                    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+                    color: white;
+                    
+                    .blk-stat-number {
+                        color: white;
+                    }
+                    
+                    .blk-stat-label {
+                        color: rgba(255, 255, 255, 0.9);
+                    }
+                }
+
                 .blk-stat-number {
                     font-size: 2rem;
                     font-weight: 700;
-                    color: #1f2937;
+                    color: inherit;
                     margin-bottom: 0.25rem;
                 }
 
                 .blk-stat-label {
                     font-size: 0.875rem;
-                    color: #6b7280;
+                    color: inherit;
                     text-transform: uppercase;
                     letter-spacing: 0.025em;
+                }
+            }
+        }
+
+        .blk-stats-secondary {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            max-width: 300px;
+            margin: 1rem auto 0;
+
+            @media (max-width: 480px) {
+                grid-template-columns: 1fr;
+            }
+
+            .blk-stat-card {
+                background: #f3f4f6;
+                padding: 0.75rem 0.5rem;
+                border-radius: 0.375rem;
+                text-align: center;
+
+                &--small {
+                    .blk-stat-number {
+                        font-size: 1.25rem;
+                        font-weight: 600;
+                        color: #6b7280;
+                        margin-bottom: 0.125rem;
+                    }
+
+                    .blk-stat-label {
+                        font-size: 0.75rem;
+                        color: #9ca3af;
+                        text-transform: uppercase;
+                        letter-spacing: 0.025em;
+                    }
                 }
             }
         }
@@ -306,72 +344,6 @@
         }
     }
 
-    .blk-migration-prompt {
-        background: #eff6ff;
-        border: 2px solid #3b82f6;
-        border-radius: 0.75rem;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        
-        .blk-migration-content {
-            text-align: center;
-            
-            h3 {
-                font-size: 1.25rem;
-                font-weight: 600;
-                margin: 0 0 0.75rem;
-                color: #1e40af;
-            }
-            
-            p {
-                margin: 0 0 1rem;
-                color: #1e40af;
-            }
-            
-            .blk-migration-details {
-                background: white;
-                border-radius: 0.5rem;
-                padding: 1rem;
-                margin: 1rem 0;
-                text-align: left;
-                
-                p {
-                    margin: 0.25rem 0;
-                    color: #374151;
-                    font-size: 0.875rem;
-                }
-            }
-            
-            .blk-migration-actions {
-                display: flex;
-                gap: 0.75rem;
-                justify-content: center;
-                margin-top: 1.5rem;
-                
-                @media (max-width: 640px) {
-                    flex-direction: column;
-                }
-            }
-            
-            .blk-migration-progress {
-                margin: 1rem 0;
-                
-                .blk-progress-bar {
-                    width: 100%;
-                    height: 8px;
-                    background: #e5e7eb;
-                    border-radius: 4px;
-                    overflow: hidden;
-
-                    .blk-progress-fill {
-                        height: 100%;
-                        background: #3b82f6;
-                        transition: width 0.3s ease;
-                    }
-                }
-            }
-        }
-    }
 
     .blk-teaser-results {
         position: relative;
@@ -505,7 +477,9 @@
 
     .blk-accounts-list {
         background: #f9fafb;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
         border-radius: 0.5rem;
+        box-shadow: inset 0 3px 6px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
         padding: 1rem;
         max-height: 400px;
         overflow-y: auto;

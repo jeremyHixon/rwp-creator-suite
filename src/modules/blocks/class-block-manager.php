@@ -58,14 +58,30 @@ class RWP_Creator_Suite_Block_Manager {
      * Enqueue Instagram Analyzer specific assets.
      */
     private function enqueue_instagram_analyzer_assets() {
-        // Enqueue JSZip library
+        // Enqueue JSZip library with local fallback
+        $jszip_local_path = RWP_CREATOR_SUITE_PLUGIN_DIR . 'assets/vendor/jszip.min.js';
+        $jszip_url = file_exists( $jszip_local_path ) 
+            ? RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/vendor/jszip.min.js'
+            : 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        
         wp_enqueue_script(
             'jszip',
-            'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+            $jszip_url,
             array(),
             '3.10.1',
             true
         );
+        
+        // Add JSZip loading error handling
+        $jszip_error_handler = "
+            if (typeof JSZip === 'undefined') {
+                console.error('JSZip library failed to load from both local and CDN sources');
+                if (window.rwpInstagramAnalyzer && window.rwpInstagramAnalyzer.strings) {
+                    alert('Required library failed to load. Please check your internet connection and try refreshing the page.');
+                }
+            }
+        ";
+        wp_add_inline_script( 'jszip', $jszip_error_handler, 'after' );
 
         // Enqueue State Manager
         wp_enqueue_script(

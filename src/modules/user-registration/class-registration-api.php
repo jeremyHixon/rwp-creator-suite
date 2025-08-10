@@ -143,34 +143,48 @@ class RWP_Creator_Suite_Registration_API {
      * @return WP_REST_Response|WP_Error Registration response.
      */
     public function handle_registration( $request ) {
-        // Rate limiting check
-        if ( ! $this->check_rate_limit( $request->get_param( 'email' ) ) ) {
+        try {
+            // Rate limiting check
+            if ( ! $this->check_rate_limit( $request->get_param( 'email' ) ) ) {
+                return new WP_Error(
+                    'rate_limit_exceeded',
+                    'Too many registration attempts. Please try again later.',
+                    array( 'status' => 429 )
+                );
+            }
+
+            $result = $this->user_registration->handle_registration_request( array(
+                'email'       => $request->get_param( 'email' ),
+                'redirect_to' => $request->get_param( 'redirect_to' ),
+                'nonce'       => $request->get_param( 'nonce' ),
+            ) );
+
+            if ( is_wp_error( $result ) ) {
+                // Log registration errors for debugging
+                error_log( 'RWP Creator Suite Registration Error: ' . $result->get_error_message() );
+                
+                return rest_ensure_response( array(
+                    'success' => false,
+                    'message' => $result->get_error_message(),
+                    'code'    => $result->get_error_code(),
+                ) );
+            }
+
+            return rest_ensure_response( array(
+                'success' => true,
+                'message' => 'Registration successful. You are now logged in.',
+                'data'    => $result,
+            ) );
+        } catch ( Exception $e ) {
+            // Log unexpected errors
+            error_log( 'RWP Creator Suite Registration Exception: ' . $e->getMessage() );
+            
             return new WP_Error(
-                'rate_limit_exceeded',
-                'Too many registration attempts. Please try again later.',
-                array( 'status' => 429 )
+                'registration_exception',
+                'An unexpected error occurred during registration. Please try again.',
+                array( 'status' => 500 )
             );
         }
-
-        $result = $this->user_registration->handle_registration_request( array(
-            'email'       => $request->get_param( 'email' ),
-            'redirect_to' => $request->get_param( 'redirect_to' ),
-            'nonce'       => $request->get_param( 'nonce' ),
-        ) );
-
-        if ( is_wp_error( $result ) ) {
-            return rest_ensure_response( array(
-                'success' => false,
-                'message' => $result->get_error_message(),
-                'code'    => $result->get_error_code(),
-            ) );
-        }
-
-        return rest_ensure_response( array(
-            'success' => true,
-            'message' => 'Registration successful. You are now logged in.',
-            'data'    => $result,
-        ) );
     }
 
     /**
@@ -180,27 +194,41 @@ class RWP_Creator_Suite_Registration_API {
      * @return WP_REST_Response|WP_Error Login response.
      */
     public function handle_login( $request ) {
-        $auto_login = new RWP_Creator_Suite_Auto_Login();
+        try {
+            $auto_login = new RWP_Creator_Suite_Auto_Login();
 
-        $result = $auto_login->login_user(
-            $request->get_param( 'email' ),
-            $request->get_param( 'password' ),
-            $request->get_param( 'redirect_to' )
-        );
+            $result = $auto_login->login_user(
+                $request->get_param( 'email' ),
+                $request->get_param( 'password' ),
+                $request->get_param( 'redirect_to' )
+            );
 
-        if ( is_wp_error( $result ) ) {
+            if ( is_wp_error( $result ) ) {
+                // Log login errors for security monitoring
+                error_log( 'RWP Creator Suite Login Error: ' . $result->get_error_message() );
+                
+                return rest_ensure_response( array(
+                    'success' => false,
+                    'message' => $result->get_error_message(),
+                    'code'    => $result->get_error_code(),
+                ) );
+            }
+
             return rest_ensure_response( array(
-                'success' => false,
-                'message' => $result->get_error_message(),
-                'code'    => $result->get_error_code(),
+                'success' => true,
+                'message' => 'Login successful.',
+                'data'    => $result,
             ) );
+        } catch ( Exception $e ) {
+            // Log unexpected errors
+            error_log( 'RWP Creator Suite Login Exception: ' . $e->getMessage() );
+            
+            return new WP_Error(
+                'login_exception',
+                'An unexpected error occurred during login. Please try again.',
+                array( 'status' => 500 )
+            );
         }
-
-        return rest_ensure_response( array(
-            'success' => true,
-            'message' => 'Login successful.',
-            'data'    => $result,
-        ) );
     }
 
     /**

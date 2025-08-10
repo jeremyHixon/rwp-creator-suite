@@ -25,41 +25,57 @@ class RWP_Creator_Suite_Instagram_Analyzer_API {
      * Sync whitelist with server.
      */
     public function sync_whitelist() {
-        // Verify nonce
-        if ( ! wp_verify_nonce( $_POST['nonce'], 'rwp_instagram_analyzer_nonce' ) ) {
-            wp_die( json_encode( array( 'success' => false, 'data' => 'Invalid nonce' ) ) );
-        }
-
-        // Check user authentication
-        if ( ! is_user_logged_in() ) {
-            wp_die( json_encode( array( 'success' => false, 'data' => 'User not authenticated' ) ) );
-        }
-
-        $user_id = get_current_user_id();
-        $whitelist_data = wp_unslash( $_POST['whitelist'] );
-        
-        // Validate and sanitize whitelist data
-        $whitelist = json_decode( $whitelist_data, true );
-        if ( ! is_array( $whitelist ) ) {
-            wp_die( json_encode( array( 'success' => false, 'data' => 'Invalid whitelist data' ) ) );
-        }
-
-        // Sanitize each username
-        $sanitized_whitelist = array();
-        foreach ( $whitelist as $username ) {
-            $clean_username = $this->sanitize_instagram_username( $username );
-            if ( $clean_username ) {
-                $sanitized_whitelist[] = $clean_username;
+        try {
+            // Sanitize and verify nonce
+            $nonce = sanitize_text_field( $_POST['nonce'] ?? '' );
+            if ( ! wp_verify_nonce( $nonce, 'rwp_instagram_analyzer_nonce' ) ) {
+                $this->send_json_error( 'Invalid nonce', 403 );
+                return;
             }
-        }
 
-        // Save to user meta
-        $result = update_user_meta( $user_id, 'instagram_analyzer_whitelist', $sanitized_whitelist );
-        
-        if ( $result !== false ) {
-            wp_die( json_encode( array( 'success' => true, 'data' => 'Whitelist synchronized' ) ) );
-        } else {
-            wp_die( json_encode( array( 'success' => false, 'data' => 'Failed to save whitelist' ) ) );
+            // Check user authentication
+            if ( ! is_user_logged_in() ) {
+                $this->send_json_error( 'User not authenticated', 401 );
+                return;
+            }
+
+            $user_id = get_current_user_id();
+            $whitelist_data = sanitize_textarea_field( wp_unslash( $_POST['whitelist'] ?? '' ) );
+            
+            // Validate and sanitize whitelist data
+            $whitelist = json_decode( $whitelist_data, true );
+            if ( json_last_error() !== JSON_ERROR_NONE ) {
+                error_log( 'RWP Creator Suite JSON Decode Error: ' . json_last_error_msg() );
+                $this->send_json_error( 'Invalid JSON data provided', 400 );
+                return;
+            }
+            
+            if ( ! is_array( $whitelist ) ) {
+                $this->send_json_error( 'Invalid whitelist data format', 400 );
+                return;
+            }
+
+            // Sanitize each username
+            $sanitized_whitelist = array();
+            foreach ( $whitelist as $username ) {
+                $clean_username = $this->sanitize_instagram_username( $username );
+                if ( $clean_username ) {
+                    $sanitized_whitelist[] = $clean_username;
+                }
+            }
+
+            // Save to user meta
+            $result = update_user_meta( $user_id, 'instagram_analyzer_whitelist', $sanitized_whitelist );
+            
+            if ( $result !== false ) {
+                $this->send_json_success( 'Whitelist synchronized', $sanitized_whitelist );
+            } else {
+                error_log( 'RWP Creator Suite: Failed to save whitelist for user ' . $user_id );
+                $this->send_json_error( 'Failed to save whitelist', 500 );
+            }
+        } catch ( Exception $e ) {
+            error_log( 'RWP Creator Suite Whitelist Sync Exception: ' . $e->getMessage() );
+            $this->send_json_error( 'An unexpected error occurred', 500 );
         }
     }
 
@@ -67,14 +83,17 @@ class RWP_Creator_Suite_Instagram_Analyzer_API {
      * Get user whitelist.
      */
     public function get_whitelist() {
-        // Verify nonce
-        if ( ! wp_verify_nonce( $_POST['nonce'], 'rwp_instagram_analyzer_nonce' ) ) {
-            wp_die( json_encode( array( 'success' => false, 'data' => 'Invalid nonce' ) ) );
+        // Sanitize and verify nonce
+        $nonce = sanitize_text_field( $_POST['nonce'] ?? '' );
+        if ( ! wp_verify_nonce( $nonce, 'rwp_instagram_analyzer_nonce' ) ) {
+            $this->send_json_error( 'Invalid nonce', 403 );
+            return;
         }
 
         // Check user authentication
         if ( ! is_user_logged_in() ) {
-            wp_die( json_encode( array( 'success' => false, 'data' => 'User not authenticated' ) ) );
+            $this->send_json_error( 'User not authenticated', 401 );
+            return;
         }
 
         $user_id = get_current_user_id();
@@ -84,7 +103,7 @@ class RWP_Creator_Suite_Instagram_Analyzer_API {
             $whitelist = array();
         }
 
-        wp_die( json_encode( array( 'success' => true, 'data' => $whitelist ) ) );
+        $this->send_json_success( 'Whitelist retrieved', $whitelist );
     }
 
 
@@ -99,6 +118,9 @@ class RWP_Creator_Suite_Instagram_Analyzer_API {
 
     /**
      * Sanitize Instagram username.
+     *
+     * @param string $username The username to sanitize.
+     * @return string|false The sanitized username or false if invalid.
      */
     private function sanitize_instagram_username( $username ) {
         // Remove @ if present
@@ -116,6 +138,40 @@ class RWP_Creator_Suite_Instagram_Analyzer_API {
         }
         
         return $username;
+    }
+
+    /**
+     * Send JSON success response.
+     *
+     * @param string $message Success message.
+     * @param mixed  $data Optional data to include.
+     */
+    private function send_json_success( $message, $data = null ) {
+        $response = array(
+            'success' => true,
+            'message' => $message,
+        );
+        
+        if ( $data !== null ) {
+            $response['data'] = $data;
+        }
+        
+        wp_send_json( $response );
+    }
+
+    /**
+     * Send JSON error response.
+     *
+     * @param string $message Error message.
+     * @param int    $status_code HTTP status code.
+     */
+    private function send_json_error( $message, $status_code = 400 ) {
+        $response = array(
+            'success' => false,
+            'message' => $message,
+        );
+        
+        wp_send_json( $response, $status_code );
     }
 
 }

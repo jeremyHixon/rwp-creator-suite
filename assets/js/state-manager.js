@@ -71,8 +71,11 @@ class StateManager {
 			);
 		} else if ( this.storage.type === 'sessionStorage' ) {
 			this.showWarning(
-				'Using session storage - data will be lost when browser closes'
+				'localStorage unavailable - using temporary session storage'
 			);
+		} else if ( this.storage.type === 'localStorage' ) {
+			// Success - localStorage is available and preferred
+			console.log( 'State Manager: Using localStorage for data persistence' );
 		}
 	}
 
@@ -118,6 +121,7 @@ class StateManager {
 			return this.fallbackData;
 		}
 
+		// Priority order: localStorage (preferred) -> sessionStorage (fallback) -> memory (last resort)
 		return this.storage.type === 'localStorage'
 			? localStorage
 			: sessionStorage;

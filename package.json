@@ -1,25 +1,25 @@
 {
-  "name": "rwp-creator-suite",
-  "version": "1.2.0",
-  "description": "A suite of tools for content creators including Instagram follower analysis.",
-  "scripts": {
-    "build": "wp-scripts build",
-    "start": "wp-scripts start",
-    "lint:css": "wp-scripts lint-style",
-    "lint:js": "wp-scripts lint-js",
-    "format": "wp-scripts format",
-    "packages-update": "wp-scripts packages-update"
-  },
-  "devDependencies": {
-    "@wordpress/scripts": "^27.0.0"
-  },
-  "keywords": [
-    "wordpress",
-    "plugin",
-    "instagram",
-    "follower-analysis",
-    "block"
-  ],
-  "author": "Jeremy Hixon",
-  "license": "GPL-2.0-or-later"
+	"name": "rwp-creator-suite",
+	"version": "1.2.0",
+	"description": "A suite of tools for content creators including Instagram follower analysis.",
+	"scripts": {
+		"build": "wp-scripts build",
+		"start": "wp-scripts start",
+		"lint:css": "wp-scripts lint-style",
+		"lint:js": "wp-scripts lint-js",
+		"format": "wp-scripts format",
+		"packages-update": "wp-scripts packages-update"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^27.0.0"
+	},
+	"keywords": [
+		"wordpress",
+		"plugin",
+		"instagram",
+		"follower-analysis",
+		"block"
+	],
+	"author": "Jeremy Hixon",
+	"license": "GPL-2.0-or-later"
 }

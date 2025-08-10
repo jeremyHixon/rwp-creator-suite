@@ -32,6 +32,9 @@ class RWP_Creator_Suite_Block_Manager {
     public function register_blocks() {
         // Register Instagram Analyzer block from build directory
         register_block_type( RWP_CREATOR_SUITE_PLUGIN_DIR . 'build/blocks/instagram-analyzer' );
+        
+        // Register Instagram Banner block from build directory
+        register_block_type( RWP_CREATOR_SUITE_PLUGIN_DIR . 'build/blocks/instagram-banner' );
     }
 
     /**
@@ -43,6 +46,11 @@ class RWP_Creator_Suite_Block_Manager {
         // Only enqueue if Instagram Analyzer block is present
         if ( has_block( 'rwp-creator-suite/instagram-analyzer', $post ) ) {
             $this->enqueue_instagram_analyzer_assets();
+        }
+        
+        // Only enqueue if Instagram Banner block is present
+        if ( has_block( 'rwp-creator-suite/instagram-banner', $post ) ) {
+            $this->enqueue_instagram_banner_assets();
         }
     }
 
@@ -91,6 +99,49 @@ class RWP_Creator_Suite_Block_Manager {
                     'processing' => __( 'Processing...', 'rwp-creator-suite' ),
                     'analysisComplete' => __( 'Analysis Complete', 'rwp-creator-suite' ),
                     'loginRequired' => __( 'Login required to see full results', 'rwp-creator-suite' ),
+                )
+            )
+        );
+    }
+
+    /**
+     * Enqueue Instagram Banner specific assets.
+     */
+    private function enqueue_instagram_banner_assets() {
+        // Enqueue State Manager (shared dependency)
+        wp_enqueue_script(
+            'rwp-state-manager',
+            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/state-manager.js',
+            array(),
+            RWP_CREATOR_SUITE_VERSION,
+            true
+        );
+
+        // Enqueue Instagram Banner app
+        wp_enqueue_script(
+            'rwp-instagram-banner-app',
+            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/instagram-banner.js',
+            array( 'rwp-state-manager' ),
+            RWP_CREATOR_SUITE_VERSION,
+            true
+        );
+
+        // Localize script with WordPress data
+        wp_localize_script(
+            'rwp-instagram-banner-app',
+            'rwpInstagramBanner',
+            array(
+                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                'nonce' => wp_create_nonce( 'rwp_instagram_banner_nonce' ),
+                'isLoggedIn' => is_user_logged_in(),
+                'currentUserId' => get_current_user_id(),
+                'strings' => array(
+                    'uploadPrompt' => __( 'Upload an image to create Instagram banner', 'rwp-creator-suite' ),
+                    'processing' => __( 'Processing...', 'rwp-creator-suite' ),
+                    'cropPrompt' => __( 'Crop your image to 3248x1440 aspect ratio', 'rwp-creator-suite' ),
+                    'loginRequired' => __( 'Login required to download images', 'rwp-creator-suite' ),
+                    'download' => __( 'Download Images', 'rwp-creator-suite' ),
+                    'preview' => __( 'Preview', 'rwp-creator-suite' ),
                 )
             )
         );

@@ -6,8 +6,8 @@ export default function save() {
 	return (
 		<div { ...blockProps }>
 			<div
-				className="blk-instagram-analyzer-container"
-				id="instagram-analyzer-app"
+				className="blk-instagram-banner-container"
+				id="instagram-banner-app"
 			></div>
 		</div>
 	);

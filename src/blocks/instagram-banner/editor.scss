@@ -1,0 +1,19 @@
+/**
+ * Instagram Banner Creator Block - Editor Styles
+ */
+
+.wp-block-rwp-creator-suite-instagram-banner {
+    .components-placeholder {
+        min-height: 200px;
+        
+        .components-placeholder__label {
+            color: #1e1e1e;
+            font-weight: 600;
+        }
+        
+        .components-placeholder__instructions {
+            color: #757575;
+            margin-bottom: 0;
+        }
+    }
+}

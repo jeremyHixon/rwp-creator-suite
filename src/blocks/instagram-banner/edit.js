@@ -8,13 +8,10 @@ export default function Edit() {
 	return (
 		<div { ...blockProps }>
 			<Placeholder
-				icon={ <Icon icon="chart-bar" /> }
-				label={ __(
-					'Instagram Follower Analyzer',
-					'rwp-creator-suite'
-				) }
+				icon={ <Icon icon="format-gallery" /> }
+				label={ __( 'Instagram Banner Creator', 'rwp-creator-suite' ) }
 				instructions={ __(
-					'This block will display an Instagram follower analysis interface on the frontend.',
+					'This block will display an Instagram banner creation interface on the frontend where users can upload and split images.',
 					'rwp-creator-suite'
 				) }
 			/>

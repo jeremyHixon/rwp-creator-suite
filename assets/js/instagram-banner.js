@@ -79,16 +79,6 @@ class InstagramBannerCreator {
 	createUploadInterface() {
 		return `
             <div class="blk-upload-section">
-                <div class="blk-upload-header">
-                    <h2 class="blk-section-title">${
-						this.config.strings.uploadPrompt || 'Upload Your Image'
-					}</h2>
-                    <p class="blk-section-description">
-                        Upload an image to create a 3-panel Instagram banner. 
-                        Best results with landscape images at least 3248x1440 pixels.
-                    </p>
-                </div>
-                
                 <div class="blk-upload-zone" id="upload-zone">
                     <div class="blk-upload-icon">
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -122,15 +112,6 @@ class InstagramBannerCreator {
 	createCropInterface() {
 		return `
             <div class="blk-crop-section">
-                <div class="blk-crop-header">
-                    <h2 class="blk-section-title">${
-						this.config.strings.cropPrompt || 'Position Your Image'
-					}</h2>
-                    <p class="blk-section-description">
-                        Drag the image to position it within the 3248×1440 cropping frame.
-                    </p>
-                </div>
-                
                 <div class="blk-crop-container">
                     <div class="blk-crop-canvas-container" id="crop-canvas-container">
                         <canvas id="crop-canvas" class="blk-crop-canvas"></canvas>
@@ -165,13 +146,6 @@ class InstagramBannerCreator {
 	createPreviewInterface() {
 		return `
             <div class="blk-preview-section">
-                <div class="blk-preview-header">
-                    <h2 class="blk-section-title">Instagram Banner Preview</h2>
-                    <p class="blk-section-description">
-                        Your image will be split into 3 separate images. Preview how they'll look on Instagram.
-                    </p>
-                </div>
-                
                 <div class="blk-preview-container">
                     <div class="blk-banner-preview" id="banner-preview">
                         <div class="blk-banner-image" id="banner-image-1">
@@ -236,17 +210,6 @@ class InstagramBannerCreator {
                             Download Image 3
                         </button>
                     </div>
-                </div>
-                
-                <div class="blk-download-info">
-                    <h4>Upload Instructions:</h4>
-                    <ol>
-                        <li>Download all 3 images</li>
-                        <li>Post Image 1 to your Instagram</li>
-                        <li>Post Image 2 next</li>
-                        <li>Post Image 3 last</li>
-                        <li>Your banner will display correctly on your profile grid!</li>
-                    </ol>
                 </div>
             </div>
         `;
@@ -934,19 +897,84 @@ class InstagramBannerCreator {
 		};
 
 		this.stateManager.saveFormState( stateData );
+		
+		// Save image data using the analyzer pattern
+		if ( this.state.croppedImageData ) {
+			this.saveBannerData();
+		}
 	}
 
 	restoreState() {
 		const savedState = this.stateManager.getFormState();
 		if ( savedState && savedState.timestamp > Date.now() - 3600000 ) {
 			// 1 hour
-			// Restore UI state but not image data (too large for localStorage)
 			this.goToStep( savedState.currentStep || 'upload' );
+			
+			// Try to restore saved banner data
+			this.loadStoredBannerData();
 		}
 	}
 
 	clearState() {
 		this.stateManager.clearFormState();
+		this.stateManager.removeItem( 'banner_data' );
+	}
+
+	saveBannerData() {
+		if ( ! this.state.croppedImageData ) {
+			return false;
+		}
+
+		const bannerData = {
+			croppedImageDataUrl: this.state.croppedImageData.dataUrl,
+			timestamp: Date.now(),
+			currentStep: this.state.currentStep
+		};
+
+		const success = this.stateManager.setItem( 'banner_data', bannerData );
+		if ( ! success ) {
+			console.warn( 'Could not save banner data. Results may not persist.' );
+		}
+		return success;
+	}
+
+	async loadStoredBannerData() {
+		try {
+			const storedData = this.stateManager.getItem( 'banner_data' );
+			if ( storedData && storedData.croppedImageDataUrl ) {
+				// Recreate the cropped image data from stored data URL
+				this.state.croppedImageData = {
+					dataUrl: storedData.croppedImageDataUrl,
+					canvas: await this.createCanvasFromDataUrl( storedData.croppedImageDataUrl )
+				};
+				
+				// If we're on the preview step, regenerate the preview images
+				if ( storedData.currentStep === 'preview' ) {
+					await this.generatePreviewImages( this.state.croppedImageData );
+				}
+				
+				return true;
+			}
+		} catch ( error ) {
+			console.warn( 'Could not load stored banner data:', error );
+		}
+		return false;
+	}
+
+	createCanvasFromDataUrl( dataUrl ) {
+		return new Promise( ( resolve, reject ) => {
+			const img = new Image();
+			img.onload = () => {
+				const canvas = document.createElement( 'canvas' );
+				canvas.width = this.specs.targetWidth;
+				canvas.height = this.specs.targetHeight;
+				const ctx = canvas.getContext( '2d' );
+				ctx.drawImage( img, 0, 0 );
+				resolve( canvas );
+			};
+			img.onerror = reject;
+			img.src = dataUrl;
+		} );
 	}
 
 	// Utility methods

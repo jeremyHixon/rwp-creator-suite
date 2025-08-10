@@ -25,7 +25,8 @@ class InstagramAnalyzer {
             isProcessing: false,
             uploadProgress: 0,
             analysisData: null,
-            whitelist: []
+            whitelist: [],
+            viewedAccounts: []
         };
 
         // Initialize state manager
@@ -491,10 +492,13 @@ class InstagramAnalyzer {
         // Hide upload interface
         uploadContainer.style.display = 'none';
         
-        // Ensure whitelist is up-to-date for logged-in users
+        // Ensure whitelist and viewed accounts are up-to-date for logged-in users
         if (this.config.isLoggedIn) {
             await this.loadServerData();
         }
+        
+        // Load viewed accounts from storage
+        this.state.viewedAccounts = this.stateManager.getViewedAccounts();
         
         // Show results
         resultsContainer.style.display = 'block';
@@ -597,16 +601,20 @@ class InstagramAnalyzer {
 
     createAccountItem(account) {
         const isWhitelisted = this.state.whitelist.includes(account.username);
+        const isViewed = this.state.viewedAccounts.includes(account.username);
         
         return `
-            <div class="blk-account-item ${isWhitelisted ? 'blk-account-item--whitelisted' : ''}" data-username="${account.username}">
-                <div class="blk-account-avatar"></div>
+            <div class="blk-account-item ${isWhitelisted ? 'blk-account-item--whitelisted' : ''} ${isViewed ? 'blk-account-item--viewed' : ''}" data-username="${account.username}">
+                <div class="blk-account-avatar">
+                    ${isViewed ? '<div class="blk-viewed-indicator">👁</div>' : ''}
+                </div>
                 <div class="blk-account-info">
                     <div class="blk-account-username">
-                        <a href="${account.profileUrl}" target="_blank" rel="noopener noreferrer">
+                        <a href="${account.profileUrl}" target="_blank" rel="noopener noreferrer" class="blk-profile-link" data-username="${account.username}">
                             ${account.username}
                         </a>
                         ${isWhitelisted ? '<span class="blk-whitelist-badge">Whitelisted</span>' : ''}
+                        ${isViewed ? '<span class="blk-viewed-badge">Viewed</span>' : ''}
                     </div>
                     <div class="blk-account-meta">
                         ${account.timestamp ? `<span class="blk-timestamp">Added ${this.formatDate(account.timestamp)}</span>` : ''}
@@ -618,7 +626,7 @@ class InstagramAnalyzer {
                             ${isWhitelisted ? 'Remove from Whitelist' : 'Add to Whitelist'}
                         </button>
                     ` : ''}
-                    <a href="${account.profileUrl}" target="_blank" class="blk-button blk-button--small blk-button--secondary">
+                    <a href="${account.profileUrl}" target="_blank" class="blk-button blk-button--small blk-button--secondary blk-view-profile-btn" data-username="${account.username}">
                         View Profile
                     </a>
                 </div>
@@ -730,6 +738,7 @@ class InstagramAnalyzer {
             if (storedData) {
                 this.state.analysisData = storedData;
                 this.state.whitelist = this.stateManager.getWhitelist();
+                this.state.viewedAccounts = this.stateManager.getViewedAccounts();
                 await this.displayResults(storedData);
                 return true;
             }
@@ -826,6 +835,22 @@ class InstagramAnalyzer {
                 this.resetAnalyzer();
             });
         }
+
+        // Profile link clicks (username links)
+        const profileLinks = this.container.querySelectorAll('.blk-profile-link');
+        profileLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                this.markAccountAsViewed(e.target.dataset.username);
+            });
+        });
+
+        // View profile button clicks
+        const viewProfileBtns = this.container.querySelectorAll('.blk-view-profile-btn');
+        viewProfileBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.markAccountAsViewed(e.target.dataset.username);
+            });
+        });
     }
 
     filterAccounts(searchTerm) {
@@ -912,6 +937,41 @@ class InstagramAnalyzer {
             
             // Add visual indicator
             accountItem.classList.toggle('blk-account-item--whitelisted', isWhitelisted);
+        }
+    }
+
+    markAccountAsViewed(username) {
+        // Add to viewed accounts state
+        if (!this.state.viewedAccounts.includes(username)) {
+            this.state.viewedAccounts.push(username);
+            this.stateManager.markAccountAsViewed(username);
+            
+            // Update UI immediately
+            this.updateViewedUI(username, true);
+        }
+    }
+
+    updateViewedUI(username, isViewed) {
+        const accountItem = this.container.querySelector(`[data-username="${username}"]`);
+        if (accountItem) {
+            // Add viewed class
+            accountItem.classList.toggle('blk-account-item--viewed', isViewed);
+            
+            // Add viewed indicator to avatar
+            const avatar = accountItem.querySelector('.blk-account-avatar');
+            if (avatar && isViewed) {
+                if (!avatar.querySelector('.blk-viewed-indicator')) {
+                    avatar.innerHTML = '<div class="blk-viewed-indicator">👁</div>';
+                }
+            }
+            
+            // Add viewed badge to username area
+            const usernameArea = accountItem.querySelector('.blk-account-username');
+            if (usernameArea && isViewed) {
+                if (!usernameArea.querySelector('.blk-viewed-badge')) {
+                    usernameArea.insertAdjacentHTML('beforeend', '<span class="blk-viewed-badge">Viewed</span>');
+                }
+            }
         }
     }
 
@@ -1051,7 +1111,7 @@ class InstagramAnalyzer {
         this.state.isProcessing = false;
         this.state.uploadProgress = 0;
         
-        // Clear stored data (but keep whitelist unless user clears it)
+        // Clear stored data (but keep whitelist and viewed accounts unless user clears them)
         this.stateManager.removeItem('analysis_data');
         this.stateManager.clearFormState();
         

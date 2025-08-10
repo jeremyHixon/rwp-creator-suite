@@ -332,4 +332,25 @@ class StateManager {
     clearFormState() {
         this.removeItem('form_state');
     }
+
+    saveViewedAccounts(viewedAccounts) {
+        return this.setItem('viewed_accounts', viewedAccounts, { type: 'viewed' });
+    }
+
+    getViewedAccounts() {
+        return this.getItem('viewed_accounts') || [];
+    }
+
+    markAccountAsViewed(username) {
+        const viewedAccounts = this.getViewedAccounts();
+        if (!viewedAccounts.includes(username)) {
+            viewedAccounts.push(username);
+            this.saveViewedAccounts(viewedAccounts);
+        }
+        return true;
+    }
+
+    clearViewedAccounts() {
+        this.removeItem('viewed_accounts');
+    }
 }

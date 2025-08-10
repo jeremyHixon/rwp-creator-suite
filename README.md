@@ -19,6 +19,16 @@ A comprehensive WordPress plugin designed for content creators, providing stream
 - **User Authentication Integration**: Full functionality for registered users, preview mode for guests
 - **Secure Data Handling**: All analysis is performed client-side for privacy protection
 
+### Instagram Banner Creator
+- **WordPress Block**: Intuitive Gutenberg block for creating Instagram banner effects
+- **Image Upload**: Drag-and-drop interface for uploading images (JPEG, PNG, WebP up to 10MB)
+- **Image Cropping**: Interactive crop interface with locked 3248×1440 aspect ratio for optimal banner layout
+- **Three-Panel Split**: Automatically splits images into three 1080×1440 Instagram posts with 4px gaps
+- **Real-time Preview**: Live preview of the banner effect showing all three images side by side
+- **Batch Download**: Download all three images at once for easy posting to Instagram
+- **User Authentication Integration**: Full functionality for registered users, teaser preview for guests
+- **Responsive Design**: Mobile-optimized interface with touch-friendly controls
+
 ### Security & Performance
 - **Rate limiting**: Prevents spam registrations with configurable rate limits
 - **Secure redirects**: All redirects are validated for security
@@ -58,6 +68,25 @@ A comprehensive WordPress plugin designed for content creators, providing stream
 - `rwp_creator_suite_subscriber_redirect_url` - Filter for subscriber default redirect
 
 ## Changelog
+
+### Version 1.3.0 (2025-08-10)
+#### New Features
+- **Instagram Banner Creator Block**: Complete implementation of a Gutenberg block for creating Instagram banner effects
+  - Client-side image processing with drag-and-drop upload interface
+  - Interactive cropping tool with locked 3248×1440 aspect ratio for optimal banner layout
+  - Automatic image splitting into three 1080×1440 Instagram posts with 4px gaps
+  - Real-time preview showing the banner effect with all three images
+  - Batch download functionality for easy Instagram posting
+  - Support for JPEG, PNG, and WebP formats up to 10MB
+  - Responsive design optimized for mobile devices
+  - Integration with user authentication system (full access for registered users, teaser for guests)
+
+#### Technical Improvements  
+- Added `InstagramBannerCreator` JavaScript class with complete image processing workflow
+- Implemented HTML5 Canvas-based image manipulation for precise splitting
+- Added responsive SCSS styling with container queries and mobile optimization
+- Enhanced block registration system to support the new banner creator block
+- Added state management for preserving user progress during the creation process
 
 ### Version 1.2.0 (2025-08-08)
 #### New Features

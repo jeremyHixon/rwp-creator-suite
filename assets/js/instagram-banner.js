@@ -55,7 +55,7 @@ class InstagramBannerCreator {
 	async init() {
 		this.createInterface();
 		this.bindEvents();
-		this.restoreState();
+		await this.restoreState();
 	}
 
 	createInterface() {
@@ -353,19 +353,21 @@ class InstagramBannerCreator {
 		const startOverBtn = this.container.querySelector( '#start-over-btn' );
 
 		if ( backToUploadBtn ) {
-			backToUploadBtn.addEventListener( 'click', () =>
-				this.goToStep( 'upload' )
-			);
+			backToUploadBtn.addEventListener( 'click', async () => {
+				await this.goToStep( 'upload' );
+			});
 		}
 
 		if ( backToCropBtn ) {
-			backToCropBtn.addEventListener( 'click', () =>
-				this.goToStep( 'crop' )
-			);
+			backToCropBtn.addEventListener( 'click', async () => {
+				await this.goToStep( 'crop' );
+			});
 		}
 
 		if ( startOverBtn ) {
-			startOverBtn.addEventListener( 'click', () => this.startOver() );
+			startOverBtn.addEventListener( 'click', async () => {
+				await this.startOver();
+			});
 		}
 	}
 
@@ -416,7 +418,7 @@ class InstagramBannerCreator {
 			this.showProgress( 50 );
 			
 			// Move to crop step first
-			this.goToStep( 'crop' );
+			await this.goToStep( 'crop' );
 
 			this.showProgress( 75 );
 
@@ -512,40 +514,81 @@ class InstagramBannerCreator {
 		
 		console.log( 'Canvas size set to:', canvas.width, 'x', canvas.height );
 		
-		// Calculate image size to be larger than canvas for dragging
-		const imageAspect = imageData.width / imageData.height;
-		const canvasAspect = canvas.width / canvas.height;
-		
-		// Make image 150% of canvas size so there's room to drag
-		const scaleFactor = 1.5;
-		let drawWidth, drawHeight;
-		
-		if ( imageAspect > canvasAspect ) {
-			// Scale by height
-			drawHeight = canvas.height * scaleFactor;
-			drawWidth = drawHeight * imageAspect;
+		// For restored images (from page refresh), use the same scaling logic as original uploads
+		// so users can still drag the image around to adjust the crop
+		if ( imageData.isRestored && this.imagePosition ) {
+			// Use the same scaling logic as original uploads to ensure draggability
+			const imageAspect = imageData.width / imageData.height;
+			const canvasAspect = canvas.width / canvas.height;
+			
+			// Make image 150% of canvas size so there's room to drag
+			const scaleFactor = 1.5;
+			let drawWidth, drawHeight;
+			
+			if ( imageAspect > canvasAspect ) {
+				// Scale by height
+				drawHeight = canvas.height * scaleFactor;
+				drawWidth = drawHeight * imageAspect;
+			} else {
+				// Scale by width  
+				drawWidth = canvas.width * scaleFactor;
+				drawHeight = drawWidth / imageAspect;
+			}
+			
+			// Use restored position, or center if not available
+			if (!this.imagePosition) {
+				this.imagePosition = {
+					x: (canvas.width - drawWidth) / 2,
+					y: (canvas.height - drawHeight) / 2
+				};
+			}
+			
+			// Store image info for dragging and cropping
+			this.cropImageInfo = {
+				originalImage: imageData.image,
+				drawWidth,
+				drawHeight,
+				originalWidth: imageData.width,
+				originalHeight: imageData.height,
+				scaleX: drawWidth / imageData.width,
+				scaleY: drawHeight / imageData.height
+			};
 		} else {
-			// Scale by width  
-			drawWidth = canvas.width * scaleFactor;
-			drawHeight = drawWidth / imageAspect;
+			// Original upload flow - make image larger for cropping
+			const imageAspect = imageData.width / imageData.height;
+			const canvasAspect = canvas.width / canvas.height;
+			
+			// Make image 150% of canvas size so there's room to drag
+			const scaleFactor = 1.5;
+			let drawWidth, drawHeight;
+			
+			if ( imageAspect > canvasAspect ) {
+				// Scale by height
+				drawHeight = canvas.height * scaleFactor;
+				drawWidth = drawHeight * imageAspect;
+			} else {
+				// Scale by width  
+				drawWidth = canvas.width * scaleFactor;
+				drawHeight = drawWidth / imageAspect;
+			}
+			
+			// Initial position (centered)
+			this.imagePosition = {
+				x: (canvas.width - drawWidth) / 2,
+				y: (canvas.height - drawHeight) / 2
+			};
+			
+			// Store image info for dragging and cropping
+			this.cropImageInfo = {
+				originalImage: imageData.image,
+				drawWidth,
+				drawHeight,
+				originalWidth: imageData.width,
+				originalHeight: imageData.height,
+				scaleX: drawWidth / imageData.width,
+				scaleY: drawHeight / imageData.height
+			};
 		}
-		
-		// Initial position (centered)
-		this.imagePosition = {
-			x: (canvas.width - drawWidth) / 2,
-			y: (canvas.height - drawHeight) / 2
-		};
-		
-		// Store image info for dragging and cropping
-		this.cropImageInfo = {
-			originalImage: imageData.image,
-			drawWidth,
-			drawHeight,
-			originalWidth: imageData.width,
-			originalHeight: imageData.height,
-			scaleX: drawWidth / imageData.width,
-			scaleY: drawHeight / imageData.height
-		};
 		
 		console.log( 'Image info:', this.cropImageInfo );
 		console.log( 'Initial position:', this.imagePosition );
@@ -553,7 +596,7 @@ class InstagramBannerCreator {
 		// Draw the image at initial position
 		this.redrawCropCanvas();
 		
-		// Make image draggable
+		// Make image draggable - users should be able to adjust crop position even for restored images
 		this.makeImageDraggable( canvas );
 	}
 
@@ -625,6 +668,8 @@ class InstagramBannerCreator {
 			if ( isDragging ) {
 				isDragging = false;
 				canvas.style.cursor = 'grab';
+				// Save the updated position to localStorage
+				this.saveState();
 			}
 		} );
 	}
@@ -673,8 +718,8 @@ class InstagramBannerCreator {
 			this.saveState();
 
 			// Move to preview step
-			setTimeout( () => {
-				this.goToStep( 'preview' );
+			setTimeout( async () => {
+				await this.goToStep( 'preview' );
 				this.hideProgress();
 			}, 500 );
 		} catch ( error ) {
@@ -844,7 +889,7 @@ class InstagramBannerCreator {
 	}
 
 	// Navigation methods
-	goToStep( step ) {
+	async goToStep( step ) {
 		// Hide all steps
 		this.container
 			.querySelectorAll( '.blk-creator-step' )
@@ -861,11 +906,21 @@ class InstagramBannerCreator {
 			this.state.currentStep = step;
 		}
 
+		// Special handling for crop step - initialize crop interface if needed
+		if ( step === 'crop' && this.state.uploadedImage && !this.cropImageInfo ) {
+			try {
+				await this.initializeCropInterface( this.state.uploadedImage );
+			} catch ( error ) {
+				console.error( 'Failed to initialize crop interface:', error );
+				this.showError( 'Failed to initialize crop interface. Please start over.' );
+			}
+		}
+
 		// Update state
 		this.saveState();
 	}
 
-	startOver() {
+	async startOver() {
 		if (
 			confirm(
 				'Are you sure you want to start over? This will clear your current work.'
@@ -879,7 +934,7 @@ class InstagramBannerCreator {
 			};
 
 			this.clearState();
-			this.goToStep( 'upload' );
+			await this.goToStep( 'upload' );
 
 			// Reset file input
 			const fileInput = this.container.querySelector( '#file-input' );
@@ -904,14 +959,16 @@ class InstagramBannerCreator {
 		}
 	}
 
-	restoreState() {
+	async restoreState() {
 		const savedState = this.stateManager.getFormState();
 		if ( savedState && savedState.timestamp > Date.now() - 3600000 ) {
 			// 1 hour
-			this.goToStep( savedState.currentStep || 'upload' );
 			
-			// Try to restore saved banner data
-			this.loadStoredBannerData();
+			// Try to restore saved banner data first
+			await this.loadStoredBannerData();
+			
+			// Then navigate to the saved step
+			await this.goToStep( savedState.currentStep || 'upload' );
 		}
 	}
 
@@ -927,6 +984,10 @@ class InstagramBannerCreator {
 
 		const bannerData = {
 			croppedImageDataUrl: this.state.croppedImageData.dataUrl,
+			originalImageDataUrl: this.state.uploadedImage ? this.state.uploadedImage.src : null,
+			originalImageWidth: this.state.uploadedImage ? this.state.uploadedImage.width : null,
+			originalImageHeight: this.state.uploadedImage ? this.state.uploadedImage.height : null,
+			imagePosition: this.imagePosition || null,
 			timestamp: Date.now(),
 			currentStep: this.state.currentStep
 		};
@@ -947,6 +1008,46 @@ class InstagramBannerCreator {
 					dataUrl: storedData.croppedImageDataUrl,
 					canvas: await this.createCanvasFromDataUrl( storedData.croppedImageDataUrl )
 				};
+				
+				// Recreate the uploaded image state from the original image data (if available)
+				// This is needed for the crop interface to work properly after page refresh
+				if (storedData.originalImageDataUrl) {
+					const originalImage = new Image();
+					await new Promise((resolve, reject) => {
+						originalImage.onload = resolve;
+						originalImage.onerror = reject;
+						originalImage.src = storedData.originalImageDataUrl;
+					});
+					
+					this.state.uploadedImage = {
+						src: storedData.originalImageDataUrl,
+						width: storedData.originalImageWidth || originalImage.width,
+						height: storedData.originalImageHeight || originalImage.height,
+						image: originalImage,
+						isRestored: true // Flag to indicate this is restored from storage
+					};
+					
+					// Restore image position if available
+					if (storedData.imagePosition) {
+						this.imagePosition = storedData.imagePosition;
+					}
+				} else {
+					// Fallback to cropped image if original isn't available (backward compatibility)
+					const croppedImage = new Image();
+					await new Promise((resolve, reject) => {
+						croppedImage.onload = resolve;
+						croppedImage.onerror = reject;
+						croppedImage.src = storedData.croppedImageDataUrl;
+					});
+					
+					this.state.uploadedImage = {
+						src: storedData.croppedImageDataUrl,
+						width: croppedImage.width,
+						height: croppedImage.height,
+						image: croppedImage,
+						isRestored: true // Flag to indicate this is restored from storage
+					};
+				}
 				
 				// If we're on the preview step, regenerate the preview images
 				if ( storedData.currentStep === 'preview' ) {

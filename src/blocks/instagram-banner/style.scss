@@ -7,6 +7,7 @@
         width: 100%;
         max-width: 100%;
         margin: 0 auto;
+        container-type: inline-size;
         
         // Mobile first approach
         padding: 1rem;
@@ -320,112 +321,179 @@
         }
     }
 
-    // Guest interface
-    .blk-guest-section {
+    // Teaser interface (replaces guest interface)
+    .blk-teaser-section {
         position: relative;
     }
 
-    .blk-guest-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(139, 92, 246, 0.95));
-        border-radius: 0.75rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10;
-    }
+    .blk-teaser-results {
+        position: relative;
 
-    .blk-guest-content {
-        text-align: center;
-        padding: 2rem;
-        max-width: 400px;
+        .blk-teaser-overlay {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(139, 92, 246, 0.95));
+            border-radius: 0.75rem 0.75rem 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            min-height: fit-content;
 
-        .blk-teaser-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
+            .blk-teaser-content {
+                text-align: center;
+                padding: 1.5rem;
+                max-width: 90%;
+                width: 100%;
+                box-sizing: border-box;
+
+                .blk-teaser-icon {
+                    font-size: 2.75rem;
+                    margin-bottom: 1rem;
+                }
+
+                h3 {
+                    font-size: 1.625rem;
+                    font-weight: 700;
+                    margin: 0 0 0.75rem;
+                    color: white;
+                    line-height: 1.2;
+                }
+
+                p {
+                    margin: 0 0 1.25rem;
+                    color: rgba(255, 255, 255, 0.9);
+                    font-size: 1.05rem;
+                    line-height: 1.4;
+
+                    strong {
+                        color: white;
+                        font-weight: 700;
+                    }
+                }
+
+                .blk-teaser-benefits {
+                    text-align: left;
+                    margin: 1.25rem 0;
+
+                    .blk-benefit-item {
+                        display: flex;
+                        align-items: center;
+                        margin: 0.625rem 0;
+                        color: rgba(255, 255, 255, 0.9);
+                        font-size: 0.95rem;
+
+                        .blk-benefit-icon {
+                            margin-right: 0.625rem;
+                            font-size: 1.05rem;
+                            flex-shrink: 0;
+                        }
+                    }
+                }
+
+                .blk-teaser-cta {
+                    margin-top: 1.75rem;
+
+                    .blk-button--large {
+                        padding: 0.8rem 1.75rem;
+                        font-size: 1.05rem;
+                        font-weight: 600;
+                        margin-bottom: 0.875rem;
+                        background: white;
+                        color: #3b82f6;
+                        border-radius: 0.5rem;
+
+                        &:hover {
+                            background: #f8fafc;
+                            color: #2563eb;
+                        }
+                    }
+
+                    .blk-teaser-note {
+                        margin: 0;
+                        color: rgba(255, 255, 255, 0.8);
+                        font-size: 0.8rem;
+                        line-height: 1.3;
+
+                        a {
+                            color: white;
+                            text-decoration: underline;
+
+                            &:hover {
+                                color: #f1f5f9;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
-        h3 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin: 0 0 0.5rem;
-            color: white;
-        }
+        .blk-teaser-preview {
+            filter: blur(1px);
+            opacity: 0.7;
 
-        p {
-            margin: 0 0 1.5rem;
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 1.1rem;
-
-            strong {
-                color: white;
-                font-weight: 700;
+            .blk-teaser-footer {
+                text-align: center;
+                padding: 1.5rem;
+                background: rgba(255, 255, 255, 0.9);
+                border-radius: 0 0 0.5rem 0.5rem;
+                margin-top: 1rem;
             }
         }
     }
 
-    .blk-guest-icon {
-        font-size: 3rem;
-        margin: 0 0 1rem 0;
-    }
+    // Responsive adjustments for teaser content
+    @container (max-width: 768px) {
+        .blk-teaser-content {
+            padding: 1rem !important;
+            
+            .blk-teaser-icon {
+                font-size: 2rem !important;
+            }
 
-    .blk-guest-benefits {
-        text-align: left;
-        margin: 1.5rem 0;
-    }
+            h3 {
+                font-size: 1.25rem !important;
+            }
 
-    .blk-benefit-item {
-        display: flex;
-        align-items: center;
-        margin: 0.75rem 0;
-        color: rgba(255, 255, 255, 0.9);
+            p {
+                font-size: 0.9rem !important;
+            }
 
-        .blk-benefit-icon {
-            margin-right: 0.75rem;
-            font-size: 1.1rem;
-        }
-    }
+            .blk-benefit-item {
+                font-size: 0.8rem !important;
+            }
 
-    .blk-guest-cta {
-        margin-top: 2rem;
-
-        .blk-button--large {
-            padding: 0.875rem 2rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            background: white;
-            color: #3b82f6;
-
-            &:hover {
-                background: #f8fafc;
-                color: #2563eb;
+            .blk-button--large {
+                padding: 0.625rem 1.25rem !important;
+                font-size: 0.9rem !important;
             }
         }
     }
 
-    .blk-guest-note {
-        margin: 0;
-        color: rgba(255, 255, 255, 0.8);
-        font-size: 0.875rem;
+    @container (max-width: 480px) {
+        .blk-teaser-content {
+            padding: 0.75rem !important;
 
-        a {
-            color: white;
-            text-decoration: underline;
+            .blk-teaser-benefits {
+                text-align: center !important;
+            }
 
-            &:hover {
-                color: #f1f5f9;
+            .blk-teaser-icon {
+                font-size: 1.75rem !important;
+                margin-bottom: 0.5rem !important;
+            }
+
+            h3 {
+                font-size: 1.1rem !important;
+                margin-bottom: 0.25rem !important;
+            }
+
+            .blk-teaser-cta {
+                margin-top: 1rem !important;
             }
         }
-    }
-
-    .blk-preview-blur {
-        filter: blur(2px);
-        opacity: 0.7;
     }
 
     // Buttons

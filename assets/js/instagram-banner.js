@@ -288,8 +288,21 @@ class InstagramBannerCreator {
                 </div>
                 
                 <div class="blk-teaser-preview">
-                    <div class="blk-preview-blur" id="preview-blur">
-                        <!-- Blurred preview overlay -->
+                    <div class="blk-banner-preview" id="banner-preview">
+                        <div class="blk-banner-image" id="banner-image-1">
+                            <canvas id="preview-canvas-1"></canvas>
+                            <div class="blk-image-label">Image 1</div>
+                        </div>
+                        <div class="blk-banner-gap"></div>
+                        <div class="blk-banner-image" id="banner-image-2">
+                            <canvas id="preview-canvas-2"></canvas>
+                            <div class="blk-image-label">Image 2</div>
+                        </div>
+                        <div class="blk-banner-gap"></div>
+                        <div class="blk-banner-image" id="banner-image-3">
+                            <canvas id="preview-canvas-3"></canvas>
+                            <div class="blk-image-label">Image 3</div>
+                        </div>
                     </div>
                 </div>
             </div>

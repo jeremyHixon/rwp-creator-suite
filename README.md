@@ -88,6 +88,20 @@ A comprehensive WordPress plugin designed for content creators, providing stream
 - Enhanced block registration system to support the new banner creator block
 - Added state management for preserving user progress during the creation process
 
+### Version 1.2.1 (2025-08-10)
+#### New Features
+- **Account Viewed Tracking**: Instagram Follower Analyzer now tracks which account profiles have been viewed
+  - Visual indicators: Eye icon (👁) and "Viewed" badge appear on accounts that have been clicked
+  - Automatic marking when users click username links or "View Profile" buttons
+  - Viewed state persists across sessions using browser storage
+  - Helps users systematically work through large lists of non-mutual followers
+
+#### Technical Improvements
+- Enhanced StateManager with `markAccountAsViewed()`, `getViewedAccounts()`, and `saveViewedAccounts()` methods
+- Added `blk-account-item--viewed` CSS class for styling viewed accounts
+- Improved UI updates with real-time visual feedback
+- Updated Instagram Analyzer block version to 1.1.0
+
 ### Version 1.2.0 (2025-08-08)
 #### New Features
 - **Instagram Follower Analyzer Block**: Complete implementation of a Gutenberg block for analyzing Instagram follower relationships

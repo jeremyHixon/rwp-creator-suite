@@ -740,4 +740,12 @@
             border-top: 1px solid #e5e7eb;
         }
     }
+    .blk-viewed-badge {
+        background-color: #f3f4f6;
+        border-radius: .375rem;
+        color: #939396;
+        font-size: .75rem;
+        padding: .4rem .65rem;
+        text-transform: lowercase;
+    }
 }

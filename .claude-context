@@ -1,0 +1,719 @@
+# Caption Writer/Template Generator - Claude Code Development Context
+
+## Project Overview
+
+Building a WordPress plugin feature that combines AI-powered caption generation with a curated template library for social media content creators. This tool bridges the gap between automated content creation and customizable templates.
+
+## Feature Specification
+
+### Core Functionality
+- **AI Caption Generator**: Input photo/video description → Generate 3-5 captions in different tones
+- **Template Library**: Pre-built, customizable templates for various post types
+- **Hybrid Approach**: Users can start with templates and enhance with AI, or vice versa
+- **Character Counting**: Real-time tracking for different platform limits
+- **Save & Reuse**: Personal template collections and favorite generated captions
+
+### Target Platforms
+- Instagram (2,200 char limit)
+- TikTok/Reels (2,200 char limit)
+- X/Twitter (280 char limit)
+- LinkedIn (3,000 char limit)
+- Facebook (63,206 char limit)
+
+## Technical Architecture
+
+### Plugin Structure
+```
+src/
+├── modules/
+│   ├── caption-generator/
+│   │   ├── class-ai-caption-service.php
+│   │   ├── class-template-manager.php
+│   │   ├── class-caption-api.php
+│   │   └── class-character-counter.php
+│   └── user-management/
+│       ├── class-user-templates.php
+│       └── class-usage-tracking.php
+├── blocks/
+│   └── caption-writer/
+│       ├── block.json
+│       ├── index.js
+│       ├── edit.js
+│       └── save.js
+└── assets/
+    └── modules/
+        └── caption-writer/
+            ├── index.js
+            ├── ai-service.js
+            ├── template-engine.js
+            └── character-counter.js
+```
+
+### WordPress Integration
+
+#### Block Registration
+```php
+// PHP - Block registration following WordPress standards
+function plugin_name_register_caption_writer_block() {
+    register_block_type( __DIR__ . '/build/blocks/caption-writer', array(
+        'render_callback' => 'plugin_name_render_caption_writer',
+    ) );
+}
+
+function plugin_name_render_caption_writer( $attributes, $content ) {
+    $wrapper_attributes = get_block_wrapper_attributes( array(
+        'id' => 'plugin-name-caption-writer-' . wp_unique_id(),
+        'data-platform' => $attributes['platform'] ?? 'instagram',
+        'data-config' => wp_json_encode( $attributes ),
+    ) );
+    
+    return sprintf( '<div %s></div>', $wrapper_attributes );
+}
+```
+
+#### API Endpoints
+```php
+// REST API endpoints following WordPress standards
+class Plugin_Name_Caption_API {
+    private $namespace = 'plugin-name/v1';
+    
+    public function register_routes() {
+        // Generate AI captions
+        register_rest_route( $this->namespace, '/captions/generate', array(
+            'methods'             => 'POST',
+            'callback'            => array( $this, 'generate_captions' ),
+            'permission_callback' => array( $this, 'check_user_logged_in' ),
+            'args'                => array(
+                'description' => array(
+                    'required' => true,
+                    'type'     => 'string',
+                    'sanitize_callback' => 'sanitize_textarea_field',
+                ),
+                'tone' => array(
+                    'type'     => 'string',
+                    'enum'     => array( 'witty', 'inspirational', 'question', 'professional', 'casual' ),
+                    'default'  => 'casual',
+                ),
+                'platform' => array(
+                    'type'     => 'string',
+                    'enum'     => array( 'instagram', 'tiktok', 'twitter', 'linkedin', 'facebook' ),
+                    'default'  => 'instagram',
+                ),
+            ),
+        ) );
+        
+        // Save/get user templates
+        register_rest_route( $this->namespace, '/templates', array(
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_user_templates' ),
+                'permission_callback' => array( $this, 'check_user_logged_in' ),
+            ),
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'save_user_template' ),
+                'permission_callback' => array( $this, 'check_user_logged_in' ),
+                'args'                => $this->get_template_schema(),
+            ),
+        ) );
+    }
+    
+    public function generate_captions( $request ) {
+        $description = $request->get_param( 'description' );
+        $tone = $request->get_param( 'tone' );
+        $platform = $request->get_param( 'platform' );
+        
+        $ai_service = new Plugin_Name_AI_Caption_Service();
+        $captions = $ai_service->generate_captions( $description, $tone, $platform );
+        
+        if ( is_wp_error( $captions ) ) {
+            return $captions;
+        }
+        
+        // Track usage for logged-in users
+        $this->track_usage( get_current_user_id(), 'ai_generation' );
+        
+        return rest_ensure_response( array(
+            'success' => true,
+            'data'    => $captions,
+            'meta'    => array(
+                'platform_limit' => $this->get_character_limit( $platform ),
+                'generated_at'   => current_time( 'mysql' ),
+            ),
+        ) );
+    }
+}
+```
+
+### Client-Side Architecture
+
+#### Block Edit Component
+```javascript
+// Block editor component - WordPress standards compliant
+import { __ } from '@wordpress/i18n';
+import { useBlockProps } from '@wordpress/block-editor';
+import { 
+    Placeholder,
+    SelectControl,
+    TextareaControl,
+    ButtonGroup,
+    Button,
+    Notice
+} from '@wordpress/components';
+import { useState } from '@wordpress/element';
+
+export default function Edit({ attributes, setAttributes }) {
+    const [description, setDescription] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [generatedCaptions, setGeneratedCaptions] = useState([]);
+    const [selectedTemplate, setSelectedTemplate] = useState(null);
+    
+    const blockProps = useBlockProps({
+        className: 'caption-writer-editor'
+    });
+    
+    return (
+        <div {...blockProps}>
+            <Placeholder
+                icon="edit"
+                label={__('Caption Writer & Template Generator', 'plugin-name')}
+                instructions={__('Create engaging captions with AI or choose from templates.', 'plugin-name')}
+            >
+                <SelectControl
+                    label={__('Platform', 'plugin-name')}
+                    value={attributes.platform}
+                    options={[
+                        { label: 'Instagram', value: 'instagram' },
+                        { label: 'TikTok/Reels', value: 'tiktok' },
+                        { label: 'Twitter/X', value: 'twitter' },
+                        { label: 'LinkedIn', value: 'linkedin' },
+                        { label: 'Facebook', value: 'facebook' }
+                    ]}
+                    onChange={(platform) => setAttributes({ platform })}
+                />
+                
+                <TextareaControl
+                    label={__('Describe your content', 'plugin-name')}
+                    value={description}
+                    onChange={setDescription}
+                    placeholder={__('e.g., "Photo of a golden retriever in a field of flowers"', 'plugin-name')}
+                    rows={3}
+                />
+                
+                <ButtonGroup>
+                    <Button
+                        isPrimary
+                        onClick={() => generateCaptions(description, attributes.tone, attributes.platform)}
+                        disabled={!description.trim() || isGenerating}
+                        isBusy={isGenerating}
+                    >
+                        {__('Generate Captions', 'plugin-name')}
+                    </Button>
+                    
+                    <Button
+                        isSecondary
+                        onClick={() => showTemplateLibrary()}
+                    >
+                        {__('Browse Templates', 'plugin-name')}
+                    </Button>
+                </ButtonGroup>
+            </Placeholder>
+        </div>
+    );
+}
+```
+
+#### Frontend App Component
+```javascript
+// Frontend React app - Client-side heavy architecture
+class CaptionWriterApp {
+    constructor(container, config) {
+        this.container = container;
+        this.config = config;
+        this.api = new PluginNameAPI();
+        this.storage = new PluginNameStorage();
+        this.state = {
+            description: '',
+            platform: config.platform || 'instagram',
+            tone: 'casual',
+            generatedCaptions: [],
+            templates: [],
+            favorites: this.storage.get('caption_favorites') || [],
+            isGenerating: false,
+            characterCount: 0,
+            characterLimit: this.getCharacterLimit('instagram')
+        };
+        
+        this.init();
+    }
+    
+    async init() {
+        this.render();
+        await this.loadTemplates();
+        this.setupEventListeners();
+        
+        // Load user preferences if logged in
+        if (this.isUserLoggedIn()) {
+            await this.loadUserData();
+        }
+    }
+    
+    async generateCaptions() {
+        if (!this.state.description.trim()) return;
+        
+        this.setState({ isGenerating: true });
+        
+        try {
+            const response = await this.api.post('captions/generate', {
+                description: this.state.description,
+                tone: this.state.tone,
+                platform: this.state.platform
+            });
+            
+            this.setState({
+                generatedCaptions: response.data,
+                isGenerating: false
+            });
+            
+            // Save to localStorage for persistence
+            this.storage.set('last_generated_captions', response.data);
+            
+        } catch (error) {
+            this.handleError(error);
+            this.setState({ isGenerating: false });
+        }
+    }
+    
+    async loadTemplates() {
+        try {
+            // Load built-in templates
+            const builtInTemplates = await this.getBuiltInTemplates();
+            
+            // Load user templates if logged in
+            let userTemplates = [];
+            if (this.isUserLoggedIn()) {
+                const response = await this.api.get('templates');
+                userTemplates = response.data;
+            }
+            
+            this.setState({
+                templates: [...builtInTemplates, ...userTemplates]
+            });
+            
+        } catch (error) {
+            console.warn('Failed to load templates:', error);
+        }
+    }
+    
+    getBuiltInTemplates() {
+        return [
+            {
+                id: 'product-launch',
+                name: 'Product Launch',
+                category: 'business',
+                template: '🚀 Excited to introduce {product}!\n\n{description}\n\n✨ Key features:\n• {feature1}\n• {feature2}\n• {feature3}\n\nWhat do you think? Drop a 💭 below!\n\n{hashtags}',
+                variables: ['product', 'description', 'feature1', 'feature2', 'feature3', 'hashtags'],
+                platforms: ['instagram', 'facebook', 'linkedin']
+            },
+            {
+                id: 'behind-scenes',
+                name: 'Behind the Scenes',
+                category: 'personal',
+                template: 'Taking you behind the scenes of {activity} 🎬\n\n{insight}\n\nI never expected {surprise}! \n\nWhat\'s something surprising about your work?\n\n{hashtags}',
+                variables: ['activity', 'insight', 'surprise', 'hashtags'],
+                platforms: ['instagram', 'tiktok', 'facebook']
+            },
+            {
+                id: 'question-engage',
+                name: 'Engagement Question',
+                category: 'engagement',
+                template: '{question} 🤔\n\nA) {optionA}\nB) {optionB}\nC) {optionC}\n\nVote in the comments! I\'ll share the results in my stories.\n\n{hashtags}',
+                variables: ['question', 'optionA', 'optionB', 'optionC', 'hashtags'],
+                platforms: ['instagram', 'facebook', 'twitter']
+            }
+        ];
+    }
+    
+    getCharacterLimit(platform) {
+        const limits = {
+            instagram: 2200,
+            tiktok: 2200,
+            twitter: 280,
+            linkedin: 3000,
+            facebook: 63206
+        };
+        return limits[platform] || 2200;
+    }
+    
+    render() {
+        this.container.innerHTML = `
+            <div class="plugin-name-caption-writer">
+                <div class="caption-writer-header">
+                    <h3>Caption Writer & Templates</h3>
+                    <div class="platform-selector">
+                        <select data-platform>
+                            <option value="instagram">Instagram</option>
+                            <option value="tiktok">TikTok/Reels</option>
+                            <option value="twitter">Twitter/X</option>
+                            <option value="linkedin">LinkedIn</option>
+                            <option value="facebook">Facebook</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="caption-writer-tabs">
+                    <button class="tab-button active" data-tab="generator">AI Generator</button>
+                    <button class="tab-button" data-tab="templates">Templates</button>
+                    <button class="tab-button" data-tab="favorites">Favorites</button>
+                </div>
+                
+                <div class="tab-content active" data-content="generator">
+                    <div class="ai-generator">
+                        <textarea 
+                            placeholder="Describe your content (e.g., 'Photo of a golden retriever in a field of flowers')"
+                            data-description
+                            rows="3"
+                        ></textarea>
+                        
+                        <div class="tone-selector">
+                            <label>Tone:</label>
+                            <select data-tone>
+                                <option value="casual">Casual</option>
+                                <option value="witty">Witty</option>
+                                <option value="inspirational">Inspirational</option>
+                                <option value="question">Question-based</option>
+                                <option value="professional">Professional</option>
+                            </select>
+                        </div>
+                        
+                        <button class="generate-btn" data-generate>
+                            Generate Captions
+                        </button>
+                        
+                        <div class="generated-captions" data-captions></div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" data-content="templates">
+                    <div class="template-library">
+                        <div class="template-filters">
+                            <select data-template-category>
+                                <option value="all">All Categories</option>
+                                <option value="business">Business</option>
+                                <option value="personal">Personal</option>
+                                <option value="engagement">Engagement</option>
+                            </select>
+                        </div>
+                        
+                        <div class="templates-grid" data-templates-grid></div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" data-content="favorites">
+                    <div class="favorites-list" data-favorites></div>
+                </div>
+                
+                <div class="caption-output">
+                    <label>Final Caption:</label>
+                    <textarea 
+                        data-final-caption
+                        placeholder="Your caption will appear here..."
+                        rows="8"
+                    ></textarea>
+                    <div class="character-counter">
+                        <span data-char-count>0</span> / <span data-char-limit>2200</span>
+                    </div>
+                    
+                    <div class="output-actions">
+                        <button data-copy>Copy Caption</button>
+                        <button data-save-favorite>Save to Favorites</button>
+                        ${this.isUserLoggedIn() ? '<button data-save-template>Save as Template</button>' : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+```
+
+### Data Management
+
+#### Template Storage
+```php
+// User template management - WordPress user meta
+class Plugin_Name_Template_Manager {
+    
+    public function save_user_template( $user_id, $template_data ) {
+        $template = array(
+            'id'        => wp_generate_uuid4(),
+            'name'      => sanitize_text_field( $template_data['name'] ),
+            'category'  => sanitize_text_field( $template_data['category'] ),
+            'template'  => sanitize_textarea_field( $template_data['template'] ),
+            'variables' => array_map( 'sanitize_text_field', $template_data['variables'] ),
+            'platforms' => array_map( 'sanitize_text_field', $template_data['platforms'] ),
+            'created_at' => current_time( 'mysql' ),
+        );
+        
+        $templates = get_user_meta( $user_id, 'plugin_name_caption_templates', true );
+        if ( ! is_array( $templates ) ) {
+            $templates = array();
+        }
+        
+        $templates[] = $template;
+        
+        return update_user_meta( $user_id, 'plugin_name_caption_templates', $templates );
+    }
+    
+    public function get_user_templates( $user_id ) {
+        $templates = get_user_meta( $user_id, 'plugin_name_caption_templates', true );
+        return is_array( $templates ) ? $templates : array();
+    }
+    
+    public function delete_user_template( $user_id, $template_id ) {
+        $templates = $this->get_user_templates( $user_id );
+        
+        $templates = array_filter( $templates, function( $template ) use ( $template_id ) {
+            return $template['id'] !== $template_id;
+        } );
+        
+        return update_user_meta( $user_id, 'plugin_name_caption_templates', array_values( $templates ) );
+    }
+}
+```
+
+#### AI Service Integration
+```php
+// AI caption generation service
+class Plugin_Name_AI_Caption_Service {
+    private $api_key;
+    private $model = 'gpt-3.5-turbo';
+    
+    public function __construct() {
+        $this->api_key = get_option( 'plugin_name_openai_api_key' );
+    }
+    
+    public function generate_captions( $description, $tone, $platform ) {
+        if ( empty( $this->api_key ) ) {
+            return new WP_Error( 'no_api_key', 'AI service not configured' );
+        }
+        
+        $character_limit = $this->get_character_limit( $platform );
+        $prompt = $this->build_prompt( $description, $tone, $platform, $character_limit );
+        
+        $response = wp_remote_post( 'https://api.openai.com/v1/chat/completions', array(
+            'timeout' => 30,
+            'headers' => array(
+                'Authorization' => 'Bearer ' . $this->api_key,
+                'Content-Type'  => 'application/json',
+            ),
+            'body' => wp_json_encode( array(
+                'model' => $this->model,
+                'messages' => array(
+                    array(
+                        'role'    => 'system',
+                        'content' => 'You are a social media caption expert who creates engaging, platform-optimized content.',
+                    ),
+                    array(
+                        'role'    => 'user',
+                        'content' => $prompt,
+                    ),
+                ),
+                'max_tokens' => 500,
+                'temperature' => 0.7,
+            ) ),
+        ) );
+        
+        if ( is_wp_error( $response ) ) {
+            return $response;
+        }
+        
+        $body = wp_remote_retrieve_body( $response );
+        $data = json_decode( $body, true );
+        
+        if ( ! isset( $data['choices'][0]['message']['content'] ) ) {
+            return new WP_Error( 'ai_error', 'Failed to generate captions' );
+        }
+        
+        return $this->parse_captions( $data['choices'][0]['message']['content'] );
+    }
+    
+    private function build_prompt( $description, $tone, $platform, $character_limit ) {
+        $tone_descriptions = array(
+            'casual'       => 'friendly, conversational, approachable',
+            'witty'        => 'clever, humorous, engaging with wordplay',
+            'inspirational' => 'motivational, uplifting, encouraging',
+            'question'     => 'engaging with questions that encourage comments',
+            'professional' => 'polished, authoritative, business-appropriate',
+        );
+        
+        $tone_desc = $tone_descriptions[ $tone ] ?? 'casual and engaging';
+        
+        return sprintf(
+            "Create 3 different %s captions for %s based on this description: \"%s\"\n\n" .
+            "Requirements:\n" .
+            "- Each caption should be under %d characters\n" .
+            "- Include relevant emoji where appropriate\n" .
+            "- End with placeholder {hashtags} for hashtag insertion\n" .
+            "- Make each caption distinctly different in approach\n" .
+            "- Format as numbered list (1., 2., 3.)\n\n" .
+            "The tone should be: %s",
+            $tone_desc,
+            $platform,
+            $description,
+            $character_limit - 200, // Leave room for hashtags
+            $tone_desc
+        );
+    }
+    
+    private function parse_captions( $content ) {
+        $lines = explode( "\n", $content );
+        $captions = array();
+        
+        foreach ( $lines as $line ) {
+            if ( preg_match( '/^\d+\.\s*(.+)/', $line, $matches ) ) {
+                $captions[] = array(
+                    'text' => trim( $matches[1] ),
+                    'character_count' => mb_strlen( trim( $matches[1] ) ),
+                );
+            }
+        }
+        
+        return $captions;
+    }
+}
+```
+
+### State Management
+```javascript
+// Client-side state management with localStorage persistence
+class CaptionWriterState {
+    constructor() {
+        this.state = {
+            description: '',
+            platform: 'instagram',
+            tone: 'casual',
+            generatedCaptions: [],
+            selectedTemplate: null,
+            finalCaption: '',
+            favorites: [],
+            userTemplates: []
+        };
+        
+        this.storage = new PluginNameStorage();
+        this.loadPersistedState();
+    }
+    
+    loadPersistedState() {
+        const saved = this.storage.get('caption_writer_state');
+        if (saved) {
+            this.state = { ...this.state, ...saved };
+        }
+    }
+    
+    setState(updates) {
+        this.state = { ...this.state, ...updates };
+        this.persistState();
+        this.notifyListeners();
+    }
+    
+    persistState() {
+        // Only persist certain state parts
+        const persistable = {
+            description: this.state.description,
+            platform: this.state.platform,
+            tone: this.state.tone,
+            favorites: this.state.favorites,
+            finalCaption: this.state.finalCaption
+        };
+        
+        this.storage.set('caption_writer_state', persistable);
+    }
+}
+```
+
+## Development Guidelines
+
+### Security Requirements
+- Sanitize all user inputs: `sanitize_textarea_field()`, `sanitize_text_field()`
+- Use nonces for all AJAX requests: `wp_verify_nonce()`
+- Validate API responses before processing
+- Escape all outputs: `esc_html()`, `esc_attr()`
+- Check user capabilities: `is_user_logged_in()`, `current_user_can()`
+
+### Performance Considerations
+- Implement API rate limiting for AI generation
+- Cache templates in localStorage for quick access
+- Debounce character counting updates
+- Use pagination for large template libraries
+- Lazy load user templates only when needed
+
+### WordPress Compliance
+- Follow block development standards strictly
+- Use WordPress components in editor only
+- No localStorage usage warnings for unsupported browsers
+- Progressive enhancement - basic functionality without JS
+- Proper text domain for translations
+
+### Error Handling
+- Graceful AI service failures with fallback templates
+- Network error recovery with retry mechanisms
+- User-friendly error messages
+- Debug logging for development environments
+
+### Testing Strategy
+- Unit tests for template variable replacement
+- Integration tests for AI caption generation
+- Frontend tests for character counting accuracy
+- Cross-browser compatibility testing
+- WordPress multisite compatibility
+
+## Implementation Priorities
+
+### Phase 1: Core Functionality (Week 1-2)
+1. Block registration and basic UI
+2. Template library with built-in templates
+3. Character counting for all platforms
+4. Basic save/copy functionality
+
+### Phase 2: AI Integration (Week 2-3)
+1. OpenAI API integration
+2. Caption generation with tone selection
+3. Error handling and rate limiting
+4. Usage tracking for logged-in users
+
+### Phase 3: User Features (Week 3-4)
+1. User template creation and management
+2. Favorites system with persistence
+3. Template variable replacement engine
+4. Import/export functionality
+
+### Phase 4: Enhancement (Week 4-5)
+1. Advanced template categories and filtering
+2. Batch caption generation
+3. Template sharing between users
+4. Analytics and usage insights
+
+## API Requirements
+
+### External Services
+- OpenAI API (GPT-3.5-turbo recommended for cost/quality balance)
+- Alternative: Anthropic Claude API for backup
+- Consider local AI model for privacy-conscious users
+
+### Rate Limiting
+- 10 AI generations per hour for free users
+- 50 AI generations per hour for premium users
+- Template access unlimited
+- Implement exponential backoff for API failures
+
+## Configuration Constants
+
+```php
+// wp-config.php additions
+define( 'PLUGIN_NAME_OPENAI_API_KEY', 'your-api-key-here' );
+define( 'PLUGIN_NAME_AI_MODEL', 'gpt-3.5-turbo' );
+define( 'PLUGIN_NAME_AI_RATE_LIMIT', 10 ); // per hour for free users
+define( 'PLUGIN_NAME_DEBUG_AI', false ); // log AI requests in debug mode
+```
+
+This development context provides a comprehensive foundation for building the Caption Writer/Template Generator feature while maintaining strict adherence to WordPress development standards and your architectural preferences.

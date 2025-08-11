@@ -1,0 +1,64 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "rwp-creator-suite/caption-writer",
+  "version": "1.0.0",
+  "title": "Caption Writer & Templates",
+  "category": "rwp-creator-suite",
+  "icon": "edit-page",
+  "description": "AI-powered caption generation with customizable templates for social media content creators.",
+  "keywords": [
+    "caption",
+    "ai",
+    "templates",
+    "social media",
+    "content",
+    "instagram",
+    "twitter",
+    "tiktok"
+  ],
+  "textdomain": "rwp-creator-suite",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./editor.scss",
+  "style": "file:./style.scss",
+  "render": "file:./render.php",
+  "attributes": {
+    "platform": {
+      "type": "string",
+      "default": "instagram",
+      "enum": ["instagram", "tiktok", "twitter", "linkedin", "facebook"]
+    },
+    "tone": {
+      "type": "string", 
+      "default": "casual",
+      "enum": ["casual", "witty", "inspirational", "question", "professional"]
+    },
+    "selectedTemplate": {
+      "type": "string",
+      "default": ""
+    },
+    "finalCaption": {
+      "type": "string",
+      "default": ""
+    },
+    "showPreview": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": ["wide", "full"],
+    "spacing": {
+      "margin": true,
+      "padding": true
+    }
+  },
+  "example": {
+    "attributes": {
+      "platform": "instagram",
+      "tone": "casual",
+      "showPreview": true
+    }
+  }
+}

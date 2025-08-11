@@ -35,6 +35,14 @@ class RWP_Creator_Suite_Block_Manager {
         
         // Register Instagram Banner block from build directory
         register_block_type( RWP_CREATOR_SUITE_PLUGIN_DIR . 'build/blocks/instagram-banner' );
+        
+        // Register Caption Writer block from build directory
+        register_block_type( 
+            RWP_CREATOR_SUITE_PLUGIN_DIR . 'build/blocks/caption-writer',
+            array(
+                'render_callback' => array( $this, 'render_caption_writer_block' ),
+            )
+        );
     }
 
     /**
@@ -51,6 +59,11 @@ class RWP_Creator_Suite_Block_Manager {
         // Only enqueue if Instagram Banner block is present
         if ( has_block( 'rwp-creator-suite/instagram-banner', $post ) ) {
             $this->enqueue_instagram_banner_assets();
+        }
+        
+        // Only enqueue if Caption Writer block is present
+        if ( has_block( 'rwp-creator-suite/caption-writer', $post ) ) {
+            $this->enqueue_caption_writer_assets();
         }
     }
 
@@ -198,6 +211,70 @@ class RWP_Creator_Suite_Block_Manager {
                     'download' => __( 'Download Images', 'rwp-creator-suite' ),
                     'preview' => __( 'Preview', 'rwp-creator-suite' ),
                 )
+            )
+        );
+    }
+    
+    /**
+     * Render Caption Writer block.
+     */
+    public function render_caption_writer_block( $attributes, $content ) {
+        // Include the render template
+        ob_start();
+        include RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/blocks/caption-writer/render.php';
+        return ob_get_clean();
+    }
+    
+    /**
+     * Enqueue Caption Writer specific assets.
+     */
+    private function enqueue_caption_writer_assets() {
+        // Enqueue State Manager (shared dependency)
+        wp_enqueue_script(
+            'rwp-state-manager',
+            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/state-manager.js',
+            array(),
+            RWP_CREATOR_SUITE_VERSION,
+            true
+        );
+
+        // Enqueue Caption Writer app
+        wp_enqueue_script(
+            'rwp-caption-writer-app',
+            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/caption-writer.js',
+            array( 'rwp-state-manager' ),
+            RWP_CREATOR_SUITE_VERSION,
+            true
+        );
+
+        // Localize script with WordPress data
+        wp_localize_script(
+            'rwp-caption-writer-app',
+            'rwpCaptionWriter',
+            array(
+                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                'restUrl' => rest_url( 'rwp-creator-suite/v1/' ),
+                'nonce' => wp_create_nonce( 'wp_rest' ),
+                'isLoggedIn' => is_user_logged_in(),
+                'currentUserId' => get_current_user_id(),
+                'strings' => array(
+                    'generatePrompt' => __( 'Describe your content to generate captions', 'rwp-creator-suite' ),
+                    'processing' => __( 'Generating captions...', 'rwp-creator-suite' ),
+                    'generatedCaptions' => __( 'Generated Captions', 'rwp-creator-suite' ),
+                    'loginRequired' => __( 'Login required to save favorites and templates', 'rwp-creator-suite' ),
+                    'copySuccess' => __( 'Caption copied to clipboard!', 'rwp-creator-suite' ),
+                    'saveSuccess' => __( 'Saved to favorites!', 'rwp-creator-suite' ),
+                    'templateSuccess' => __( 'Saved as template!', 'rwp-creator-suite' ),
+                    'errorGeneral' => __( 'Something went wrong. Please try again.', 'rwp-creator-suite' ),
+                    'errorDescription' => __( 'Please enter a description for your content', 'rwp-creator-suite' ),
+                ),
+                'characterLimits' => array(
+                    'instagram' => 2200,
+                    'tiktok' => 2200,
+                    'twitter' => 280,
+                    'linkedin' => 3000,
+                    'facebook' => 63206,
+                ),
             )
         );
     }

@@ -1,0 +1,179 @@
+// Caption Writer Block Editor Styles
+
+.caption-writer-editor {
+    .caption-writer-container {
+        max-width: 100%;
+        
+        .wp-components-notice {
+            margin-bottom: 16px;
+        }
+        
+        .wp-components-tab-panel {
+            .wp-components-tab-panel__tabs {
+                display: flex;
+                border-bottom: 1px solid #ddd;
+                margin-bottom: 20px;
+                
+                .wp-components-button {
+                    padding: 12px 20px;
+                    border: none;
+                    border-bottom: 2px solid transparent;
+                    background: none;
+                    cursor: pointer;
+                    
+                    &.is-active {
+                        border-bottom-color: #007cba;
+                        color: #007cba;
+                        font-weight: 600;
+                    }
+                    
+                    &:hover {
+                        color: #005a87;
+                    }
+                }
+            }
+            
+            .wp-components-tab-panel__tab-content {
+                padding: 20px 0;
+            }
+        }
+        
+        .ai-generator {
+            .wp-components-base-control {
+                margin-bottom: 16px;
+            }
+            
+            .generate-button {
+                margin: 16px 0;
+            }
+            
+            .generated-captions {
+                margin-top: 20px;
+                
+                h4 {
+                    margin: 0 0 16px 0;
+                    color: #1e1e1e;
+                    font-size: 14px;
+                    font-weight: 600;
+                }
+                
+                .caption-option {
+                    padding: 16px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    margin-bottom: 12px;
+                    background: #fff;
+                    
+                    p {
+                        margin: 0 0 12px 0;
+                        font-size: 14px;
+                        line-height: 1.5;
+                    }
+                    
+                    .caption-meta {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        
+                        .character-count {
+                            font-size: 12px;
+                            color: #757575;
+                        }
+                    }
+                }
+            }
+        }
+        
+        .template-library {
+            h4 {
+                margin: 0 0 16px 0;
+                color: #1e1e1e;
+                font-size: 14px;
+                font-weight: 600;
+            }
+            
+            .templates-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 16px;
+                
+                .template-card {
+                    padding: 16px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    background: #fff;
+                    
+                    h5 {
+                        margin: 0 0 8px 0;
+                        font-size: 14px;
+                        font-weight: 600;
+                        color: #1e1e1e;
+                    }
+                    
+                    .template-category {
+                        margin: 0 0 12px 0;
+                        font-size: 12px;
+                        color: #757575;
+                        text-transform: capitalize;
+                    }
+                    
+                    .template-preview {
+                        margin-bottom: 12px;
+                        font-size: 13px;
+                        line-height: 1.4;
+                        color: #444;
+                        max-height: 60px;
+                        overflow: hidden;
+                    }
+                    
+                    .select-template-btn {
+                        width: 100%;
+                    }
+                }
+            }
+        }
+        
+        .caption-output {
+            margin-top: 24px;
+            
+            label {
+                display: block;
+                margin-bottom: 8px;
+                font-weight: 600;
+                color: #1e1e1e;
+            }
+            
+            .final-caption-textarea {
+                width: 100% !important;
+                margin-bottom: 8px;
+            }
+            
+            .character-counter {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                font-size: 12px;
+                margin-bottom: 12px;
+                
+                .character-count {
+                    font-weight: 600;
+                }
+                
+                .character-limit {
+                    color: #757575;
+                }
+            }
+        }
+    }
+}
+
+// Responsive adjustments
+@media (max-width: 782px) {
+    .caption-writer-editor {
+        .caption-writer-container {
+            .templates-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    }
+}

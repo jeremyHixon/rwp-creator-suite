@@ -1,0 +1,194 @@
+<?php
+/**
+ * Caption Writer block render template
+ * 
+ * @package RWP_Creator_Suite
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+// Extract attributes
+$platform = $attributes['platform'] ?? 'instagram';
+$tone = $attributes['tone'] ?? 'casual';
+$selected_template = $attributes['selectedTemplate'] ?? '';
+$final_caption = $attributes['finalCaption'] ?? '';
+$show_preview = $attributes['showPreview'] ?? false;
+
+// Generate unique ID for this instance
+$unique_id = wp_unique_id( 'rwp-caption-writer-' );
+
+// Get block wrapper attributes
+$wrapper_attributes = get_block_wrapper_attributes( array(
+    'id' => $unique_id,
+    'class' => 'rwp-caption-writer-container',
+    'data-platform' => esc_attr( $platform ),
+    'data-tone' => esc_attr( $tone ),
+    'data-config' => wp_json_encode( array(
+        'platform' => $platform,
+        'tone' => $tone,
+        'selectedTemplate' => $selected_template,
+        'finalCaption' => $final_caption,
+        'isLoggedIn' => is_user_logged_in(),
+        'userId' => get_current_user_id(),
+    ) ),
+) );
+?>
+
+<div <?php echo $wrapper_attributes; ?>>
+    <div class="caption-writer-app">
+        <div class="caption-writer-header">
+            <h3><?php esc_html_e( 'Caption Writer & Templates', 'rwp-creator-suite' ); ?></h3>
+            <div class="platform-indicator">
+                <span class="platform-label"><?php esc_html_e( 'Platform:', 'rwp-creator-suite' ); ?></span>
+                <span class="platform-value"><?php echo esc_html( ucfirst( $platform ) ); ?></span>
+            </div>
+        </div>
+        
+        <div class="caption-writer-tabs">
+            <button class="tab-button active" data-tab="generator">
+                <?php esc_html_e( 'AI Generator', 'rwp-creator-suite' ); ?>
+            </button>
+            <button class="tab-button" data-tab="templates">
+                <?php esc_html_e( 'Templates', 'rwp-creator-suite' ); ?>
+            </button>
+            <?php if ( is_user_logged_in() ) : ?>
+                <button class="tab-button" data-tab="favorites">
+                    <?php esc_html_e( 'Favorites', 'rwp-creator-suite' ); ?>
+                </button>
+            <?php endif; ?>
+        </div>
+        
+        <!-- AI Generator Tab -->
+        <div class="tab-content active" data-content="generator">
+            <div class="ai-generator-section">
+                <div class="input-section">
+                    <label for="<?php echo esc_attr( $unique_id . '-description' ); ?>">
+                        <?php esc_html_e( 'Describe your content:', 'rwp-creator-suite' ); ?>
+                    </label>
+                    <textarea 
+                        id="<?php echo esc_attr( $unique_id . '-description' ); ?>"
+                        class="content-description"
+                        placeholder="<?php esc_attr_e( 'e.g., Photo of a golden retriever in a field of flowers', 'rwp-creator-suite' ); ?>"
+                        rows="3"
+                        data-description
+                    ></textarea>
+                    
+                    <div class="tone-selector">
+                        <label for="<?php echo esc_attr( $unique_id . '-tone' ); ?>">
+                            <?php esc_html_e( 'Tone:', 'rwp-creator-suite' ); ?>
+                        </label>
+                        <select id="<?php echo esc_attr( $unique_id . '-tone' ); ?>" data-tone>
+                            <option value="casual" <?php selected( $tone, 'casual' ); ?>>
+                                <?php esc_html_e( 'Casual', 'rwp-creator-suite' ); ?>
+                            </option>
+                            <option value="witty" <?php selected( $tone, 'witty' ); ?>>
+                                <?php esc_html_e( 'Witty', 'rwp-creator-suite' ); ?>
+                            </option>
+                            <option value="inspirational" <?php selected( $tone, 'inspirational' ); ?>>
+                                <?php esc_html_e( 'Inspirational', 'rwp-creator-suite' ); ?>
+                            </option>
+                            <option value="question" <?php selected( $tone, 'question' ); ?>>
+                                <?php esc_html_e( 'Question-based', 'rwp-creator-suite' ); ?>
+                            </option>
+                            <option value="professional" <?php selected( $tone, 'professional' ); ?>>
+                                <?php esc_html_e( 'Professional', 'rwp-creator-suite' ); ?>
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <button class="generate-btn btn-primary" data-generate>
+                        <?php esc_html_e( 'Generate Captions', 'rwp-creator-suite' ); ?>
+                    </button>
+                </div>
+                
+                <div class="generated-captions-container" data-captions style="display: none;">
+                    <h4><?php esc_html_e( 'Generated Captions:', 'rwp-creator-suite' ); ?></h4>
+                    <div class="captions-list"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Templates Tab -->
+        <div class="tab-content" data-content="templates">
+            <div class="template-library-section">
+                <div class="template-filters">
+                    <select data-template-category>
+                        <option value="all"><?php esc_html_e( 'All Categories', 'rwp-creator-suite' ); ?></option>
+                        <option value="business"><?php esc_html_e( 'Business', 'rwp-creator-suite' ); ?></option>
+                        <option value="personal"><?php esc_html_e( 'Personal', 'rwp-creator-suite' ); ?></option>
+                        <option value="engagement"><?php esc_html_e( 'Engagement', 'rwp-creator-suite' ); ?></option>
+                    </select>
+                </div>
+                
+                <div class="templates-grid" data-templates-grid>
+                    <!-- Templates will be loaded via JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <?php if ( is_user_logged_in() ) : ?>
+        <!-- Favorites Tab -->
+        <div class="tab-content" data-content="favorites">
+            <div class="favorites-section">
+                <h4><?php esc_html_e( 'Saved Favorites:', 'rwp-creator-suite' ); ?></h4>
+                <div class="favorites-list" data-favorites>
+                    <!-- Favorites will be loaded via JavaScript -->
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+        
+        <!-- Caption Output -->
+        <div class="caption-output-section">
+            <label for="<?php echo esc_attr( $unique_id . '-final-caption' ); ?>">
+                <?php esc_html_e( 'Final Caption:', 'rwp-creator-suite' ); ?>
+            </label>
+            <textarea 
+                id="<?php echo esc_attr( $unique_id . '-final-caption' ); ?>"
+                class="final-caption"
+                placeholder="<?php esc_attr_e( 'Your caption will appear here...', 'rwp-creator-suite' ); ?>"
+                rows="8"
+                data-final-caption
+            ><?php echo esc_textarea( $final_caption ); ?></textarea>
+            
+            <div class="character-counter">
+                <span class="character-count" data-char-count>0</span>
+                <span class="character-separator"> / </span>
+                <span class="character-limit" data-char-limit>2200</span>
+                <span class="platform-indicator">
+                    (<?php echo esc_html( ucfirst( $platform ) ); ?>)
+                </span>
+            </div>
+            
+            <div class="output-actions">
+                <button class="btn-secondary" data-copy>
+                    <?php esc_html_e( 'Copy Caption', 'rwp-creator-suite' ); ?>
+                </button>
+                <?php if ( is_user_logged_in() ) : ?>
+                    <button class="btn-secondary" data-save-favorite>
+                        <?php esc_html_e( 'Save to Favorites', 'rwp-creator-suite' ); ?>
+                    </button>
+                    <button class="btn-secondary" data-save-template>
+                        <?php esc_html_e( 'Save as Template', 'rwp-creator-suite' ); ?>
+                    </button>
+                <?php else : ?>
+                    <p class="login-prompt">
+                        <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>">
+                            <?php esc_html_e( 'Login to save favorites and templates', 'rwp-creator-suite' ); ?>
+                        </a>
+                    </p>
+                <?php endif; ?>
+            </div>
+        </div>
+        
+        <!-- Loading and error states -->
+        <div class="caption-writer-loading" data-loading style="display: none;">
+            <div class="loading-spinner"></div>
+            <p><?php esc_html_e( 'Generating captions...', 'rwp-creator-suite' ); ?></p>
+        </div>
+        
+        <div class="caption-writer-error" data-error style="display: none;">
+            <div class="error-message"></div>
+        </div>
+    </div>
+</div>

@@ -42,6 +42,8 @@ class RWP_Creator_Suite {
     private $redirect_handler;
     private $registration_api;
     private $block_manager;
+    private $caption_api;
+    private $caption_admin;
 
     /**
      * Get single instance of the plugin.
@@ -77,6 +79,8 @@ class RWP_Creator_Suite {
         $this->redirect_handler = new RWP_Creator_Suite_Redirect_Handler();
         $this->registration_api = new RWP_Creator_Suite_Registration_API();
         $this->block_manager = new RWP_Creator_Suite_Block_Manager();
+        $this->caption_api = new RWP_Creator_Suite_Caption_API();
+        $this->caption_admin = new RWP_Creator_Suite_Caption_Admin_Settings();
 
         // Initialize all components
         $this->wp_login_integration->init();
@@ -84,6 +88,8 @@ class RWP_Creator_Suite {
         $this->redirect_handler->init();
         $this->registration_api->init();
         $this->block_manager->init();
+        $this->caption_api->init();
+        $this->caption_admin->init();
 
         // Load text domain
         load_plugin_textdomain( 'rwp-creator-suite', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
@@ -118,6 +124,12 @@ class RWP_Creator_Suite {
 
         // Instagram Analyzer Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/instagram-analyzer/class-instagram-analyzer-api.php';
+        
+        // Caption Writer Module
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-ai-caption-service.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-template-manager.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-caption-api.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-admin-settings.php';
     }
 
     /**

@@ -1,0 +1,180 @@
+/**
+ * Caption Writer Admin Styles
+ */
+
+.rwp-caption-settings {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.rwp-settings-main {
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.rwp-settings-sidebar .rwp-settings-card {
+    background: #fff;
+    padding: 20px;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    margin-bottom: 20px;
+}
+
+.rwp-settings-card h3 {
+    margin: 0 0 15px 0;
+    padding: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.rwp-settings-card p {
+    margin: 0 0 10px 0;
+    color: #50575e;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.rwp-settings-card ol {
+    margin: 0 0 15px 20px;
+    color: #50575e;
+    font-size: 13px;
+}
+
+.rwp-settings-card ol li {
+    margin-bottom: 5px;
+}
+
+.rwp-settings-card a {
+    color: #2271b1;
+    text-decoration: none;
+}
+
+.rwp-settings-card a:hover {
+    text-decoration: underline;
+}
+
+/* Form field enhancements */
+.toggle-password {
+    margin-left: 5px;
+}
+
+#rwp-connection-status {
+    min-height: 40px;
+    padding: 10px;
+    background: #f6f7f7;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+#rwp-connection-status.testing {
+    background: #fff3cd;
+    border-color: #ffeaa7;
+    color: #856404;
+}
+
+#rwp-connection-status.success {
+    background: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+#rwp-connection-status.error {
+    background: #f8d7da;
+    border-color: #f1aeb5;
+    color: #721c24;
+}
+
+#rwp-connection-status p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+#rwp-test-connection {
+    width: 100%;
+}
+
+#rwp-test-connection:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Provider-specific field visibility */
+.rwp-field-openai,
+.rwp-field-claude {
+    transition: opacity 0.3s ease;
+}
+
+.rwp-field-openai.hidden,
+.rwp-field-claude.hidden {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Status indicators */
+.rwp-status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.rwp-status-indicator.connected {
+    background: #00a32a;
+}
+
+.rwp-status-indicator.disconnected {
+    background: #d63638;
+}
+
+.rwp-status-indicator.testing {
+    background: #dba617;
+}
+
+/* Responsive design */
+@media (max-width: 1280px) {
+    .rwp-caption-settings {
+        grid-template-columns: 1fr;
+    }
+    
+    .rwp-settings-sidebar {
+        order: -1;
+    }
+    
+    .rwp-settings-sidebar .rwp-settings-card {
+        display: inline-block;
+        width: calc(50% - 10px);
+        margin-right: 20px;
+        vertical-align: top;
+    }
+    
+    .rwp-settings-sidebar .rwp-settings-card:nth-child(even) {
+        margin-right: 0;
+    }
+}
+
+@media (max-width: 782px) {
+    .rwp-settings-sidebar .rwp-settings-card {
+        display: block;
+        width: auto;
+        margin-right: 0;
+        margin-bottom: 20px;
+    }
+    
+    .rwp-caption-settings {
+        gap: 15px;
+    }
+    
+    .rwp-settings-main,
+    .rwp-settings-sidebar .rwp-settings-card {
+        padding: 15px;
+    }
+}

@@ -229,6 +229,14 @@ class RWP_Creator_Suite_Block_Manager {
      * Enqueue Caption Writer specific assets.
      */
     private function enqueue_caption_writer_assets() {
+        // Enqueue Caption Writer CSS
+        wp_enqueue_style(
+            'rwp-caption-writer-style',
+            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/caption-writer.css',
+            array(),
+            RWP_CREATOR_SUITE_VERSION
+        );
+
         // Enqueue State Manager (shared dependency)
         wp_enqueue_script(
             'rwp-state-manager',

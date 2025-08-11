@@ -45,10 +45,10 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
         </div>
         
         <div class="caption-writer-tabs">
-            <button class="tab-button active" data-tab="generator">
+            <button class="tab-button<?php echo is_user_logged_in() ? ' active' : ''; ?>" data-tab="generator">
                 <?php esc_html_e( 'AI Generator', 'rwp-creator-suite' ); ?>
             </button>
-            <button class="tab-button" data-tab="templates">
+            <button class="tab-button<?php echo ! is_user_logged_in() ? ' active' : ''; ?>" data-tab="templates">
                 <?php esc_html_e( 'Templates', 'rwp-creator-suite' ); ?>
             </button>
             <?php if ( is_user_logged_in() ) : ?>
@@ -59,57 +59,99 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
         </div>
         
         <!-- AI Generator Tab -->
-        <div class="tab-content active" data-content="generator">
-            <div class="ai-generator-section">
-                <div class="input-section">
-                    <label for="<?php echo esc_attr( $unique_id . '-description' ); ?>">
-                        <?php esc_html_e( 'Describe your content:', 'rwp-creator-suite' ); ?>
-                    </label>
-                    <textarea 
-                        id="<?php echo esc_attr( $unique_id . '-description' ); ?>"
-                        class="content-description"
-                        placeholder="<?php esc_attr_e( 'e.g., Photo of a golden retriever in a field of flowers', 'rwp-creator-suite' ); ?>"
-                        rows="3"
-                        data-description
-                    ></textarea>
-                    
-                    <div class="tone-selector">
-                        <label for="<?php echo esc_attr( $unique_id . '-tone' ); ?>">
-                            <?php esc_html_e( 'Tone:', 'rwp-creator-suite' ); ?>
+        <div class="tab-content<?php echo is_user_logged_in() ? ' active' : ''; ?>" data-content="generator">
+            <?php if ( is_user_logged_in() ) : ?>
+                <div class="ai-generator-section">
+                    <div class="input-section">
+                        <label for="<?php echo esc_attr( $unique_id . '-description' ); ?>">
+                            <?php esc_html_e( 'Describe your content:', 'rwp-creator-suite' ); ?>
                         </label>
-                        <select id="<?php echo esc_attr( $unique_id . '-tone' ); ?>" data-tone>
-                            <option value="casual" <?php selected( $tone, 'casual' ); ?>>
-                                <?php esc_html_e( 'Casual', 'rwp-creator-suite' ); ?>
-                            </option>
-                            <option value="witty" <?php selected( $tone, 'witty' ); ?>>
-                                <?php esc_html_e( 'Witty', 'rwp-creator-suite' ); ?>
-                            </option>
-                            <option value="inspirational" <?php selected( $tone, 'inspirational' ); ?>>
-                                <?php esc_html_e( 'Inspirational', 'rwp-creator-suite' ); ?>
-                            </option>
-                            <option value="question" <?php selected( $tone, 'question' ); ?>>
-                                <?php esc_html_e( 'Question-based', 'rwp-creator-suite' ); ?>
-                            </option>
-                            <option value="professional" <?php selected( $tone, 'professional' ); ?>>
-                                <?php esc_html_e( 'Professional', 'rwp-creator-suite' ); ?>
-                            </option>
-                        </select>
+                        <textarea 
+                            id="<?php echo esc_attr( $unique_id . '-description' ); ?>"
+                            class="content-description"
+                            placeholder="<?php esc_attr_e( 'e.g., Photo of a golden retriever in a field of flowers', 'rwp-creator-suite' ); ?>"
+                            rows="3"
+                            data-description
+                        ></textarea>
+                        
+                        <div class="tone-selector">
+                            <label for="<?php echo esc_attr( $unique_id . '-tone' ); ?>">
+                                <?php esc_html_e( 'Tone:', 'rwp-creator-suite' ); ?>
+                            </label>
+                            <select id="<?php echo esc_attr( $unique_id . '-tone' ); ?>" data-tone>
+                                <option value="casual" <?php selected( $tone, 'casual' ); ?>>
+                                    <?php esc_html_e( 'Casual', 'rwp-creator-suite' ); ?>
+                                </option>
+                                <option value="witty" <?php selected( $tone, 'witty' ); ?>>
+                                    <?php esc_html_e( 'Witty', 'rwp-creator-suite' ); ?>
+                                </option>
+                                <option value="inspirational" <?php selected( $tone, 'inspirational' ); ?>>
+                                    <?php esc_html_e( 'Inspirational', 'rwp-creator-suite' ); ?>
+                                </option>
+                                <option value="question" <?php selected( $tone, 'question' ); ?>>
+                                    <?php esc_html_e( 'Question-based', 'rwp-creator-suite' ); ?>
+                                </option>
+                                <option value="professional" <?php selected( $tone, 'professional' ); ?>>
+                                    <?php esc_html_e( 'Professional', 'rwp-creator-suite' ); ?>
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <button class="generate-btn btn-primary" data-generate>
+                            <?php esc_html_e( 'Generate Captions', 'rwp-creator-suite' ); ?>
+                        </button>
                     </div>
                     
-                    <button class="generate-btn btn-primary" data-generate>
-                        <?php esc_html_e( 'Generate Captions', 'rwp-creator-suite' ); ?>
-                    </button>
+                    <div class="generated-captions-container" data-captions style="display: none;">
+                        <h4><?php esc_html_e( 'Generated Captions:', 'rwp-creator-suite' ); ?></h4>
+                        <div class="captions-list"></div>
+                    </div>
                 </div>
-                
-                <div class="generated-captions-container" data-captions style="display: none;">
-                    <h4><?php esc_html_e( 'Generated Captions:', 'rwp-creator-suite' ); ?></h4>
-                    <div class="captions-list"></div>
+            <?php else : ?>
+                <!-- Guest Teaser for AI Generator -->
+                <div class="ai-generator-guest-teaser">
+                    <div class="guest-teaser-content">
+                        <div class="guest-teaser-icon">🤖</div>
+                        <h3><?php esc_html_e( 'AI Caption Generator', 'rwp-creator-suite' ); ?></h3>
+                        <p><?php esc_html_e( 'Unlock the power of AI to generate engaging captions for your content. Get multiple caption options in different tones tailored to your platform.', 'rwp-creator-suite' ); ?></p>
+                        
+                        <div class="guest-teaser-benefits">
+                            <div class="guest-benefit-item">
+                                <div class="guest-benefit-icon">✨</div>
+                                <?php esc_html_e( 'Generate multiple caption variations instantly', 'rwp-creator-suite' ); ?>
+                            </div>
+                            <div class="guest-benefit-item">
+                                <div class="guest-benefit-icon">🎯</div>
+                                <?php esc_html_e( 'Choose from different tones and styles', 'rwp-creator-suite' ); ?>
+                            </div>
+                            <div class="guest-benefit-item">
+                                <div class="guest-benefit-icon">📱</div>
+                                <?php esc_html_e( 'Optimized for each social media platform', 'rwp-creator-suite' ); ?>
+                            </div>
+                            <div class="guest-benefit-item">
+                                <div class="guest-benefit-icon">💾</div>
+                                <?php esc_html_e( 'Save favorites and create custom templates', 'rwp-creator-suite' ); ?>
+                            </div>
+                        </div>
+                        
+                        <div class="guest-teaser-cta">
+                            <a href="<?php echo esc_url( wp_registration_url() ); ?>" class="guest-cta-button">
+                                <?php esc_html_e( 'Get Free Access', 'rwp-creator-suite' ); ?>
+                            </a>
+                            <p class="guest-login-note">
+                                <?php esc_html_e( 'Already have an account?', 'rwp-creator-suite' ); ?> 
+                                <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>">
+                                    <?php esc_html_e( 'Login here', 'rwp-creator-suite' ); ?>
+                                </a>
+                            </p>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            <?php endif; ?>
         </div>
         
         <!-- Templates Tab -->
-        <div class="tab-content" data-content="templates">
+        <div class="tab-content<?php echo ! is_user_logged_in() ? ' active' : ''; ?>" data-content="templates">
             <div class="template-library-section">
                 <div class="template-filters">
                     <select data-template-category>

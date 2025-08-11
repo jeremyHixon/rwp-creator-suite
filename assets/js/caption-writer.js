@@ -37,11 +37,18 @@
             this.updateCharacterCount();
             
             if (rwpCaptionWriter.isLoggedIn) {
+                this.updateGenerateButtonState();
                 this.loadUserData();
+            } else {
+                // For guests, show teaser instead of functional AI generator
+                this.handleGuestExperience();
             }
             
             // Update character limit when platform changes
             this.updateCharacterLimit();
+            
+            // Add ARIA labels for better accessibility
+            this.enhanceAccessibility();
         }
         
         cacheElements() {
@@ -83,30 +90,69 @@
         }
         
         setupEventListeners() {
-            // Tab switching
-            this.elements.tabButtons.forEach(button => {
+            // Tab switching with keyboard navigation
+            this.elements.tabButtons.forEach((button, index) => {
                 button.addEventListener('click', (e) => {
                     this.switchTab(e.target.dataset.tab);
                 });
+                
+                // Keyboard navigation for tabs
+                button.addEventListener('keydown', (e) => {
+                    let nextIndex = index;
+                    
+                    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        nextIndex = (index + 1) % this.elements.tabButtons.length;
+                    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        nextIndex = (index - 1 + this.elements.tabButtons.length) % this.elements.tabButtons.length;
+                    } else if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.switchTab(e.target.dataset.tab);
+                        return;
+                    }
+                    
+                    if (nextIndex !== index) {
+                        this.elements.tabButtons[nextIndex].focus();
+                        this.switchTab(this.elements.tabButtons[nextIndex].dataset.tab);
+                    }
+                });
             });
             
-            // AI Generator
-            if (this.elements.generateBtn) {
+            // AI Generator (only for logged-in users)
+            if (this.elements.generateBtn && rwpCaptionWriter.isLoggedIn) {
                 this.elements.generateBtn.addEventListener('click', () => {
                     this.generateCaptions();
                 });
             }
             
-            if (this.elements.descriptionInput) {
-                this.elements.descriptionInput.addEventListener('input', (e) => {
-                    this.state.setState({ description: e.target.value });
-                });
-            }
-            
-            if (this.elements.toneSelect) {
-                this.elements.toneSelect.addEventListener('change', (e) => {
-                    this.state.setState({ tone: e.target.value });
-                });
+            // Only set up AI generator input listeners for logged-in users
+            if (rwpCaptionWriter.isLoggedIn) {
+                if (this.elements.descriptionInput) {
+                    this.elements.descriptionInput.addEventListener('input', (e) => {
+                        const value = e.target.value;
+                        this.state.setState({ description: value });
+                        
+                        // Real-time validation feedback
+                        this.validateDescription(value);
+                        
+                        // Update generate button state
+                        this.updateGenerateButtonState();
+                    });
+                    
+                    // Enhanced accessibility - announce character count for screen readers
+                    this.elements.descriptionInput.addEventListener('blur', (e) => {
+                        if (e.target.value.length > 0) {
+                            this.announceToScreenReader(`Description entered: ${e.target.value.length} characters`);
+                        }
+                    });
+                }
+                
+                if (this.elements.toneSelect) {
+                    this.elements.toneSelect.addEventListener('change', (e) => {
+                        this.state.setState({ tone: e.target.value });
+                    });
+                }
             }
             
             // Template filtering
@@ -771,15 +817,6 @@
             if (!quotaElement) {
                 quotaElement = document.createElement('div');
                 quotaElement.className = 'quota-info';
-                quotaElement.style.cssText = `
-                    background: #e7f3ff;
-                    border: 1px solid #b8daff;
-                    color: #004085;
-                    padding: 8px 12px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    margin-top: 12px;
-                `;
                 
                 const generateBtn = this.container.querySelector('[data-generate]');
                 if (generateBtn && generateBtn.parentNode) {
@@ -787,23 +824,177 @@
                 }
             }
             
+            // Add icon based on quota level
+            let icon = '🟢';
+            if (remainingQuota <= 5) icon = '🟡';
+            if (remainingQuota <= 2) icon = '🟠';
+            if (remainingQuota === 0) icon = '🔴';
+            
             quotaElement.innerHTML = `
-                <span>Remaining AI generations: <strong>${remainingQuota}</strong></span>
+                <span>${icon} Remaining AI generations: <strong>${remainingQuota}</strong></span>
             `;
             
-            if (remainingQuota <= 2) {
-                quotaElement.style.background = '#fff3cd';
-                quotaElement.style.borderColor = '#ffeaa7';
-                quotaElement.style.color = '#856404';
+            if (remainingQuota === 0) {
+                quotaElement.innerHTML = `
+                    <span>${icon} <strong>Daily limit reached.</strong> Please try again later or upgrade your plan.</span>
+                `;
+                // Disable generate button when quota is exhausted
+                if (this.elements.generateBtn) {
+                    this.elements.generateBtn.disabled = true;
+                    this.elements.generateBtn.textContent = 'Quota Exhausted';
+                }
             }
             
-            if (remainingQuota === 0) {
-                quotaElement.style.background = '#f8d7da';
-                quotaElement.style.borderColor = '#f1aeb5';
-                quotaElement.style.color = '#721c24';
-                quotaElement.innerHTML = `
-                    <span><strong>Daily limit reached.</strong> Please try again later or upgrade your plan.</span>
+            // Add subtle animation
+            quotaElement.style.animation = 'slideIn 0.3s ease';
+        }
+        
+        validateDescription(description) {
+            const minLength = 10;
+            const maxLength = 500;
+            
+            // Remove any existing validation messages
+            const existingMessages = this.container.querySelectorAll('.validation-message');
+            existingMessages.forEach(msg => msg.remove());
+            
+            if (description.length < minLength && description.length > 0) {
+                this.showValidationMessage(this.elements.descriptionInput, `Please provide more detail (${minLength - description.length} more characters needed)`, 'warning');
+            } else if (description.length > maxLength) {
+                this.showValidationMessage(this.elements.descriptionInput, `Description too long (${description.length - maxLength} characters over limit)`, 'error');
+            }
+        }
+        
+        updateGenerateButtonState() {
+            if (!this.elements.generateBtn) return;
+            
+            const state = this.state.getState();
+            const description = this.elements.descriptionInput?.value?.trim() || state.description;
+            const isValid = description.length >= 10 && description.length <= 500;
+            const isGenerating = state.isGenerating;
+            
+            this.elements.generateBtn.disabled = !isValid || isGenerating;
+            
+            if (!isValid && description.length > 0) {
+                this.elements.generateBtn.title = description.length < 10 ? 'Please provide more detail' : 'Description too long';
+            } else {
+                this.elements.generateBtn.title = '';
+            }
+        }
+        
+        showValidationMessage(element, message, type = 'info') {
+            const messageEl = document.createElement('div');
+            messageEl.className = `validation-message validation-${type}`;
+            messageEl.textContent = message;
+            messageEl.style.cssText = `
+                font-size: 12px;
+                margin-top: 4px;
+                padding: 6px 10px;
+                border-radius: 4px;
+                animation: slideIn 0.2s ease;
+                ${type === 'error' ? 'background: #fee; color: #c53030; border: 1px solid #feb2b2;' : ''}
+                ${type === 'warning' ? 'background: #fffbeb; color: #92400e; border: 1px solid #fed7aa;' : ''}
+                ${type === 'info' ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : ''}
+            `;
+            
+            element.parentNode.appendChild(messageEl);
+            
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                if (messageEl.parentNode) {
+                    messageEl.parentNode.removeChild(messageEl);
+                }
+            }, 3000);
+        }
+        
+        announceToScreenReader(message) {
+            // Create a live region for screen reader announcements
+            let liveRegion = document.getElementById('rwp-caption-writer-live-region');
+            if (!liveRegion) {
+                liveRegion = document.createElement('div');
+                liveRegion.id = 'rwp-caption-writer-live-region';
+                liveRegion.setAttribute('aria-live', 'polite');
+                liveRegion.setAttribute('aria-atomic', 'true');
+                liveRegion.style.cssText = `
+                    position: absolute;
+                    left: -10000px;
+                    width: 1px;
+                    height: 1px;
+                    overflow: hidden;
                 `;
+                document.body.appendChild(liveRegion);
+            }
+            
+            liveRegion.textContent = message;
+        }
+        
+        enhanceAccessibility() {
+            // Add ARIA labels and descriptions
+            if (this.elements.descriptionInput) {
+                this.elements.descriptionInput.setAttribute('aria-describedby', 'description-help');
+                
+                // Add help text
+                const helpText = document.createElement('div');
+                helpText.id = 'description-help';
+                helpText.className = 'sr-only';
+                helpText.textContent = 'Describe your content in detail. Minimum 10 characters, maximum 500 characters.';
+                this.elements.descriptionInput.parentNode.appendChild(helpText);
+            }
+            
+            // Add role and aria-label to tabs
+            if (this.elements.tabButtons.length > 0) {
+                const tabList = this.elements.tabButtons[0].parentNode;
+                tabList.setAttribute('role', 'tablist');
+                
+                this.elements.tabButtons.forEach((button, index) => {
+                    button.setAttribute('role', 'tab');
+                    button.setAttribute('aria-selected', button.classList.contains('active'));
+                    button.setAttribute('tabindex', button.classList.contains('active') ? '0' : '-1');
+                    button.setAttribute('aria-controls', `panel-${button.dataset.tab}`);
+                    button.id = `tab-${button.dataset.tab}`;
+                });
+            }
+            
+            // Add role and aria-labelledby to tab panels
+            this.elements.tabContents.forEach(content => {
+                content.setAttribute('role', 'tabpanel');
+                content.id = `panel-${content.dataset.content}`;
+                content.setAttribute('aria-labelledby', `tab-${content.dataset.content}`);
+                content.setAttribute('tabindex', '0');
+            });
+            
+            // Add aria-live to captions container
+            if (this.elements.captionsContainer) {
+                this.elements.captionsContainer.setAttribute('aria-live', 'polite');
+            }
+            
+            // Add aria-describedby to character counter
+            if (this.elements.finalCaptionTextarea && this.elements.charCount) {
+                const counterId = 'char-counter-' + Date.now();
+                this.elements.charCount.parentNode.id = counterId;
+                this.elements.finalCaptionTextarea.setAttribute('aria-describedby', counterId);
+            }
+        }
+        
+        handleGuestExperience() {
+            // For guests, disable AI generator functionality and show only templates
+            // The PHP template already handles showing the teaser overlay for the AI generator
+            
+            // Disable any AI-related inputs that might still be present
+            const aiInputs = this.container.querySelectorAll('[data-description], [data-tone], [data-generate]');
+            aiInputs.forEach(input => {
+                input.disabled = true;
+            });
+            
+            // Ensure templates tab is available for guests
+            const templatesTab = this.container.querySelector('[data-tab="templates"]');
+            if (templatesTab) {
+                templatesTab.style.display = 'block';
+            }
+            
+            // Hide favorites tab for guests (already handled by PHP, but ensure JS consistency)
+            const favoritesTab = this.container.querySelector('[data-tab="favorites"]');
+            if (favoritesTab) {
+                favoritesTab.style.display = 'none';
             }
         }
         

@@ -106,7 +106,7 @@ class RWP_Creator_Suite_WP_Login_Integration {
         do_action( 'rwp_creator_suite_user_auto_login', $user_id, $redirect_to );
         
         // If this is a WordPress registration form submission and we have a redirect URL, redirect immediately
-        if ( isset( $_GET['action'] ) && $_GET['action'] === 'register' && ! empty( $redirect_to ) && $this->redirect_handler->is_valid_redirect_url( $redirect_to ) ) {
+        if ( isset( $_GET['action'] ) && sanitize_text_field( $_GET['action'] ) === 'register' && ! empty( $redirect_to ) && $this->redirect_handler->is_valid_redirect_url( $redirect_to ) ) {
             wp_safe_redirect( $redirect_to );
             exit;
         }
@@ -129,7 +129,7 @@ class RWP_Creator_Suite_WP_Login_Integration {
      * Hide username field on registration form.
      */
     public function hide_username_field() {
-        if ( isset( $_GET['action'] ) && $_GET['action'] === 'register' ) {
+        if ( isset( $_GET['action'] ) && sanitize_text_field( $_GET['action'] ) === 'register' ) {
             ?>
             <style type="text/css">
                 #registerform label[for="user_login"],
@@ -152,7 +152,7 @@ class RWP_Creator_Suite_WP_Login_Integration {
      */
     public function auto_generate_username( $user_login ) {
         // Only run during registration
-        if ( ! isset( $_POST['user_email'] ) || ! isset( $_GET['action'] ) || $_GET['action'] !== 'register' ) {
+        if ( ! isset( $_POST['user_email'] ) || ! isset( $_GET['action'] ) || sanitize_text_field( $_GET['action'] ) !== 'register' ) {
             return $user_login;
         }
 
@@ -330,7 +330,7 @@ class RWP_Creator_Suite_WP_Login_Integration {
      */
     public function handle_automatic_logout() {
         // Only handle logout action on wp-login.php
-        if ( ! isset( $_GET['action'] ) || $_GET['action'] !== 'logout' ) {
+        if ( ! isset( $_GET['action'] ) || sanitize_text_field( $_GET['action'] ) !== 'logout' ) {
             return;
         }
 
@@ -348,7 +348,7 @@ class RWP_Creator_Suite_WP_Login_Integration {
         }
 
         // If nonce is present and valid, proceed with logout
-        if ( wp_verify_nonce( $_GET['_wpnonce'], 'log-out' ) ) {
+        if ( wp_verify_nonce( sanitize_text_field( $_GET['_wpnonce'] ), 'log-out' ) ) {
             wp_logout();
             wp_safe_redirect( home_url() );
             exit;

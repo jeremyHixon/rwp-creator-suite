@@ -97,7 +97,7 @@ class RWP_Creator_Suite_Subscriber_Restrictions {
         }
 
         // Allow profile.php for subscribers
-        if ( isset( $_GET['page'] ) && $_GET['page'] === 'profile.php' ) {
+        if ( isset( $_GET['page'] ) && sanitize_text_field( $_GET['page'] ) === 'profile.php' ) {
             return;
         }
 

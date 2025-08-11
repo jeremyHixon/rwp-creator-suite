@@ -171,7 +171,7 @@ class RWP_Creator_Suite_Rate_Limiter {
 
         foreach ( $ip_keys as $key ) {
             if ( array_key_exists( $key, $_SERVER ) === true ) {
-                $ip_list = explode( ',', $_SERVER[ $key ] );
+                $ip_list = explode( ',', sanitize_text_field( $_SERVER[ $key ] ) );
                 $ip = trim( $ip_list[0] );
                 
                 if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
@@ -180,7 +180,7 @@ class RWP_Creator_Suite_Rate_Limiter {
             }
         }
 
-        return isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '';
+        return isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( $_SERVER['REMOTE_ADDR'] ) : '';
     }
 
     /**

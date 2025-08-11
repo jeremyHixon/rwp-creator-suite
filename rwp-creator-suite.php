@@ -96,6 +96,9 @@ class RWP_Creator_Suite {
      * Load plugin dependencies.
      */
     private function load_dependencies() {
+        // Common Module
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-error-logger.php';
+
         // User Registration Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/user-registration/class-username-generator.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/user-registration/class-rate-limiter.php';

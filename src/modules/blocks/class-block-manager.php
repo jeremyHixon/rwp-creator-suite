@@ -58,28 +58,67 @@ class RWP_Creator_Suite_Block_Manager {
      * Enqueue Instagram Analyzer specific assets.
      */
     private function enqueue_instagram_analyzer_assets() {
-        // Enqueue JSZip library with local fallback
+        // Enhanced JSZip library loading with better fallback handling
         $jszip_local_path = RWP_CREATOR_SUITE_PLUGIN_DIR . 'assets/vendor/jszip.min.js';
-        $jszip_url = file_exists( $jszip_local_path ) 
-            ? RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/vendor/jszip.min.js'
-            : 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        $jszip_version = '3.10.1';
+        
+        // Check if local file exists and get its version
+        if ( file_exists( $jszip_local_path ) ) {
+            $jszip_url = RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/vendor/jszip.min.js';
+            $jszip_version = filemtime( $jszip_local_path ); // Use file time for cache busting
+        } else {
+            $jszip_url = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+            RWP_Creator_Suite_Error_Logger::log_performance( 
+                'JSZip CDN Fallback', 
+                0, 
+                array( 'reason' => 'Local file not found', 'path' => $jszip_local_path )
+            );
+        }
         
         wp_enqueue_script(
             'jszip',
             $jszip_url,
             array(),
-            '3.10.1',
+            $jszip_version,
             true
         );
         
-        // Add JSZip loading error handling
+        // Enhanced error handling with better user feedback
         $jszip_error_handler = "
-            if (typeof JSZip === 'undefined') {
-                console.error('JSZip library failed to load from both local and CDN sources');
-                if (window.rwpInstagramAnalyzer && window.rwpInstagramAnalyzer.strings) {
-                    alert('Required library failed to load. Please check your internet connection and try refreshing the page.');
+            (function() {
+                var checkJSZip = function() {
+                    if (typeof JSZip === 'undefined') {
+                        console.error('JSZip library failed to load');
+                        
+                        // Try to load fallback if primary fails
+                        if (!window.jszip_fallback_attempted) {
+                            window.jszip_fallback_attempted = true;
+                            var fallbackScript = document.createElement('script');
+                            fallbackScript.src = 'https://unpkg.com/jszip@3.10.1/dist/jszip.min.js';
+                            fallbackScript.onload = function() {
+                                console.log('JSZip loaded from fallback CDN');
+                            };
+                            fallbackScript.onerror = function() {
+                                console.error('All JSZip sources failed to load');
+                                if (window.rwpInstagramAnalyzer && window.rwpInstagramAnalyzer.strings) {
+                                    var notice = document.createElement('div');
+                                    notice.className = 'notice notice-error';
+                                    notice.innerHTML = '<p>Required library failed to load. Some features may not work properly.</p>';
+                                    var container = document.querySelector('.wp-block-rwp-creator-suite-instagram-analyzer');
+                                    if (container) container.prepend(notice);
+                                }
+                            };
+                            document.head.appendChild(fallbackScript);
+                        }
+                    }
+                };
+                
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', checkJSZip);
+                } else {
+                    checkJSZip();
                 }
-            }
+            })();
         ";
         wp_add_inline_script( 'jszip', $jszip_error_handler, 'after' );
 

@@ -117,6 +117,14 @@ class InstagramAnalyzer {
 			}
 		} );
 
+		// Upload zone click (excluding the browse button to avoid double-firing)
+		uploadZone.addEventListener( 'click', ( e ) => {
+			// Don't trigger if the browse button was clicked
+			if ( e.target !== browseBtnContainer && ! browseBtnContainer.contains( e.target ) ) {
+				fileInput.click();
+			}
+		} );
+
 		// Browse button click
 		browseBtnContainer.addEventListener( 'click', () => {
 			fileInput.click();

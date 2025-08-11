@@ -11,6 +11,11 @@
     // Global configuration from WordPress
     const config = window.rwpHashtagAnalysis || {};
     const strings = config.strings || {};
+    const isLoggedIn = config.isLoggedIn || false;
+    const userLimits = {
+        guest: 5,
+        user: 20
+    };
     
     class HashtagAnalysisApp {
         constructor(container) {
@@ -252,6 +257,7 @@
 
             let html = `<div class="search-results-header">
                 <h3>Results for #${this.state.currentHashtag}</h3>
+                ${this.renderUserLimitInfo()}
             </div>`;
 
             // Render analytics summary
@@ -259,22 +265,78 @@
                 html += '<div class="analytics-summary">' + this.renderAnalyticsSummary() + '</div>';
             }
 
-            // Render platform results
+            // Render authentication gate for non-logged users
+            if (!isLoggedIn) {
+                html += this.renderAuthenticationGate();
+            }
+
+            // Render platform results (limited for guests)
             Object.keys(this.state.searchResults).forEach(platform => {
                 const results = this.state.searchResults[platform];
                 if (results && results.length > 0) {
+                    const displayLimit = isLoggedIn ? 10 : 3; // Show fewer results for guests
+                    const limitedResults = results.slice(0, displayLimit);
+                    
                     html += `
                         <div class="platform-results">
                             <h4>${strings[platform] || platform} (${results.length} posts)</h4>
                             <div class="posts-grid">
-                                ${results.slice(0, 6).map(post => this.renderPost(post)).join('')}
+                                ${limitedResults.map(post => this.renderPost(post)).join('')}
                             </div>
+                            ${!isLoggedIn && results.length > displayLimit ? this.renderUpgradePrompt(results.length - displayLimit) : ''}
                         </div>
                     `;
                 }
             });
 
             return html;
+        }
+
+        renderUserLimitInfo() {
+            const currentLimit = isLoggedIn ? userLimits.user : userLimits.guest;
+            const limitType = isLoggedIn ? 'daily searches remaining' : 'guest searches remaining';
+            
+            return `
+                <div class="user-limit-info">
+                    <span class="limit-badge ${isLoggedIn ? 'user' : 'guest'}">
+                        ${currentLimit} ${limitType}
+                    </span>
+                </div>
+            `;
+        }
+
+        renderAuthenticationGate() {
+            return `
+                <div class="auth-gate">
+                    <div class="auth-gate-content">
+                        <h4>🔒 Limited Results</h4>
+                        <p>You're viewing limited results. Login for full access to:</p>
+                        <ul>
+                            <li>Complete analytics dashboard</li>
+                            <li>Full search results (up to 20 per platform)</li>
+                            <li>Export functionality</li>
+                            <li>Advanced filtering options</li>
+                            <li>Higher daily search limits</li>
+                        </ul>
+                        <a href="${this.getLoginUrl()}" class="auth-login-btn">Login for Full Access</a>
+                    </div>
+                </div>
+            `;
+        }
+
+        renderUpgradePrompt(hiddenCount) {
+            return `
+                <div class="upgrade-prompt">
+                    <p><strong>+${hiddenCount} more results</strong> available with login</p>
+                    <a href="${this.getLoginUrl()}" class="upgrade-btn">Login to See All</a>
+                </div>
+            `;
+        }
+
+        getLoginUrl() {
+            // Return to current page after login
+            const currentUrl = encodeURIComponent(window.location.href);
+            return `/wp-login.php?redirect_to=${currentUrl}`;
         }
 
         renderAnalyticsSummary() {
@@ -410,15 +472,38 @@
                 // Search for posts
                 const searchResponse = await this.apiClient.searchHashtag(hashtag, platforms);
                 
-                // Get analytics
-                const analyticsResponse = await this.apiClient.getAnalytics(hashtag, platforms);
+                // Handle rate limit errors
+                if (!searchResponse.success && searchResponse.errors) {
+                    const rateLimitError = Object.values(searchResponse.errors).find(error => 
+                        typeof error === 'object' && error.code === 'rate_limit_exceeded'
+                    );
+                    
+                    if (rateLimitError) {
+                        this.showRateLimitError(rateLimitError.message);
+                        return;
+                    }
+                }
 
+                // Get analytics (only for successful searches)
+                let analyticsResponse = { success: false, data: {} };
                 if (searchResponse.success) {
+                    analyticsResponse = await this.apiClient.getAnalytics(hashtag, platforms);
+                }
+
+                if (searchResponse.success || Object.keys(searchResponse.data || {}).length > 0) {
+                    // Update UI with available data and error information
                     this.setState({
-                        searchResults: searchResponse.data,
+                        searchResults: searchResponse.data || {},
                         analytics: analyticsResponse.success ? analyticsResponse.data : {},
+                        searchErrors: searchResponse.errors || {},
+                        searchWarnings: searchResponse.warnings || [],
                         isLoading: false
                     });
+
+                    // Show warnings if some platforms failed
+                    if (searchResponse.errors && Object.keys(searchResponse.errors).length > 0) {
+                        this.showPartialResultsWarning(searchResponse.errors);
+                    }
 
                     // Add to recent searches
                     this.addToRecentSearches(hashtag);
@@ -431,15 +516,70 @@
                     this.render();
                     this.saveState();
                 } else {
-                    throw new Error(searchResponse.error || 'Search failed');
+                    throw new Error(searchResponse.error || 'All platforms failed to return results');
                 }
             } catch (error) {
                 console.error('Search error:', error);
-                this.setState({ 
-                    error: 'Search failed. Please try again.',
-                    isLoading: false 
-                });
+                
+                // Handle specific error types
+                if (error.message.includes('rate limit')) {
+                    this.showRateLimitError(error.message);
+                } else if (error.message.includes('authentication')) {
+                    this.showAuthenticationError();
+                } else {
+                    this.setState({ 
+                        error: 'Search failed. Please try again.',
+                        isLoading: false 
+                    });
+                }
             }
+        }
+
+        showRateLimitError(message) {
+            this.setState({ 
+                error: message,
+                isLoading: false 
+            });
+            
+            // Show upgrade prompt for guests
+            if (!isLoggedIn) {
+                setTimeout(() => {
+                    const errorDiv = this.container.querySelector('.hashtag-dashboard__error');
+                    if (errorDiv) {
+                        errorDiv.innerHTML += `
+                            <div class="rate-limit-upgrade">
+                                <p><strong>Need more searches?</strong></p>
+                                <a href="${this.getLoginUrl()}" class="upgrade-btn">Login for ${userLimits.user} daily searches</a>
+                            </div>
+                        `;
+                    }
+                }, 100);
+            }
+        }
+
+        showPartialResultsWarning(errors) {
+            const errorPlatforms = Object.keys(errors);
+            const warningMessage = `Some platforms unavailable: ${errorPlatforms.join(', ')}. Showing available results.`;
+            
+            // Show non-blocking warning
+            const warningDiv = document.createElement('div');
+            warningDiv.className = 'search-warning';
+            warningDiv.innerHTML = `<p>⚠️ ${warningMessage}</p>`;
+            
+            const resultsContainer = this.container.querySelector('.hashtag-search__results');
+            if (resultsContainer) {
+                resultsContainer.prepend(warningDiv);
+                
+                // Auto-remove warning after 5 seconds
+                setTimeout(() => warningDiv.remove(), 5000);
+            }
+        }
+
+        showAuthenticationError() {
+            this.setState({ 
+                error: 'Authentication required for this feature.',
+                isLoading: false 
+            });
         }
 
         searchHashtag(hashtag) {

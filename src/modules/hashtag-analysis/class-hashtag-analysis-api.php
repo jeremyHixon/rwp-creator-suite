@@ -126,12 +126,85 @@ class RWP_Creator_Suite_Hashtag_Analysis_API {
     }
 
     /**
+     * Check user rate limits for API calls.
+     *
+     * @param string $action The action being performed.
+     * @return true|WP_Error True if within limits, error if exceeded.
+     */
+    private function check_user_rate_limits( $action ) {
+        $user_id = get_current_user_id();
+        $is_logged_in = $user_id > 0;
+        
+        // Get configured limits
+        $guest_limit = get_option( 'rwp_hashtag_analysis_guest_limit', 5 );
+        $user_limit = get_option( 'rwp_hashtag_analysis_user_limit', 20 );
+        $daily_limit = $is_logged_in ? $user_limit : $guest_limit;
+        
+        // Check daily usage
+        $cache_key = 'rwp_hashtag_rate_limit_' . ( $is_logged_in ? $user_id : $_SERVER['REMOTE_ADDR'] ) . '_' . date( 'Y-m-d' );
+        $current_usage = get_transient( $cache_key ) ?: 0;
+        
+        if ( $current_usage >= $daily_limit ) {
+            $message = $is_logged_in 
+                ? sprintf( 'Daily limit of %d searches reached. Try again tomorrow.', $daily_limit )
+                : sprintf( 'Daily limit of %d searches reached. Login for higher limits.', $daily_limit );
+                
+            return new WP_Error( 'rate_limit_exceeded', $message, array( 'status' => 429 ) );
+        }
+        
+        // Increment usage counter
+        set_transient( $cache_key, $current_usage + 1, DAY_IN_SECONDS );
+        
+        return true;
+    }
+
+    /**
+     * Get user-specific search limit.
+     *
+     * @return int The search limit for current user.
+     */
+    private function get_user_search_limit() {
+        $is_logged_in = get_current_user_id() > 0;
+        return $is_logged_in 
+            ? get_option( 'rwp_hashtag_analysis_user_limit', 20 )
+            : get_option( 'rwp_hashtag_analysis_guest_limit', 5 );
+    }
+
+    /**
+     * Get cached API response.
+     *
+     * @param string $cache_key The cache key.
+     * @return array|null Cached data or null if not found/expired.
+     */
+    private function get_cached_response( $cache_key ) {
+        $cache_duration = get_option( 'rwp_hashtag_analysis_cache_duration', 3600 );
+        return get_transient( $cache_key );
+    }
+
+    /**
+     * Set cached API response.
+     *
+     * @param string $cache_key The cache key.
+     * @param array  $data      The data to cache.
+     */
+    private function set_cached_response( $cache_key, $data ) {
+        $cache_duration = get_option( 'rwp_hashtag_analysis_cache_duration', 3600 );
+        set_transient( $cache_key, $data, $cache_duration );
+    }
+
+    /**
      * Search for hashtag data across platforms.
      *
      * @param WP_REST_Request $request The request object.
      * @return WP_REST_Response|WP_Error The response.
      */
     public function search_hashtag( $request ) {
+        // Check rate limits first
+        $rate_limit_check = $this->check_user_rate_limits( 'search' );
+        if ( is_wp_error( $rate_limit_check ) ) {
+            return $rate_limit_check;
+        }
+
         $hashtag = $request->get_param( 'hashtag' );
         $platforms = $request->get_param( 'platforms' );
         $limit = $request->get_param( 'limit' );
@@ -139,12 +212,30 @@ class RWP_Creator_Suite_Hashtag_Analysis_API {
         // Clean hashtag
         $hashtag = ltrim( $hashtag, '#' );
 
+        // Apply user limits
+        $user_limit = $this->get_user_search_limit();
+        $limit = min( $limit, $user_limit );
+
+        // Check cache first
+        $cache_key = 'rwp_hashtag_search_' . md5( $hashtag . implode( '_', $platforms ) . $limit );
+        $cached_response = $this->get_cached_response( $cache_key );
+        
+        if ( $cached_response ) {
+            $cached_response['cached'] = true;
+            $cached_response['cache_timestamp'] = $cached_response['timestamp'] ?? time();
+            $cached_response['timestamp'] = current_time( 'timestamp' );
+            return new WP_REST_Response( $cached_response, 200 );
+        }
+
         $results = array();
         $errors = array();
+        $warnings = array();
 
         // Search across requested platforms
         foreach ( $platforms as $platform ) {
             try {
+                $platform_results = null;
+                
                 switch ( $platform ) {
                     case 'tiktok':
                         $platform_results = $this->tiktok_service->search_hashtag( $hashtag, $limit );
@@ -154,32 +245,74 @@ class RWP_Creator_Suite_Hashtag_Analysis_API {
                         $platform_results = $this->aggregator_service->search_hashtag( $hashtag, $platform, $limit );
                         break;
                     default:
-                        continue 2; // Skip unknown platform
+                        $warnings[] = "Platform '{$platform}' is not supported";
+                        continue 2;
                 }
 
                 if ( ! is_wp_error( $platform_results ) ) {
                     $results[ $platform ] = $platform_results;
                 } else {
-                    $errors[ $platform ] = $platform_results->get_error_message();
+                    $error_code = $platform_results->get_error_code();
+                    $error_message = $platform_results->get_error_message();
+                    $error_data = $platform_results->get_error_data();
+                    
+                    $errors[ $platform ] = array(
+                        'code' => $error_code,
+                        'message' => $error_message,
+                        'recoverable' => in_array( $error_code, array( 'rate_limit_exceeded', 'temporary_error' ) ),
+                    );
+                    
+                    // Log detailed error for debugging
+                    RWP_Creator_Suite_Error_Logger::log_error( 
+                        'Hashtag Search API Error', 
+                        $error_message, 
+                        array( 
+                            'platform' => $platform, 
+                            'hashtag' => $hashtag,
+                            'error_code' => $error_code,
+                            'error_data' => $error_data,
+                        )
+                    );
                 }
             } catch ( Exception $e ) {
-                $errors[ $platform ] = $e->getMessage();
+                $errors[ $platform ] = array(
+                    'code' => 'exception',
+                    'message' => 'Platform temporarily unavailable',
+                    'recoverable' => true,
+                );
+                
                 RWP_Creator_Suite_Error_Logger::log_error( 
-                    'Hashtag Search Error', 
+                    'Hashtag Search Exception', 
                     $e->getMessage(), 
-                    array( 'platform' => $platform, 'hashtag' => $hashtag )
+                    array( 
+                        'platform' => $platform, 
+                        'hashtag' => $hashtag,
+                        'trace' => $e->getTraceAsString(),
+                    )
                 );
             }
         }
 
-        // Return results even if some platforms failed
-        return new WP_REST_Response( array(
+        $response_data = array(
             'success' => ! empty( $results ),
             'data' => $results,
             'errors' => $errors,
+            'warnings' => $warnings,
             'hashtag' => $hashtag,
+            'platforms_requested' => $platforms,
+            'platforms_successful' => array_keys( $results ),
+            'limit' => $limit,
+            'user_limit' => $user_limit,
+            'is_logged_in' => get_current_user_id() > 0,
             'timestamp' => current_time( 'timestamp' ),
-        ), 200 );
+        );
+
+        // Cache successful results
+        if ( ! empty( $results ) ) {
+            $this->set_cached_response( $cache_key, $response_data );
+        }
+
+        return new WP_REST_Response( $response_data, 200 );
     }
 
     /**

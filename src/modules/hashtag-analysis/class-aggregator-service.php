@@ -28,20 +28,22 @@ class RWP_Creator_Suite_Aggregator_Service {
      * Constructor.
      */
     public function __construct() {
-        // In production, these would be stored in WordPress options
-        $this->provider = get_option( 'rwp_aggregator_provider', 'apify' );
-        $this->api_key = get_option( 'rwp_aggregator_api_key', '' );
+        // Determine which provider to use based on configured credentials
+        $apify_token = get_option( 'rwp_apify_api_token', '' );
+        $data365_key = get_option( 'rwp_data365_api_key', '' );
         
-        // Set API URL based on provider
-        switch ( $this->provider ) {
-            case 'apify':
-                $this->api_url = 'https://api.apify.com/v2';
-                break;
-            case 'data365':
-                $this->api_url = 'https://api.data365.co/v1';
-                break;
-            default:
-                $this->api_url = '';
+        if ( ! empty( $apify_token ) ) {
+            $this->provider = 'apify';
+            $this->api_key = $apify_token;
+            $this->api_url = 'https://api.apify.com/v2';
+        } elseif ( ! empty( $data365_key ) ) {
+            $this->provider = 'data365';
+            $this->api_key = $data365_key;
+            $this->api_url = 'https://api.data365.co/v1';
+        } else {
+            $this->provider = null;
+            $this->api_key = '';
+            $this->api_url = '';
         }
     }
 
@@ -151,13 +153,24 @@ class RWP_Creator_Suite_Aggregator_Service {
      * @return array|WP_Error Results or error.
      */
     private function search_apify( $hashtag, $platform, $limit ) {
-        $actor_id = $platform === 'instagram' ? 'apify/instagram-hashtag-scraper' : 'apify/facebook-posts-scraper';
+        // Use configured actor ID or default ones
+        $configured_actor = get_option( 'rwp_apify_actor_id', '' );
+        
+        if ( ! empty( $configured_actor ) ) {
+            $actor_id = $configured_actor;
+        } else {
+            // Default actor IDs for different platforms
+            $actor_id = $platform === 'instagram' ? 
+                'apify/instagram-hashtag-scraper' : 
+                'apify/facebook-posts-scraper';
+        }
         
         $endpoint = $this->api_url . '/acts/' . $actor_id . '/runs';
         
         $body = array(
             'hashtag' => $hashtag,
             'resultsLimit' => $limit,
+            'platform' => $platform,
         );
 
         $response = $this->make_api_request( $endpoint, $body, 'POST' );
@@ -166,9 +179,16 @@ class RWP_Creator_Suite_Aggregator_Service {
             return $response;
         }
 
-        // Apify returns a run ID, we'd need to poll for results
-        // For now, return mock data formatted for Apify
-        return $this->get_mock_search_data( $hashtag, $platform, $limit );
+        // Apify returns a run ID - in production we'd poll for completion
+        // For demo purposes, return formatted mock data
+        if ( isset( $response['data']['id'] ) ) {
+            // Store run ID for potential polling
+            $run_id = $response['data']['id'];
+            // For now, return mock data that simulates Apify results
+            return $this->get_mock_search_data( $hashtag, $platform, $limit );
+        }
+
+        return $this->format_apify_results( $response, $hashtag, $platform );
     }
 
     /**
@@ -277,6 +297,41 @@ class RWP_Creator_Suite_Aggregator_Service {
             'timeframe' => $timeframe,
             'platform' => $platform,
         );
+    }
+
+    /**
+     * Format Apify API results.
+     *
+     * @param array  $response Raw API response.
+     * @param string $hashtag  The hashtag.
+     * @param string $platform The platform.
+     * @return array Formatted results.
+     */
+    private function format_apify_results( $response, $hashtag, $platform ) {
+        $formatted = array();
+        $posts = $response['data'] ?? array();
+
+        foreach ( $posts as $post ) {
+            $formatted[] = array(
+                'id' => $post['id'] ?? '',
+                'title' => $post['caption'] ?? $post['text'] ?? '',
+                'description' => $post['description'] ?? '',
+                'thumbnail' => $post['displayUrl'] ?? $post['image'] ?? '',
+                'url' => $post['url'] ?? '',
+                'metrics' => array(
+                    'likes' => $post['likesCount'] ?? $post['likes'] ?? 0,
+                    'comments' => $post['commentsCount'] ?? $post['comments'] ?? 0,
+                    'shares' => $post['sharesCount'] ?? $post['shares'] ?? 0,
+                    'views' => $post['viewsCount'] ?? $post['views'] ?? 0,
+                ),
+                'author' => $post['ownerUsername'] ?? $post['username'] ?? '',
+                'platform' => $platform,
+                'hashtag' => $hashtag,
+                'created_time' => $post['timestamp'] ?? $post['createdAt'] ?? '',
+            );
+        }
+
+        return $formatted;
     }
 
     /**

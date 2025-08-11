@@ -42,6 +42,7 @@ class RWP_Creator_Suite {
     private $redirect_handler;
     private $registration_api;
     private $block_manager;
+    private $hashtag_analysis_settings;
 
     /**
      * Get single instance of the plugin.
@@ -77,6 +78,7 @@ class RWP_Creator_Suite {
         $this->redirect_handler = new RWP_Creator_Suite_Redirect_Handler();
         $this->registration_api = new RWP_Creator_Suite_Registration_API();
         $this->block_manager = new RWP_Creator_Suite_Block_Manager();
+        $this->hashtag_analysis_settings = new RWP_Creator_Suite_Hashtag_Analysis_Settings();
 
         // Initialize all components
         $this->wp_login_integration->init();
@@ -84,6 +86,7 @@ class RWP_Creator_Suite {
         $this->redirect_handler->init();
         $this->registration_api->init();
         $this->block_manager->init();
+        $this->hashtag_analysis_settings->init();
 
         // Load text domain
         load_plugin_textdomain( 'rwp-creator-suite', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
@@ -121,6 +124,9 @@ class RWP_Creator_Suite {
 
         // Hashtag Analysis Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/hashtag-analysis/class-hashtag-analysis-api.php';
+
+        // Admin Module
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/admin/class-hashtag-analysis-settings.php';
     }
 
     /**

@@ -69,7 +69,7 @@ A comprehensive WordPress plugin designed for content creators, providing stream
 
 ## Changelog
 
-### Version 1.3.0 (2025-08-10)
+### Version 1.3.0 (2025-08)
 #### New Features
 - **Instagram Banner Creator Block**: Complete implementation of a Gutenberg block for creating Instagram banner effects
   - Client-side image processing with drag-and-drop upload interface
@@ -88,7 +88,7 @@ A comprehensive WordPress plugin designed for content creators, providing stream
 - Enhanced block registration system to support the new banner creator block
 - Added state management for preserving user progress during the creation process
 
-### Version 1.2.1 (2025-08-10)
+### Version 1.2.1 (2025-08)
 #### New Features
 - **Account Viewed Tracking**: Instagram Follower Analyzer now tracks which account profiles have been viewed
   - Visual indicators: Eye icon (👁) and "Viewed" badge appear on accounts that have been clicked
@@ -102,7 +102,7 @@ A comprehensive WordPress plugin designed for content creators, providing stream
 - Improved UI updates with real-time visual feedback
 - Updated Instagram Analyzer block version to 1.1.0
 
-### Version 1.2.0 (2025-08-08)
+### Version 1.2.0 (2025-08)
 #### New Features
 - **Instagram Follower Analyzer Block**: Complete implementation of a Gutenberg block for analyzing Instagram follower relationships
   - Client-side ZIP file processing for Instagram data exports
@@ -123,7 +123,7 @@ A comprehensive WordPress plugin designed for content creators, providing stream
 - Enhanced block manager to register the Instagram Analyzer block
 - Added JSZip integration for client-side ZIP file processing
 
-### Version 1.1.0 (2025-08-07)
+### Version 1.1.0 (2025-08)
 #### New Features
 - Added automatic logout redirect functionality
   - Users navigating to `/wp-login.php?action=logout` are automatically logged out and redirected to homepage

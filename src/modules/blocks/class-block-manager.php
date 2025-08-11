@@ -15,6 +15,11 @@ class RWP_Creator_Suite_Block_Manager {
     private $instagram_api;
 
     /**
+     * Hashtag Analysis API instance.
+     */
+    private $hashtag_analysis_api;
+
+    /**
      * Initialize the block manager.
      */
     public function init() {
@@ -24,6 +29,10 @@ class RWP_Creator_Suite_Block_Manager {
         // Initialize Instagram Analyzer API
         $this->instagram_api = new RWP_Creator_Suite_Instagram_Analyzer_API();
         $this->instagram_api->init();
+
+        // Initialize Hashtag Analysis API
+        $this->hashtag_analysis_api = new RWP_Creator_Suite_Hashtag_Analysis_API();
+        $this->hashtag_analysis_api->init();
     }
 
     /**
@@ -35,6 +44,9 @@ class RWP_Creator_Suite_Block_Manager {
         
         // Register Instagram Banner block from build directory
         register_block_type( RWP_CREATOR_SUITE_PLUGIN_DIR . 'build/blocks/instagram-banner' );
+        
+        // Register Hashtag Analysis block from build directory
+        register_block_type( RWP_CREATOR_SUITE_PLUGIN_DIR . 'build/blocks/hashtag-analysis' );
     }
 
     /**
@@ -51,6 +63,11 @@ class RWP_Creator_Suite_Block_Manager {
         // Only enqueue if Instagram Banner block is present
         if ( has_block( 'rwp-creator-suite/instagram-banner', $post ) ) {
             $this->enqueue_instagram_banner_assets();
+        }
+        
+        // Only enqueue if Hashtag Analysis block is present
+        if ( has_block( 'rwp-creator-suite/hashtag-analysis', $post ) ) {
+            $this->enqueue_hashtag_analysis_assets();
         }
     }
 
@@ -197,6 +214,54 @@ class RWP_Creator_Suite_Block_Manager {
                     'loginRequired' => __( 'Login required to download images', 'rwp-creator-suite' ),
                     'download' => __( 'Download Images', 'rwp-creator-suite' ),
                     'preview' => __( 'Preview', 'rwp-creator-suite' ),
+                )
+            )
+        );
+    }
+
+    /**
+     * Enqueue Hashtag Analysis specific assets.
+     */
+    private function enqueue_hashtag_analysis_assets() {
+        // Enqueue State Manager (shared dependency)
+        wp_enqueue_script(
+            'rwp-state-manager',
+            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/state-manager.js',
+            array(),
+            RWP_CREATOR_SUITE_VERSION,
+            true
+        );
+
+        // Enqueue Hashtag Analysis app
+        wp_enqueue_script(
+            'rwp-hashtag-analysis-app',
+            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/hashtag-analysis.js',
+            array( 'rwp-state-manager' ),
+            RWP_CREATOR_SUITE_VERSION,
+            true
+        );
+
+        // Localize script with WordPress data
+        wp_localize_script(
+            'rwp-hashtag-analysis-app',
+            'rwpHashtagAnalysis',
+            array(
+                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                'restUrl' => rest_url( 'hashtag-analysis/v1/' ),
+                'nonce' => wp_create_nonce( 'wp_rest' ),
+                'isLoggedIn' => is_user_logged_in(),
+                'currentUserId' => get_current_user_id(),
+                'strings' => array(
+                    'searchPlaceholder' => __( 'Enter hashtag to analyze...', 'rwp-creator-suite' ),
+                    'loading' => __( 'Loading...', 'rwp-creator-suite' ),
+                    'error' => __( 'An error occurred. Please try again.', 'rwp-creator-suite' ),
+                    'noResults' => __( 'No results found.', 'rwp-creator-suite' ),
+                    'dashboard' => __( 'Dashboard', 'rwp-creator-suite' ),
+                    'search' => __( 'Search', 'rwp-creator-suite' ),
+                    'tiktok' => __( 'TikTok', 'rwp-creator-suite' ),
+                    'instagram' => __( 'Instagram', 'rwp-creator-suite' ),
+                    'facebook' => __( 'Facebook', 'rwp-creator-suite' ),
+                    'allPlatforms' => __( 'All Platforms', 'rwp-creator-suite' ),
                 )
             )
         );

@@ -118,6 +118,9 @@ class RWP_Creator_Suite {
 
         // Instagram Analyzer Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/instagram-analyzer/class-instagram-analyzer-api.php';
+
+        // Hashtag Analysis Module
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/hashtag-analysis/class-hashtag-analysis-api.php';
     }
 
     /**

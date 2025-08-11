@@ -28,5 +28,17 @@ module.exports = {
 			__dirname,
 			'src/blocks/instagram-banner/editor.js'
 		),
+		'blocks/hashtag-analysis/index': path.resolve(
+			__dirname,
+			'src/blocks/hashtag-analysis/index.js'
+		),
+		'blocks/hashtag-analysis/style': path.resolve(
+			__dirname,
+			'src/blocks/hashtag-analysis/style.js'
+		),
+		'blocks/hashtag-analysis/editor': path.resolve(
+			__dirname,
+			'src/blocks/hashtag-analysis/editor.js'
+		),
 	},
 };

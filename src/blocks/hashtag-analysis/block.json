@@ -1,0 +1,48 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "rwp-creator-suite/hashtag-analysis",
+	"version": "1.0.0",
+	"title": "Hashtag Analysis Dashboard",
+	"category": "common",
+	"icon": "chart-bar",
+	"description": "Analyze hashtag performance across social media platforms with real-time metrics and engagement data.",
+	"keywords": [
+		"hashtag",
+		"analysis",
+		"social media",
+		"analytics",
+		"tiktok",
+		"instagram",
+		"dashboard"
+	],
+	"textdomain": "rwp-creator-suite",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./editor.css",
+	"style": "file:./style-style.css",
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ],
+		"spacing": {
+			"padding": true,
+			"margin": true
+		}
+	},
+	"attributes": {
+		"alignment": {
+			"type": "string",
+			"default": "none"
+		},
+		"defaultView": {
+			"type": "string",
+			"default": "dashboard",
+			"enum": ["dashboard", "search"]
+		}
+	},
+	"example": {
+		"attributes": {
+			"alignment": "center",
+			"defaultView": "dashboard"
+		}
+	}
+}

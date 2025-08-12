@@ -299,7 +299,7 @@ export default function Edit({ attributes, setAttributes }) {
                                     { label: 'LinkedIn', value: 'linkedin' },
                                     { label: 'Facebook', value: 'facebook' }
                                 ].map(platform => (
-                                    <div key={platform.value} className="platform-checkbox-with-icon" style={{marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                    <div key={platform.value} className={`platform-checkbox-with-icon ${platforms.includes(platform.value) ? 'is-checked' : ''}`} style={{marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px'}}>
                                         <CheckboxControl
                                             checked={platforms.includes(platform.value)}
                                             onChange={() => togglePlatform(platform.value)}

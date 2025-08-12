@@ -104,6 +104,36 @@ class RWP_Creator_Suite_Caption_API {
             'callback'            => array( $this, 'get_quota_status' ),
             'permission_callback' => array( $this, 'check_user_logged_in' ),
         ) );
+        
+        // User preferences
+        register_rest_route( $this->namespace, '/preferences', array(
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_user_preferences' ),
+                'permission_callback' => array( $this, 'check_user_logged_in' ),
+            ),
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'update_user_preferences' ),
+                'permission_callback' => array( $this, 'check_user_logged_in' ),
+                'args'                => array(
+                    'preferred_tone' => array(
+                        'type'     => 'string',
+                        'enum'     => array( 'witty', 'inspirational', 'question', 'professional', 'casual' ),
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ),
+                    'preferred_platforms' => array(
+                        'type'     => 'array',
+                        'items'    => array(
+                            'type' => 'string',
+                            'enum' => array( 'instagram', 'tiktok', 'twitter', 'linkedin', 'facebook' ),
+                        ),
+                        'sanitize_callback' => array( $this, 'sanitize_platforms' ),
+                        'validate_callback' => array( $this, 'validate_platforms' ),
+                    ),
+                ),
+            ),
+        ) );
     }
     
     /**
@@ -278,6 +308,90 @@ class RWP_Creator_Suite_Caption_API {
                 'user_id' => $user_id,
             ),
         ) );
+    }
+    
+    /**
+     * Get user preferences.
+     */
+    public function get_user_preferences( $request ) {
+        $user_id = get_current_user_id();
+        
+        if ( ! $user_id ) {
+            return new WP_Error(
+                'not_logged_in',
+                __( 'User must be logged in', 'rwp-creator-suite' ),
+                array( 'status' => 401 )
+            );
+        }
+        
+        $preferences = get_user_meta( $user_id, 'rwp_caption_preferences', true );
+        if ( ! is_array( $preferences ) ) {
+            $preferences = array(
+                'preferred_tone' => 'casual',
+                'preferred_platforms' => array( 'instagram' ),
+            );
+        }
+        
+        return rest_ensure_response( array(
+            'success' => true,
+            'data'    => $preferences,
+        ) );
+    }
+    
+    /**
+     * Update user preferences.
+     */
+    public function update_user_preferences( $request ) {
+        $user_id = get_current_user_id();
+        
+        if ( ! $user_id ) {
+            return new WP_Error(
+                'not_logged_in',
+                __( 'User must be logged in', 'rwp-creator-suite' ),
+                array( 'status' => 401 )
+            );
+        }
+        
+        $preferences = $request->get_json_params();
+        
+        // Get existing preferences
+        $existing_preferences = get_user_meta( $user_id, 'rwp_caption_preferences', true );
+        if ( ! is_array( $existing_preferences ) ) {
+            $existing_preferences = array();
+        }
+        
+        // Sanitize and validate new preferences
+        $clean_preferences = array();
+        
+        if ( isset( $preferences['preferred_tone'] ) ) {
+            $tone = sanitize_text_field( $preferences['preferred_tone'] );
+            if ( in_array( $tone, array( 'witty', 'inspirational', 'question', 'professional', 'casual' ), true ) ) {
+                $clean_preferences['preferred_tone'] = $tone;
+            }
+        }
+        
+        if ( isset( $preferences['preferred_platforms'] ) ) {
+            $platforms = $this->sanitize_platforms( $preferences['preferred_platforms'] );
+            if ( ! empty( $platforms ) ) {
+                $clean_preferences['preferred_platforms'] = $platforms;
+            }
+        }
+        
+        // Merge with existing preferences
+        $updated_preferences = array_merge( $existing_preferences, $clean_preferences );
+        
+        // Save preferences
+        $updated = update_user_meta( $user_id, 'rwp_caption_preferences', $updated_preferences );
+        
+        if ( $updated !== false ) {
+            return rest_ensure_response( array(
+                'success' => true,
+                'message' => __( 'Preferences updated successfully', 'rwp-creator-suite' ),
+                'data'    => $updated_preferences,
+            ) );
+        }
+        
+        return new WP_Error( 'update_failed', 'Failed to update preferences', array( 'status' => 500 ) );
     }
     
     /**

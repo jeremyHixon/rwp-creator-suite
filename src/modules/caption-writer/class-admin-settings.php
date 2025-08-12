@@ -281,7 +281,7 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
      * Render OpenAI API key field.
      */
     public function render_openai_api_key_field() {
-        $value = get_option( 'rwp_creator_suite_openai_api_key', '' );
+        $value = $this->get_key_manager()->get_api_key( 'openai' );
         ?>
         <input type="password" 
                name="rwp_creator_suite_openai_api_key" 
@@ -302,7 +302,7 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
      * Render Claude API key field.
      */
     public function render_claude_api_key_field() {
-        $value = get_option( 'rwp_creator_suite_claude_api_key', '' );
+        $value = $this->get_key_manager()->get_api_key( 'claude' );
         ?>
         <input type="password" 
                name="rwp_creator_suite_claude_api_key" 

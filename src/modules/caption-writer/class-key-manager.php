@@ -173,8 +173,8 @@ class RWP_Creator_Suite_Key_Manager {
         
         switch ( $provider ) {
             case 'openai':
-                // OpenAI keys start with 'sk-' and are 51 characters
-                if ( ! preg_match( '/^sk-[a-zA-Z0-9]{48}$/', $key ) ) {
+                // OpenAI keys start with 'sk-' followed by alphanumeric characters, hyphens, and underscores
+                if ( ! preg_match( '/^sk-[a-zA-Z0-9_-]{20,}$/', $key ) ) {
                     return new WP_Error( 'invalid_openai_key', __( 'Invalid OpenAI API key format', 'rwp-creator-suite' ) );
                 }
                 break;

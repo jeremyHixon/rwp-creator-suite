@@ -12,6 +12,7 @@ class RWP_Creator_Suite_AI_Caption_Service {
     private $api_key;
     private $model = 'gpt-3.5-turbo';
     private $api_provider = 'openai'; // openai, claude, local
+    private $key_manager;
     
     /**
      * Constructor.
@@ -20,11 +21,12 @@ class RWP_Creator_Suite_AI_Caption_Service {
         $this->api_provider = get_option( 'rwp_creator_suite_ai_provider', 'mock' );
         $this->model = get_option( 'rwp_creator_suite_ai_model', 'gpt-3.5-turbo' );
         
-        // Set API key based on provider
-        if ( $this->api_provider === 'openai' ) {
-            $this->api_key = get_option( 'rwp_creator_suite_openai_api_key' );
-        } elseif ( $this->api_provider === 'claude' ) {
-            $this->api_key = get_option( 'rwp_creator_suite_claude_api_key' );
+        // Initialize secure key manager
+        $this->key_manager = new RWP_Creator_Suite_Key_Manager();
+        
+        // Get API key securely based on provider
+        if ( $this->api_provider === 'openai' || $this->api_provider === 'claude' ) {
+            $this->api_key = $this->key_manager->get_api_key( $this->api_provider );
         }
     }
     
@@ -85,7 +87,7 @@ class RWP_Creator_Suite_AI_Caption_Service {
         ) );
         
         if ( is_wp_error( $response ) ) {
-            RWP_Creator_Suite_Error_Logger::log( 'OpenAI API Error: ' . $response->get_error_message() );
+            $this->log_error( 'OpenAI API Error: ' . $response->get_error_message() );
             return new WP_Error( 
                 'api_error', 
                 __( 'Failed to connect to AI service. Please try again later.', 'rwp-creator-suite' ),
@@ -99,7 +101,7 @@ class RWP_Creator_Suite_AI_Caption_Service {
         
         if ( $response_code !== 200 ) {
             $error_message = isset( $data['error']['message'] ) ? $data['error']['message'] : 'Unknown API error';
-            RWP_Creator_Suite_Error_Logger::log( "OpenAI API Error - HTTP {$response_code}: {$error_message}" );
+            $this->log_error( "OpenAI API Error - HTTP {$response_code}: {$error_message}" );
             
             return new WP_Error( 
                 'api_error', 
@@ -143,7 +145,7 @@ class RWP_Creator_Suite_AI_Caption_Service {
         ) );
         
         if ( is_wp_error( $response ) ) {
-            RWP_Creator_Suite_Error_Logger::log( 'Claude API Error: ' . $response->get_error_message() );
+            $this->log_error( 'Claude API Error: ' . $response->get_error_message() );
             return new WP_Error( 
                 'api_error', 
                 __( 'Failed to connect to AI service. Please try again later.', 'rwp-creator-suite' ),
@@ -157,7 +159,7 @@ class RWP_Creator_Suite_AI_Caption_Service {
         
         if ( $response_code !== 200 ) {
             $error_message = isset( $data['error']['message'] ) ? $data['error']['message'] : 'Unknown API error';
-            RWP_Creator_Suite_Error_Logger::log( "Claude API Error - HTTP {$response_code}: {$error_message}" );
+            $this->log_error( "Claude API Error - HTTP {$response_code}: {$error_message}" );
             
             return new WP_Error( 
                 'api_error', 
@@ -345,5 +347,17 @@ class RWP_Creator_Suite_AI_Caption_Service {
         );
         
         return isset( $limits[ $platform ] ) ? $limits[ $platform ] : 2200;
+    }
+    
+    /**
+     * Log errors securely with fallback.
+     */
+    private function log_error( $message ) {
+        if ( class_exists( 'RWP_Creator_Suite_Error_Logger' ) ) {
+            RWP_Creator_Suite_Error_Logger::log( $message );
+        } else {
+            // Fallback to WordPress error logging
+            error_log( 'RWP Creator Suite - ' . $message );
+        }
     }
 }

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: RWP Creator Suite
  * Description: A suite of tools for content creators including streamlined user authentication.
- * Version: 1.3.0
+ * Version: 1.4.0
  * Author: Jeremy Hixon
  * Author URI: https://jeremyhixon.com
  * Text Domain: rwp-creator-suite
@@ -17,7 +17,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Define plugin constants
-define( 'RWP_CREATOR_SUITE_VERSION', '1.3.0' );
+define( 'RWP_CREATOR_SUITE_VERSION', '1.4.0' );
 define( 'RWP_CREATOR_SUITE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RWP_CREATOR_SUITE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'RWP_CREATOR_SUITE_PLUGIN_FILE', __FILE__ );
@@ -91,10 +91,8 @@ class RWP_Creator_Suite {
         $this->caption_api->init();
         $this->caption_admin->init();
 
-        // Load text domain
-        load_plugin_textdomain( 'rwp-creator-suite', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
-
         // Additional hooks
+        add_action( 'init', array( $this, 'load_textdomain' ) );
         add_action( 'init', array( $this, 'maybe_redirect_wp_login' ) );
     }
 
@@ -126,11 +124,19 @@ class RWP_Creator_Suite {
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/instagram-analyzer/class-instagram-analyzer-api.php';
         
         // Caption Writer Module
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-key-manager.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-caption-cache.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-ai-caption-service.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-template-manager.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-caption-api.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-admin-settings.php';
+    }
+
+    /**
+     * Load plugin text domain for translations.
+     */
+    public function load_textdomain() {
+        load_plugin_textdomain( 'rwp-creator-suite', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
     }
 
     /**

@@ -29,6 +29,15 @@ A comprehensive WordPress plugin designed for content creators, providing stream
 - **User Authentication Integration**: Full functionality for registered users, teaser preview for guests
 - **Responsive Design**: Mobile-optimized interface with touch-friendly controls
 
+### Caption Writer
+- **WordPress Block**: AI-powered Gutenberg block for generating Instagram captions
+- **Image Analysis**: Upload images for AI-powered caption generation based on visual content
+- **Template System**: Pre-defined caption templates for various content types and styles
+- **AI Integration**: Seamless integration with OpenAI's GPT models for intelligent caption creation
+- **Caption Customization**: Edit and refine generated captions to match your brand voice
+- **User Authentication Integration**: Full functionality for registered users, preview mode for guests
+- **Admin Configuration**: Configurable AI settings and template management through WordPress admin
+
 ### Security & Performance
 - **Rate limiting**: Prevents spam registrations with configurable rate limits
 - **Secure redirects**: All redirects are validated for security
@@ -68,6 +77,28 @@ A comprehensive WordPress plugin designed for content creators, providing stream
 - `rwp_creator_suite_subscriber_redirect_url` - Filter for subscriber default redirect
 
 ## Changelog
+
+### Version 1.4.0 (2025-08)
+#### New Features
+- **Caption Writer Block**: Complete implementation of an AI-powered Gutenberg block for generating Instagram captions
+  - AI-powered caption generation using OpenAI's GPT models
+  - Image upload and analysis for context-aware caption creation
+  - Pre-defined template system for various content types and styles
+  - Real-time caption editing and customization interface
+  - Integration with user authentication system (full access for registered users, preview for guests)
+  - Admin configuration panel for AI settings and template management
+  - Secure API key management with encryption
+  - Caption caching system for improved performance
+  - Support for JPEG, PNG, and WebP image formats
+
+#### Technical Improvements
+- Added `RWP_Creator_Suite_Caption_API` class for handling AI caption generation
+- Implemented `RWP_Creator_Suite_AI_Caption_Service` for OpenAI integration
+- Added `RWP_Creator_Suite_Template_Manager` for caption template management
+- Created secure key management system with encryption for API credentials
+- Enhanced block registration system to support the caption writer block
+- Added caption caching functionality to optimize API usage
+- Implemented comprehensive admin settings interface for caption configuration
 
 ### Version 1.3.0 (2025-08)
 #### New Features

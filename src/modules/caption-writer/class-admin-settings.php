@@ -12,6 +12,7 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
     private $settings_page = 'rwp-caption-writer-settings';
     private $settings_group = 'rwp_caption_writer_settings';
     private $menu_slug = 'rwp-caption-writer';
+    private $key_manager;
     
     /**
      * Initialize admin settings.
@@ -19,7 +20,29 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
     public function init() {
         add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
         add_action( 'admin_init', array( $this, 'register_settings' ) );
+        add_action( 'admin_init', array( $this, 'init_key_manager' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
+    }
+    
+    /**
+     * Initialize key manager on admin_init.
+     */
+    public function init_key_manager() {
+        // Initialize secure key manager
+        $this->key_manager = new RWP_Creator_Suite_Key_Manager();
+        
+        // Migrate existing keys on admin init
+        $this->key_manager->migrate_existing_keys();
+    }
+    
+    /**
+     * Get key manager instance.
+     */
+    private function get_key_manager() {
+        if ( ! $this->key_manager ) {
+            $this->key_manager = new RWP_Creator_Suite_Key_Manager();
+        }
+        return $this->key_manager;
     }
     
     /**
@@ -415,9 +438,40 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
     }
     
     /**
-     * Sanitize API key.
+     * Sanitize and securely store API key.
      */
     public function sanitize_api_key( $value ) {
-        return sanitize_text_field( trim( $value ) );
+        $value = sanitize_text_field( trim( $value ) );
+        
+        // If empty, don't process further
+        if ( empty( $value ) ) {
+            return '';
+        }
+        
+        // Determine provider based on current context
+        $provider = 'openai'; // Default
+        if ( isset( $_POST['option_page'] ) && $_POST['option_page'] === $this->settings_group ) {
+            // Check which field is being updated
+            if ( isset( $_POST['rwp_creator_suite_claude_api_key'] ) && $_POST['rwp_creator_suite_claude_api_key'] === $value ) {
+                $provider = 'claude';
+            }
+        }
+        
+        // Use secure key manager to save
+        $result = $this->get_key_manager()->save_api_key( $value, $provider );
+        
+        if ( is_wp_error( $result ) ) {
+            // Add admin notice for error
+            add_settings_error(
+                'rwp_caption_writer_settings',
+                'api_key_error',
+                $result->get_error_message(),
+                'error'
+            );
+            return '';
+        }
+        
+        // Return empty string as we store encrypted separately
+        return '';
     }
 }

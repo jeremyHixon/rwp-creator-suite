@@ -13,6 +13,11 @@ class RWP_Creator_Suite_Block_Manager {
      * Instagram Analyzer API instance.
      */
     private $instagram_api;
+    
+    /**
+     * Track which assets have been enqueued to prevent duplicates.
+     */
+    private $enqueued_assets = array();
 
     /**
      * Initialize the block manager.
@@ -46,24 +51,73 @@ class RWP_Creator_Suite_Block_Manager {
     }
 
     /**
-     * Enqueue frontend assets for blocks.
+     * Enqueue frontend assets for blocks with optimization.
      */
     public function enqueue_frontend_assets() {
         global $post;
-
-        // Only enqueue if Instagram Analyzer block is present
-        if ( has_block( 'rwp-creator-suite/instagram-analyzer', $post ) ) {
+        
+        // Early exit if no post or we're in admin editor (assets loaded differently)
+        if ( ! $post || ( is_admin() && ! wp_doing_ajax() ) ) {
+            return;
+        }
+        
+        // Cache post content for multiple block checks
+        $post_content = $post->post_content;
+        $blocks_present = array();
+        
+        // Check all blocks at once to minimize has_block() calls
+        $block_types = array(
+            'instagram-analyzer' => 'rwp-creator-suite/instagram-analyzer',
+            'instagram-banner' => 'rwp-creator-suite/instagram-banner', 
+            'caption-writer' => 'rwp-creator-suite/caption-writer'
+        );
+        
+        foreach ( $block_types as $key => $block_name ) {
+            if ( has_block( $block_name, $post ) ) {
+                $blocks_present[ $key ] = true;
+            }
+        }
+        
+        // Early exit if no blocks are present
+        if ( empty( $blocks_present ) ) {
+            return;
+        }
+        
+        // Enqueue shared dependencies first
+        $this->enqueue_shared_dependencies( $blocks_present );
+        
+        // Enqueue block-specific assets
+        if ( isset( $blocks_present['instagram-analyzer'] ) ) {
             $this->enqueue_instagram_analyzer_assets();
         }
         
-        // Only enqueue if Instagram Banner block is present
-        if ( has_block( 'rwp-creator-suite/instagram-banner', $post ) ) {
+        if ( isset( $blocks_present['instagram-banner'] ) ) {
             $this->enqueue_instagram_banner_assets();
         }
         
-        // Only enqueue if Caption Writer block is present
-        if ( has_block( 'rwp-creator-suite/caption-writer', $post ) ) {
+        if ( isset( $blocks_present['caption-writer'] ) ) {
             $this->enqueue_caption_writer_assets();
+        }
+    }
+    
+    /**
+     * Enqueue shared dependencies to avoid duplication.
+     */
+    private function enqueue_shared_dependencies( $blocks_present ) {
+        // State manager is used by multiple blocks
+        $needs_state_manager = isset( $blocks_present['instagram-analyzer'] ) || 
+                              isset( $blocks_present['instagram-banner'] ) || 
+                              isset( $blocks_present['caption-writer'] );
+        
+        if ( $needs_state_manager && ! isset( $this->enqueued_assets['state-manager'] ) ) {
+            wp_enqueue_script(
+                'rwp-state-manager',
+                RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/state-manager.js',
+                array(),
+                RWP_CREATOR_SUITE_VERSION,
+                true
+            );
+            $this->enqueued_assets['state-manager'] = true;
         }
     }
 
@@ -176,16 +230,11 @@ class RWP_Creator_Suite_Block_Manager {
      * Enqueue Instagram Banner specific assets.
      */
     private function enqueue_instagram_banner_assets() {
-        // Enqueue State Manager (shared dependency)
-        wp_enqueue_script(
-            'rwp-state-manager',
-            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/state-manager.js',
-            array(),
-            RWP_CREATOR_SUITE_VERSION,
-            true
-        );
+        if ( isset( $this->enqueued_assets['instagram-banner'] ) ) {
+            return; // Already enqueued
+        }
 
-        // Enqueue Instagram Banner app
+        // Enqueue Instagram Banner app (state manager already loaded by shared dependencies)
         wp_enqueue_script(
             'rwp-instagram-banner-app',
             RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/instagram-banner.js',
@@ -193,6 +242,8 @@ class RWP_Creator_Suite_Block_Manager {
             RWP_CREATOR_SUITE_VERSION,
             true
         );
+        
+        $this->enqueued_assets['instagram-banner'] = true;
 
         // Localize script with WordPress data
         wp_localize_script(
@@ -229,24 +280,23 @@ class RWP_Creator_Suite_Block_Manager {
      * Enqueue Caption Writer specific assets.
      */
     private function enqueue_caption_writer_assets() {
-        // Enqueue Caption Writer CSS
+        if ( isset( $this->enqueued_assets['caption-writer'] ) ) {
+            return; // Already enqueued
+        }
+
+        // Enqueue Caption Writer CSS with performance optimization
         wp_enqueue_style(
             'rwp-caption-writer-style',
             RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/caption-writer.css',
             array(),
-            RWP_CREATOR_SUITE_VERSION
-        );
-
-        // Enqueue State Manager (shared dependency)
-        wp_enqueue_script(
-            'rwp-state-manager',
-            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/state-manager.js',
-            array(),
             RWP_CREATOR_SUITE_VERSION,
-            true
+            'all'
         );
+        
+        // Add preload hint for better performance
+        add_filter( 'wp_resource_hints', array( $this, 'add_preload_hints' ), 10, 2 );
 
-        // Enqueue Caption Writer app
+        // Enqueue Caption Writer app (state manager already loaded by shared dependencies)
         wp_enqueue_script(
             'rwp-caption-writer-app',
             RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/caption-writer.js',
@@ -254,6 +304,8 @@ class RWP_Creator_Suite_Block_Manager {
             RWP_CREATOR_SUITE_VERSION,
             true
         );
+        
+        $this->enqueued_assets['caption-writer'] = true;
 
         // Localize script with WordPress data
         wp_localize_script(
@@ -285,5 +337,61 @@ class RWP_Creator_Suite_Block_Manager {
                 ),
             )
         );
+    }
+    
+    /**
+     * Add preload hints for better performance.
+     */
+    public function add_preload_hints( $urls, $relation_type ) {
+        if ( 'preload' !== $relation_type ) {
+            return $urls;
+        }
+        
+        // Add preload hints for critical assets
+        if ( isset( $this->enqueued_assets['caption-writer'] ) ) {
+            $urls[] = array(
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/caption-writer.js',
+                'as'   => 'script',
+            );
+            $urls[] = array(
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/caption-writer.css',
+                'as'   => 'style',
+            );
+        }
+        
+        if ( isset( $this->enqueued_assets['state-manager'] ) ) {
+            $urls[] = array(
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/state-manager.js',
+                'as'   => 'script',
+            );
+        }
+        
+        return $urls;
+    }
+    
+    /**
+     * Check if assets should be loaded for current context.
+     */
+    private function should_load_assets() {
+        // Don't load on admin pages unless it's the block editor or AJAX
+        if ( is_admin() && ! wp_doing_ajax() && ! $this->is_block_editor() ) {
+            return false;
+        }
+        
+        // Load on frontend
+        return true;
+    }
+    
+    /**
+     * Check if we're in the block editor.
+     */
+    private function is_block_editor() {
+        if ( function_exists( 'get_current_screen' ) ) {
+            $screen = get_current_screen();
+            return $screen && $screen->is_block_editor();
+        }
+        
+        // Fallback check
+        return defined( 'REST_REQUEST' ) && REST_REQUEST;
     }
 }

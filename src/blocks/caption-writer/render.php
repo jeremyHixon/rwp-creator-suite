@@ -8,7 +8,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Extract attributes
-$platform = $attributes['platform'] ?? 'instagram';
+$platforms = $attributes['platforms'] ?? ['instagram'];
 $tone = $attributes['tone'] ?? 'casual';
 $selected_template = $attributes['selectedTemplate'] ?? '';
 $final_caption = $attributes['finalCaption'] ?? '';
@@ -21,26 +21,27 @@ $unique_id = wp_unique_id( 'rwp-caption-writer-' );
 $wrapper_attributes = get_block_wrapper_attributes( array(
     'id' => $unique_id,
     'class' => 'rwp-caption-writer-container',
-    'data-platform' => esc_attr( $platform ),
+    'data-platforms' => esc_attr( implode( ',', $platforms ) ),
     'data-tone' => esc_attr( $tone ),
-    'data-config' => wp_json_encode( array(
-        'platform' => $platform,
-        'tone' => $tone,
-        'selectedTemplate' => $selected_template,
-        'finalCaption' => $final_caption,
-        'isLoggedIn' => is_user_logged_in(),
-        'userId' => get_current_user_id(),
-    ) ),
+    'data-config' => esc_attr( wp_json_encode( array(
+        'platforms' => array_map( 'sanitize_text_field', $platforms ),
+        'tone' => sanitize_text_field( $tone ),
+        'selectedTemplate' => sanitize_text_field( $selected_template ),
+        'finalCaption' => sanitize_textarea_field( $final_caption ),
+        'isLoggedIn' => (bool) is_user_logged_in(),
+        'userId' => absint( get_current_user_id() ),
+    ) ) ),
 ) );
 ?>
 
 <div <?php echo $wrapper_attributes; ?>>
     <div class="caption-writer-app">
         <div class="caption-writer-header">
-            <h3><?php esc_html_e( 'Caption Writer & Templates', 'rwp-creator-suite' ); ?></h3>
-            <div class="platform-indicator">
-                <span class="platform-label"><?php esc_html_e( 'Platform:', 'rwp-creator-suite' ); ?></span>
-                <span class="platform-value"><?php echo esc_html( ucfirst( $platform ) ); ?></span>
+            <div class="platform-indicators">
+                <span class="platform-label"><?php esc_html_e( 'Platforms:', 'rwp-creator-suite' ); ?></span>
+                <?php foreach ( $platforms as $platform ) : ?>
+                    <span class="platform-badge"><?php echo esc_html( ucfirst( $platform ) ); ?></span>
+                <?php endforeach; ?>
             </div>
         </div>
         
@@ -100,10 +101,13 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                         <button class="generate-btn btn-primary" data-generate>
                             <?php esc_html_e( 'Generate Captions', 'rwp-creator-suite' ); ?>
                         </button>
+                        
+                        <div class="quota-info" data-quota-display style="display: none;">
+                            <span class="quota-text"></span>
+                        </div>
                     </div>
                     
                     <div class="generated-captions-container" data-captions style="display: none;">
-                        <h4><?php esc_html_e( 'Generated Captions:', 'rwp-creator-suite' ); ?></h4>
                         <div class="captions-list"></div>
                     </div>
                 </div>
@@ -112,7 +116,7 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                 <div class="ai-generator-guest-teaser">
                     <div class="guest-teaser-content">
                         <div class="guest-teaser-icon">🤖</div>
-                        <h3><?php esc_html_e( 'AI Caption Generator', 'rwp-creator-suite' ); ?></h3>
+                        <div class="guest-teaser-title"><?php esc_html_e( 'AI Caption Generator', 'rwp-creator-suite' ); ?></div>
                         <p><?php esc_html_e( 'Unlock the power of AI to generate engaging captions for your content. Get multiple caption options in different tones tailored to your platform.', 'rwp-creator-suite' ); ?></p>
                         
                         <div class="guest-teaser-benefits">
@@ -172,7 +176,6 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
         <!-- Favorites Tab -->
         <div class="tab-content" data-content="favorites">
             <div class="favorites-section">
-                <h4><?php esc_html_e( 'Saved Favorites:', 'rwp-creator-suite' ); ?></h4>
                 <div class="favorites-list" data-favorites>
                     <!-- Favorites will be loaded via JavaScript -->
                 </div>
@@ -193,13 +196,26 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                 data-final-caption
             ><?php echo esc_textarea( $final_caption ); ?></textarea>
             
-            <div class="character-counter">
-                <span class="character-count" data-char-count>0</span>
-                <span class="character-separator"> / </span>
-                <span class="character-limit" data-char-limit>2200</span>
-                <span class="platform-indicator">
-                    (<?php echo esc_html( ucfirst( $platform ) ); ?>)
-                </span>
+            <div class="character-counter" data-multi-platform-counter>
+                <?php 
+                $character_limits = array(
+                    'instagram' => 2200,
+                    'tiktok' => 2200,
+                    'twitter' => 280,
+                    'linkedin' => 3000,
+                    'facebook' => 63206
+                );
+                foreach ( $platforms as $platform ) : 
+                    $limit = $character_limits[ $platform ] ?? 2200;
+                ?>
+                    <div class="platform-limit-item" data-platform="<?php echo esc_attr( $platform ); ?>" data-limit="<?php echo esc_attr( $limit ); ?>">
+                        <span class="character-count" data-char-count>0</span>
+                        <span class="character-separator"> / </span>
+                        <span class="character-limit"><?php echo esc_html( $limit ); ?></span>
+                        <span class="platform-name">(<?php echo esc_html( ucfirst( $platform ) ); ?>)</span>
+                        <span class="over-limit-badge" style="display: none;">Over limit!</span>
+                    </div>
+                <?php endforeach; ?>
             </div>
             
             <div class="output-actions">

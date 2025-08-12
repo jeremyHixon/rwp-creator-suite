@@ -23,10 +23,13 @@
   "style": "file:./style.scss",
   "render": "file:./render.php",
   "attributes": {
-    "platform": {
-      "type": "string",
-      "default": "instagram",
-      "enum": ["instagram", "tiktok", "twitter", "linkedin", "facebook"]
+    "platforms": {
+      "type": "array",
+      "default": ["instagram"],
+      "items": {
+        "type": "string",
+        "enum": ["instagram", "tiktok", "twitter", "linkedin", "facebook"]
+      }
     },
     "tone": {
       "type": "string", 
@@ -56,7 +59,7 @@
   },
   "example": {
     "attributes": {
-      "platform": "instagram",
+      "platforms": ["instagram"],
       "tone": "casual",
       "showPreview": true
     }

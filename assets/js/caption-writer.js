@@ -12,9 +12,17 @@
         constructor(container, config = {}) {
             this.container = container;
             this.config = config;
+            
+            // Check for required dependencies
+            if (typeof RWPStateManager === 'undefined') {
+                console.error('CaptionWriter: RWPStateManager dependency not loaded');
+                this.showError('Required dependencies not loaded. Please refresh the page.');
+                return;
+            }
+            
             this.state = new RWPStateManager('caption_writer', {
                 description: '',
-                platform: config.platform || 'instagram',
+                platforms: config.platforms || ['instagram'],
                 tone: config.tone || 'casual',
                 generatedCaptions: [],
                 templates: [],
@@ -23,7 +31,7 @@
                 isGenerating: false,
                 activeTab: 'generator',
                 characterCount: 0,
-                characterLimit: this.getCharacterLimit(config.platform || 'instagram')
+                platformLimits: this.getPlatformLimits(config.platforms || ['instagram'])
             });
             
             this.elements = {};
@@ -39,6 +47,7 @@
             if (rwpCaptionWriter.isLoggedIn) {
                 this.updateGenerateButtonState();
                 this.loadUserData();
+                this.loadInitialQuota();
             } else {
                 // For guests, show teaser instead of functional AI generator
                 this.handleGuestExperience();
@@ -85,7 +94,11 @@
                 
                 // Loading/Error
                 loadingDiv: container.querySelector('[data-loading]'),
-                errorDiv: container.querySelector('[data-error]')
+                errorDiv: container.querySelector('[data-error]'),
+                
+                // Quota display
+                quotaDisplay: container.querySelector('[data-quota-display]'),
+                quotaText: container.querySelector('.quota-text')
             };
         }
         
@@ -248,7 +261,7 @@
                     body: JSON.stringify({
                         description: description,
                         tone: state.tone,
-                        platform: state.platform
+                        platforms: state.platforms
                     })
                 });
                 
@@ -371,6 +384,11 @@
             // Show the captions container
             if (this.elements.captionsContainer) {
                 this.elements.captionsContainer.style.display = 'block';
+                
+                // Scroll to the generated captions section
+                setTimeout(() => {
+                    this.scrollToElement(this.elements.captionsContainer);
+                }, 100);
             }
         }
         
@@ -380,6 +398,11 @@
             if (this.elements.finalCaptionTextarea) {
                 this.elements.finalCaptionTextarea.value = captionText;
                 this.updateCharacterCount();
+                
+                // Scroll to the final caption section
+                setTimeout(() => {
+                    this.scrollToElement(this.elements.finalCaptionTextarea.closest('.caption-output-section'));
+                }, 100);
             }
         }
         
@@ -501,26 +524,39 @@
             const state = this.state.getState();
             const text = this.elements.finalCaptionTextarea?.value || state.finalCaption;
             const count = text.length;
-            const limit = state.characterLimit;
             
             this.state.setState({ characterCount: count });
             
-            if (this.elements.charCount) {
-                this.elements.charCount.textContent = count;
+            // Update multi-platform character counters
+            const platformItems = this.container.querySelectorAll('.platform-limit-item');
+            platformItems.forEach(item => {
+                const platform = item.getAttribute('data-platform');
+                const limit = parseInt(item.getAttribute('data-limit'));
+                const charCountElement = item.querySelector('[data-char-count]');
+                const overLimitBadge = item.querySelector('.over-limit-badge');
                 
-                // Update color based on limit
-                if (count > limit) {
-                    this.elements.charCount.className = 'character-count over-limit';
-                } else if (count > limit * 0.9) {
-                    this.elements.charCount.className = 'character-count warning';
-                } else {
-                    this.elements.charCount.className = 'character-count';
+                if (charCountElement) {
+                    charCountElement.textContent = count;
+                    
+                    // Update color based on limit
+                    if (count > limit) {
+                        charCountElement.className = 'character-count over-limit';
+                        item.setAttribute('data-over-limit', 'true');
+                        if (overLimitBadge) overLimitBadge.style.display = 'inline';
+                    } else if (count > limit * 0.9) {
+                        charCountElement.className = 'character-count warning';
+                        item.removeAttribute('data-over-limit');
+                        if (overLimitBadge) overLimitBadge.style.display = 'none';
+                    } else {
+                        charCountElement.className = 'character-count';
+                        item.removeAttribute('data-over-limit');
+                        if (overLimitBadge) overLimitBadge.style.display = 'none';
+                    }
                 }
-            }
+            });
             
-            if (this.elements.charLimit) {
-                this.elements.charLimit.textContent = limit;
-            }
+            // Announce accessibility updates for character count
+            this.updateCharacterCountAccessibility();
         }
         
         updateCharacterLimit() {
@@ -532,6 +568,14 @@
         
         getCharacterLimit(platform) {
             return rwpCaptionWriter.characterLimits[platform] || 2200;
+        }
+        
+        getPlatformLimits(platforms) {
+            const limits = {};
+            platforms.forEach(platform => {
+                limits[platform] = this.getCharacterLimit(platform);
+            });
+            return limits;
         }
         
         async copyToClipboard() {
@@ -607,15 +651,10 @@
                 return;
             }
             
-            // Create a simple prompt for template name
-            const templateName = prompt('Enter a name for this template:');
-            if (!templateName || !templateName.trim()) {
-                return;
-            }
-            
-            const templateCategory = prompt('Enter category (business, personal, engagement, other):', 'other');
-            if (!templateCategory || !templateCategory.trim()) {
-                return;
+            // Show custom modal instead of native prompt
+            const modalData = await this.showTemplateModal();
+            if (!modalData) {
+                return; // User cancelled
             }
             
             try {
@@ -626,8 +665,8 @@
                         'X-WP-Nonce': rwpCaptionWriter.nonce
                     },
                     body: JSON.stringify({
-                        name: templateName.trim(),
-                        category: templateCategory.trim(),
+                        name: modalData.name,
+                        category: modalData.category,
                         template: text,
                         platforms: [this.state.getState().platform]
                     })
@@ -653,6 +692,32 @@
         
         async loadUserData() {
             // TODO: Load user favorites and templates in Phase 3
+        }
+        
+        async loadInitialQuota() {
+            if (!rwpCaptionWriter.isLoggedIn) {
+                return;
+            }
+            
+            try {
+                // Use the dedicated quota endpoint
+                const response = await fetch(rwpCaptionWriter.restUrl + 'quota', {
+                    method: 'GET',
+                    headers: {
+                        'X-WP-Nonce': rwpCaptionWriter.nonce
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success && result.data) {
+                    this.showQuotaInfo(result.data.remaining_quota);
+                }
+                
+            } catch (error) {
+                // Silently fail - quota info is nice to have but not critical
+                console.log('Could not load initial quota info:', error);
+            }
         }
         
         async loadFavorites() {
@@ -812,16 +877,9 @@
         }
         
         showQuotaInfo(remainingQuota) {
-            // Show quota information to user
-            let quotaElement = this.container.querySelector('.quota-info');
-            if (!quotaElement) {
-                quotaElement = document.createElement('div');
-                quotaElement.className = 'quota-info';
-                
-                const generateBtn = this.container.querySelector('[data-generate]');
-                if (generateBtn && generateBtn.parentNode) {
-                    generateBtn.parentNode.insertBefore(quotaElement, generateBtn.nextSibling);
-                }
+            // Use persistent quota display element from template
+            if (!this.elements.quotaDisplay || !this.elements.quotaText) {
+                return;
             }
             
             // Add icon based on quota level
@@ -830,23 +888,27 @@
             if (remainingQuota <= 2) icon = '🟠';
             if (remainingQuota === 0) icon = '🔴';
             
-            quotaElement.innerHTML = `
-                <span>${icon} Remaining AI generations: <strong>${remainingQuota}</strong></span>
-            `;
-            
+            // Update quota text
             if (remainingQuota === 0) {
-                quotaElement.innerHTML = `
-                    <span>${icon} <strong>Daily limit reached.</strong> Please try again later or upgrade your plan.</span>
-                `;
+                this.elements.quotaText.innerHTML = `${icon} <strong>Daily limit reached.</strong> Please try again later or upgrade your plan.`;
+                
                 // Disable generate button when quota is exhausted
                 if (this.elements.generateBtn) {
                     this.elements.generateBtn.disabled = true;
                     this.elements.generateBtn.textContent = 'Quota Exhausted';
                 }
+            } else {
+                this.elements.quotaText.innerHTML = `${icon} Remaining AI generations: <strong>${remainingQuota}</strong>`;
+                
+                // Re-enable generate button if it was disabled
+                if (this.elements.generateBtn && this.elements.generateBtn.textContent === 'Quota Exhausted') {
+                    this.elements.generateBtn.disabled = false;
+                    this.elements.generateBtn.textContent = 'Generate Captions';
+                }
             }
             
-            // Add subtle animation
-            quotaElement.style.animation = 'slideIn 0.3s ease';
+            // Show the quota display
+            this.elements.quotaDisplay.style.display = 'block';
         }
         
         validateDescription(description) {
@@ -931,12 +993,13 @@
             // Add ARIA labels and descriptions
             if (this.elements.descriptionInput) {
                 this.elements.descriptionInput.setAttribute('aria-describedby', 'description-help');
+                this.elements.descriptionInput.setAttribute('aria-label', 'Content description for caption generation');
                 
                 // Add help text
                 const helpText = document.createElement('div');
                 helpText.id = 'description-help';
                 helpText.className = 'sr-only';
-                helpText.textContent = 'Describe your content in detail. Minimum 10 characters, maximum 500 characters.';
+                helpText.textContent = 'Describe your content in detail. Minimum 10 characters, maximum 500 characters. This will be used to generate captions.';
                 this.elements.descriptionInput.parentNode.appendChild(helpText);
             }
             
@@ -944,6 +1007,7 @@
             if (this.elements.tabButtons.length > 0) {
                 const tabList = this.elements.tabButtons[0].parentNode;
                 tabList.setAttribute('role', 'tablist');
+                tabList.setAttribute('aria-label', 'Caption generation methods');
                 
                 this.elements.tabButtons.forEach((button, index) => {
                     button.setAttribute('role', 'tab');
@@ -951,6 +1015,14 @@
                     button.setAttribute('tabindex', button.classList.contains('active') ? '0' : '-1');
                     button.setAttribute('aria-controls', `panel-${button.dataset.tab}`);
                     button.id = `tab-${button.dataset.tab}`;
+                    
+                    // Add descriptive aria-label
+                    const tabNames = {
+                        'generator': 'AI Caption Generator',
+                        'templates': 'Template Library',
+                        'favorites': 'Saved Favorites'
+                    };
+                    button.setAttribute('aria-label', tabNames[button.dataset.tab] || button.textContent);
                 });
             }
             
@@ -960,18 +1032,219 @@
                 content.id = `panel-${content.dataset.content}`;
                 content.setAttribute('aria-labelledby', `tab-${content.dataset.content}`);
                 content.setAttribute('tabindex', '0');
+                
+                // Hide inactive panels from screen readers
+                if (!content.classList.contains('active')) {
+                    content.setAttribute('aria-hidden', 'true');
+                }
             });
             
-            // Add aria-live to captions container
+            // Add aria-live regions for dynamic content
             if (this.elements.captionsContainer) {
                 this.elements.captionsContainer.setAttribute('aria-live', 'polite');
+                this.elements.captionsContainer.setAttribute('aria-label', 'Generated captions');
             }
             
-            // Add aria-describedby to character counter
+            // Add loading announcement region
+            if (this.elements.loadingDiv) {
+                this.elements.loadingDiv.setAttribute('aria-live', 'assertive');
+                this.elements.loadingDiv.setAttribute('aria-label', 'Loading status');
+            }
+            
+            // Add error announcement region
+            if (this.elements.errorDiv) {
+                this.elements.errorDiv.setAttribute('role', 'alert');
+                this.elements.errorDiv.setAttribute('aria-live', 'assertive');
+            }
+            
+            // Enhanced character counter
             if (this.elements.finalCaptionTextarea && this.elements.charCount) {
                 const counterId = 'char-counter-' + Date.now();
                 this.elements.charCount.parentNode.id = counterId;
                 this.elements.finalCaptionTextarea.setAttribute('aria-describedby', counterId);
+                this.elements.charCount.parentNode.setAttribute('aria-label', 'Character count information');
+                
+                // Add status announcements for character limits
+                const announceId = 'char-announce-' + Date.now();
+                const announcer = document.createElement('div');
+                announcer.id = announceId;
+                announcer.setAttribute('aria-live', 'polite');
+                announcer.setAttribute('aria-atomic', 'true');
+                announcer.className = 'sr-only';
+                this.elements.finalCaptionTextarea.parentNode.appendChild(announcer);
+                
+                this.charAnnouncerElement = announcer;
+            }
+            
+            // Add semantic landmarks
+            const appContainer = this.container.querySelector('.caption-writer-app');
+            if (appContainer) {
+                appContainer.setAttribute('role', 'application');
+                appContainer.setAttribute('aria-label', 'Caption Writer Application');
+            }
+            
+            // Enhance button accessibility
+            this.enhanceButtonAccessibility();
+            
+            // Add skip links for keyboard users
+            this.addSkipLinks();
+            
+            // Enhanced focus management
+            this.setupFocusManagement();
+        }
+        
+        enhanceButtonAccessibility() {
+            // Generate button
+            if (this.elements.generateBtn) {
+                this.elements.generateBtn.setAttribute('aria-describedby', 'generate-help');
+                
+                const helpText = document.createElement('div');
+                helpText.id = 'generate-help';
+                helpText.className = 'sr-only';
+                helpText.textContent = 'Generate AI-powered captions based on your content description and selected tone';
+                this.elements.generateBtn.parentNode.appendChild(helpText);
+            }
+            
+            // Copy button
+            if (this.elements.copyBtn) {
+                this.elements.copyBtn.setAttribute('aria-label', 'Copy final caption to clipboard');
+                this.elements.copyBtn.setAttribute('title', 'Copy to clipboard');
+            }
+            
+            // Save buttons
+            if (this.elements.saveFavoriteBtn) {
+                this.elements.saveFavoriteBtn.setAttribute('aria-label', 'Save caption to favorites');
+                this.elements.saveFavoriteBtn.setAttribute('title', 'Save to favorites');
+            }
+            
+            if (this.elements.saveTemplateBtn) {
+                this.elements.saveTemplateBtn.setAttribute('aria-label', 'Save caption as reusable template');
+                this.elements.saveTemplateBtn.setAttribute('title', 'Save as template');
+            }
+        }
+        
+        addSkipLinks() {
+            const skipLinks = document.createElement('div');
+            skipLinks.className = 'skip-links';
+            skipLinks.innerHTML = `
+                <a href="#caption-generator" class="skip-link">Skip to generator</a>
+                <a href="#final-caption" class="skip-link">Skip to final caption</a>
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                .skip-links {
+                    position: absolute;
+                    top: -1000px;
+                    left: -1000px;
+                    height: 1px;
+                    width: 1px;
+                    overflow: hidden;
+                }
+                .skip-link:focus {
+                    position: absolute;
+                    top: 10px;
+                    left: 10px;
+                    z-index: 1000;
+                    background: #000;
+                    color: #fff;
+                    padding: 8px 16px;
+                    text-decoration: none;
+                    border-radius: 4px;
+                    height: auto;
+                    width: auto;
+                    overflow: visible;
+                }
+            `;
+            
+            if (!document.getElementById('skip-links-style')) {
+                style.id = 'skip-links-style';
+                document.head.appendChild(style);
+            }
+            
+            this.container.insertBefore(skipLinks, this.container.firstChild);
+            
+            // Add IDs to skip targets
+            if (this.elements.descriptionInput) {
+                this.elements.descriptionInput.id = 'caption-generator';
+            }
+            if (this.elements.finalCaptionTextarea) {
+                this.elements.finalCaptionTextarea.id = 'final-caption';
+            }
+        }
+        
+        setupFocusManagement() {
+            // Enhanced tab navigation
+            this.elements.tabButtons.forEach((button, index) => {
+                button.addEventListener('keydown', (e) => {
+                    let nextIndex = index;
+                    
+                    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        nextIndex = (index + 1) % this.elements.tabButtons.length;
+                    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        nextIndex = (index - 1 + this.elements.tabButtons.length) % this.elements.tabButtons.length;
+                    } else if (e.key === 'Home') {
+                        e.preventDefault();
+                        nextIndex = 0;
+                    } else if (e.key === 'End') {
+                        e.preventDefault();
+                        nextIndex = this.elements.tabButtons.length - 1;
+                    } else if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        this.switchTab(e.target.dataset.tab);
+                        return;
+                    }
+                    
+                    if (nextIndex !== index) {
+                        // Update tabindex
+                        this.elements.tabButtons[index].setAttribute('tabindex', '-1');
+                        this.elements.tabButtons[nextIndex].setAttribute('tabindex', '0');
+                        this.elements.tabButtons[nextIndex].focus();
+                    }
+                });
+            });
+            
+            // Focus management for tab switching
+            const originalSwitchTab = this.switchTab.bind(this);
+            this.switchTab = (tabName) => {
+                originalSwitchTab(tabName);
+                
+                // Update aria-selected and aria-hidden
+                this.elements.tabButtons.forEach(btn => {
+                    btn.setAttribute('aria-selected', btn.dataset.tab === tabName);
+                    btn.setAttribute('tabindex', btn.dataset.tab === tabName ? '0' : '-1');
+                });
+                
+                this.elements.tabContents.forEach(content => {
+                    const isActive = content.dataset.content === tabName;
+                    content.setAttribute('aria-hidden', !isActive);
+                });
+                
+                // Announce tab change
+                this.announceToScreenReader(`Switched to ${tabName} tab`);
+            };
+        }
+        
+        updateCharacterCountAccessibility() {
+            if (this.charAnnouncerElement && this.elements.charCount) {
+                const count = this.state.getState().characterCount;
+                const limit = this.state.getState().characterLimit;
+                const percentage = (count / limit) * 100;
+                
+                if (percentage > 90) {
+                    let message = '';
+                    if (count > limit) {
+                        message = `Over character limit by ${count - limit} characters`;
+                    } else if (percentage > 95) {
+                        message = `Approaching character limit. ${limit - count} characters remaining`;
+                    }
+                    
+                    if (message) {
+                        this.charAnnouncerElement.textContent = message;
+                    }
+                }
             }
         }
         
@@ -998,23 +1271,263 @@
             }
         }
         
+        showTemplateModal() {
+            return new Promise((resolve) => {
+                // Create modal HTML
+                const modal = document.createElement('div');
+                modal.className = 'rwp-modal-overlay';
+                modal.innerHTML = `
+                    <div class="rwp-modal">
+                        <div class="rwp-modal-header">
+                            <h3>Save as Template</h3>
+                            <button class="rwp-modal-close" aria-label="Close">&times;</button>
+                        </div>
+                        <div class="rwp-modal-body">
+                            <form class="rwp-template-form">
+                                <div class="form-field">
+                                    <label for="template-name">Template Name *</label>
+                                    <input type="text" id="template-name" name="name" required maxlength="100">
+                                </div>
+                                <div class="form-field">
+                                    <label for="template-category">Category *</label>
+                                    <select id="template-category" name="category" required>
+                                        <option value="">Select category...</option>
+                                        <option value="business">Business</option>
+                                        <option value="personal">Personal</option>
+                                        <option value="engagement">Engagement</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="rwp-modal-footer">
+                            <button class="btn-secondary" data-action="cancel">Cancel</button>
+                            <button class="btn-primary" data-action="save">Save Template</button>
+                        </div>
+                    </div>
+                `;
+                
+                // Add styles if not already present
+                if (!document.getElementById('rwp-modal-styles')) {
+                    const styles = document.createElement('style');
+                    styles.id = 'rwp-modal-styles';
+                    styles.textContent = `
+                        .rwp-modal-overlay {
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(0, 0, 0, 0.5);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            z-index: 100000;
+                            animation: fadeIn 0.2s ease;
+                        }
+                        .rwp-modal {
+                            background: white;
+                            border-radius: 8px;
+                            width: 90%;
+                            max-width: 500px;
+                            max-height: 90vh;
+                            overflow: hidden;
+                            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                            animation: slideIn 0.3s ease;
+                        }
+                        .rwp-modal-header {
+                            padding: 20px;
+                            border-bottom: 1px solid #e1e1e1;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                        }
+                        .rwp-modal-header h3 {
+                            margin: 0;
+                            font-size: 18px;
+                            font-weight: 600;
+                        }
+                        .rwp-modal-close {
+                            background: none;
+                            border: none;
+                            font-size: 24px;
+                            cursor: pointer;
+                            padding: 0;
+                            width: 30px;
+                            height: 30px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        }
+                        .rwp-modal-body {
+                            padding: 20px;
+                        }
+                        .form-field {
+                            margin-bottom: 16px;
+                        }
+                        .form-field label {
+                            display: block;
+                            margin-bottom: 6px;
+                            font-weight: 600;
+                        }
+                        .form-field input,
+                        .form-field select {
+                            width: 100%;
+                            padding: 8px 12px;
+                            border: 1px solid #ddd;
+                            border-radius: 4px;
+                            font-size: 14px;
+                        }
+                        .rwp-modal-footer {
+                            padding: 20px;
+                            border-top: 1px solid #e1e1e1;
+                            display: flex;
+                            gap: 12px;
+                            justify-content: flex-end;
+                        }
+                        .btn-primary, .btn-secondary {
+                            padding: 8px 16px;
+                            border-radius: 4px;
+                            font-size: 14px;
+                            cursor: pointer;
+                            border: 1px solid;
+                        }
+                        .btn-primary {
+                            background: #3b82f6;
+                            color: white;
+                            border-color: #3b82f6;
+                        }
+                        .btn-secondary {
+                            background: white;
+                            color: #374151;
+                            border-color: #d1d5db;
+                        }
+                        @keyframes fadeIn {
+                            from { opacity: 0; }
+                            to { opacity: 1; }
+                        }
+                        @keyframes slideIn {
+                            from { transform: translateY(-50px); opacity: 0; }
+                            to { transform: translateY(0); opacity: 1; }
+                        }
+                    `;
+                    document.head.appendChild(styles);
+                }
+                
+                // Add to DOM
+                document.body.appendChild(modal);
+                
+                // Focus first input
+                const nameInput = modal.querySelector('#template-name');
+                nameInput.focus();
+                
+                // Handle events
+                const handleClose = () => {
+                    document.body.removeChild(modal);
+                    resolve(null);
+                };
+                
+                const handleSave = () => {
+                    const form = modal.querySelector('.rwp-template-form');
+                    const formData = new FormData(form);
+                    const data = {
+                        name: formData.get('name')?.trim(),
+                        category: formData.get('category')
+                    };
+                    
+                    if (!data.name || !data.category) {
+                        alert('Please fill in all required fields');
+                        return;
+                    }
+                    
+                    document.body.removeChild(modal);
+                    resolve(data);
+                };
+                
+                // Event listeners
+                modal.querySelector('.rwp-modal-close').addEventListener('click', handleClose);
+                modal.querySelector('[data-action="cancel"]').addEventListener('click', handleClose);
+                modal.querySelector('[data-action="save"]').addEventListener('click', handleSave);
+                
+                // Close on overlay click
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        handleClose();
+                    }
+                });
+                
+                // Close on escape
+                const handleEscape = (e) => {
+                    if (e.key === 'Escape') {
+                        handleClose();
+                        document.removeEventListener('keydown', handleEscape);
+                    }
+                };
+                document.addEventListener('keydown', handleEscape);
+                
+                // Handle form submission
+                modal.querySelector('.rwp-template-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    handleSave();
+                });
+            });
+        }
+        
         escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
+        
+        scrollToElement(element, offset = 20) {
+            if (!element) return;
+            
+            const elementRect = element.getBoundingClientRect();
+            const absoluteElementTop = elementRect.top + window.pageYOffset;
+            const elementHeight = elementRect.height;
+            const viewportHeight = window.innerHeight;
+            
+            // Center the element on the page
+            const top = absoluteElementTop - (viewportHeight / 2) + (elementHeight / 2) + offset;
+            
+            window.scrollTo({
+                top: top,
+                behavior: 'smooth'
+            });
+        }
     }
     
     // Initialize Caption Writer apps when DOM is loaded
     function initializeCaptionWriters() {
+        // Check for global dependencies
+        if (typeof rwpCaptionWriter === 'undefined') {
+            console.error('CaptionWriter: Global configuration not loaded');
+            return;
+        }
+        
         const containers = document.querySelectorAll('.rwp-caption-writer-container');
+        
+        if (containers.length === 0) {
+            return; // No caption writer blocks on this page
+        }
         
         containers.forEach(container => {
             try {
                 const config = JSON.parse(container.dataset.config || '{}');
-                new CaptionWriterApp(container, config);
+                const app = new CaptionWriterApp(container, config);
+                
+                // Store app instance on container for potential cleanup
+                container.captionWriterApp = app;
             } catch (error) {
                 console.error('Failed to initialize Caption Writer:', error);
+                // Show user-friendly error in the container
+                container.innerHTML = `
+                    <div class="caption-writer-error">
+                        <div class="error-message">
+                            Failed to initialize Caption Writer. Please refresh the page.
+                        </div>
+                    </div>
+                `;
             }
         });
     }

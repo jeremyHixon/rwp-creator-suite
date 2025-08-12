@@ -10,29 +10,31 @@ import {
     Panel,
     PanelBody,
     PanelRow,
-    TabPanel
+    TabPanel,
+    CheckboxControl
 } from '@wordpress/components';
 import { useState, useEffect } from '@wordpress/element';
 import { InspectorControls } from '@wordpress/block-editor';
 
 export default function Edit({ attributes, setAttributes }) {
-    const { platform, tone, selectedTemplate, finalCaption, showPreview } = attributes;
+    const { platforms = ['instagram'], tone, selectedTemplate, finalCaption, showPreview } = attributes;
     
     const [description, setDescription] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [generatedCaptions, setGeneratedCaptions] = useState([]);
     const [templates, setTemplates] = useState([]);
     const [characterCount, setCharacterCount] = useState(0);
-    const [characterLimit, setCharacterLimit] = useState(2200);
+    const [characterLimits, setCharacterLimits] = useState({ instagram: 2200 });
     const [activeTab, setActiveTab] = useState('generator');
     const [error, setError] = useState('');
+    const [hasError, setHasError] = useState(false);
     
     const blockProps = useBlockProps({
         className: 'caption-writer-editor'
     });
     
     // Character limits for different platforms
-    const characterLimits = {
+    const platformLimits = {
         instagram: 2200,
         tiktok: 2200,
         twitter: 280,
@@ -40,15 +42,38 @@ export default function Edit({ attributes, setAttributes }) {
         facebook: 63206
     };
     
-    // Update character limit when platform changes
+    // Update character limits when platforms change
     useEffect(() => {
-        setCharacterLimit(characterLimits[platform] || 2200);
-    }, [platform]);
+        const limits = {};
+        platforms.forEach(platform => {
+            limits[platform] = platformLimits[platform] || 2200;
+        });
+        setCharacterLimits(limits);
+    }, [platforms]);
     
     // Update character count when final caption changes
     useEffect(() => {
         setCharacterCount(finalCaption.length);
     }, [finalCaption]);
+    
+    // Sync local state with block attributes on mount
+    useEffect(() => {
+        if (finalCaption && finalCaption !== '') {
+            // Initialize any local state that depends on attributes
+        }
+    }, []);
+    
+    // Update attributes when local state changes
+    useEffect(() => {
+        // Debounce attribute updates to avoid excessive re-renders
+        const timeoutId = setTimeout(() => {
+            if (description !== '') {
+                // Could save description to attributes if needed for persistence
+            }
+        }, 500);
+        
+        return () => clearTimeout(timeoutId);
+    }, [description]);
     
     // Load built-in templates
     useEffect(() => {
@@ -81,40 +106,83 @@ export default function Edit({ attributes, setAttributes }) {
         setTemplates(builtInTemplates);
     }, []);
     
-    const generateCaptions = () => {
+    const generateCaptions = async () => {
         if (!description.trim()) {
             setError(__('Please enter a description for your content', 'rwp-creator-suite'));
             return;
         }
         
+        // Check for required dependencies
+        if (typeof rwpCaptionWriter === 'undefined') {
+            setError(__('Caption writer not properly loaded. Please refresh the page.', 'rwp-creator-suite'));
+            setHasError(true);
+            return;
+        }
+        
         setIsGenerating(true);
         setError('');
+        setHasError(false);
         
-        // TODO: Implement actual API call in Phase 2
-        // For now, show placeholder generated captions
-        setTimeout(() => {
-            const mockCaptions = [
-                {
-                    text: `Check out this amazing ${description}! ✨ Perfect for your feed. What do you think? {hashtags}`,
-                    character_count: 85
+        try {
+            // Make API call to generate captions
+            const response = await fetch(rwpCaptionWriter.restUrl + 'captions/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': rwpCaptionWriter.nonce
                 },
-                {
-                    text: `Loving this ${description} moment! 💫 Sometimes the simple things bring the most joy. Share yours below! {hashtags}`,
-                    character_count: 125
-                },
-                {
-                    text: `${description} vibes hitting different today 🔥 Who else is feeling this energy? {hashtags}`,
-                    character_count: 95
-                }
-            ];
+                body: JSON.stringify({
+                    description: description,
+                    tone: tone,
+                    platforms: platforms
+                })
+            });
             
-            setGeneratedCaptions(mockCaptions);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `HTTP ${response.status}: Failed to generate captions`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.success && result.data && Array.isArray(result.data)) {
+                setGeneratedCaptions(result.data);
+                setHasError(false);
+            } else {
+                throw new Error(result.message || 'Invalid response from server');
+            }
+        } catch (error) {
+            console.error('Error generating captions:', error);
+            
+            // Provide user-friendly error messages
+            let userMessage = __('Failed to generate captions. Please try again.', 'rwp-creator-suite');
+            
+            if (error.message.includes('NetworkError') || error.message.includes('fetch')) {
+                userMessage = __('Network error. Please check your connection and try again.', 'rwp-creator-suite');
+            } else if (error.message.includes('401')) {
+                userMessage = __('Authentication error. Please refresh the page and try again.', 'rwp-creator-suite');
+            } else if (error.message.includes('429')) {
+                userMessage = __('Rate limit exceeded. Please wait a moment and try again.', 'rwp-creator-suite');
+            } else if (error.message.includes('500')) {
+                userMessage = __('Server error. Please try again later.', 'rwp-creator-suite');
+            }
+            
+            setError(userMessage);
+            setHasError(true);
+        } finally {
             setIsGenerating(false);
-        }, 1500);
+        }
     };
     
     const selectCaption = (captionText) => {
-        setAttributes({ finalCaption: captionText });
+        // Update both local state and block attributes synchronously
+        setAttributes({ 
+            finalCaption: captionText,
+            showPreview: true 
+        });
+        
+        // Ensure character count is updated immediately
+        setCharacterCount(captionText.length);
     };
     
     const selectTemplate = (template) => {
@@ -124,10 +192,21 @@ export default function Edit({ attributes, setAttributes }) {
         });
     };
     
-    const getCharacterCountColor = () => {
-        if (characterCount > characterLimit) return '#d63638';
-        if (characterCount > characterLimit * 0.9) return '#dba617';
+    const getCharacterCountColor = (limit) => {
+        if (characterCount > limit) return '#d63638';
+        if (characterCount > limit * 0.9) return '#dba617';
         return '#1e1e1e';
+    };
+    
+    const togglePlatform = (platform) => {
+        const updatedPlatforms = platforms.includes(platform)
+            ? platforms.filter(p => p !== platform)
+            : [...platforms, platform];
+        
+        // Ensure at least one platform is always selected
+        if (updatedPlatforms.length === 0) return;
+        
+        setAttributes({ platforms: updatedPlatforms });
     };
     
     const tabs = [
@@ -149,18 +228,26 @@ export default function Edit({ attributes, setAttributes }) {
                 <Panel>
                     <PanelBody title={__('Settings', 'rwp-creator-suite')}>
                         <PanelRow>
-                            <SelectControl
-                                label={__('Platform', 'rwp-creator-suite')}
-                                value={platform}
-                                options={[
+                            <div>
+                                <label style={{fontWeight: '600', marginBottom: '8px', display: 'block'}}>
+                                    {__('Target Platforms', 'rwp-creator-suite')}
+                                </label>
+                                {[
                                     { label: 'Instagram', value: 'instagram' },
                                     { label: 'TikTok/Reels', value: 'tiktok' },
                                     { label: 'Twitter/X', value: 'twitter' },
                                     { label: 'LinkedIn', value: 'linkedin' },
                                     { label: 'Facebook', value: 'facebook' }
-                                ]}
-                                onChange={(platform) => setAttributes({ platform })}
-                            />
+                                ].map(platform => (
+                                    <CheckboxControl
+                                        key={platform.value}
+                                        label={platform.label}
+                                        checked={platforms.includes(platform.value)}
+                                        onChange={() => togglePlatform(platform.value)}
+                                        style={{marginBottom: '4px'}}
+                                    />
+                                ))}
+                            </div>
                         </PanelRow>
                         <PanelRow>
                             <SelectControl
@@ -179,6 +266,23 @@ export default function Edit({ attributes, setAttributes }) {
                     </PanelBody>
                 </Panel>
             </InspectorControls>
+            
+            {hasError && (
+                <Notice status="error" isDismissible={true} onRemove={() => setHasError(false)}>
+                    <strong>{__('Caption Writer Error', 'rwp-creator-suite')}</strong>
+                    <p>{error}</p>
+                    <Button 
+                        isSecondary 
+                        isSmall
+                        onClick={() => {
+                            setHasError(false);
+                            setError('');
+                        }}
+                    >
+                        {__('Try Again', 'rwp-creator-suite')}
+                    </Button>
+                </Notice>
+            )}
             
             <div {...blockProps}>
                 <Placeholder
@@ -288,15 +392,28 @@ export default function Edit({ attributes, setAttributes }) {
                                     className="final-caption-textarea"
                                 />
                                 <div className="character-counter">
-                                    <span 
-                                        className="character-count"
-                                        style={{ color: getCharacterCountColor() }}
-                                    >
-                                        {characterCount}
-                                    </span>
-                                    <span className="character-limit">
-                                        / {characterLimit} ({platform})
-                                    </span>
+                                    <div className="platform-limits">
+                                        {platforms.map(platform => {
+                                            const limit = characterLimits[platform];
+                                            return (
+                                                <div key={platform} className="platform-limit-item">
+                                                    <span 
+                                                        className="character-count"
+                                                        style={{ color: getCharacterCountColor(limit) }}
+                                                    >
+                                                        {characterCount}
+                                                    </span>
+                                                    <span className="character-separator"> / </span>
+                                                    <span className="character-limit">
+                                                        {limit} ({platform.charAt(0).toUpperCase() + platform.slice(1)})
+                                                    </span>
+                                                    {characterCount > limit && (
+                                                        <span className="over-limit-badge">Over limit!</span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         )}

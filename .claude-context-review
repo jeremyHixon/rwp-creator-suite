@@ -12,7 +12,7 @@ This context directs Claude Code to examine newly added WordPress plugin feature
 ## Review Categories
 
 ### 1. WordPress Coding Standards Compliance
-**Check Against**: `01-wp-coding-standards-ai.md`
+**Check Against**: `.guidelines/01-wp-coding-standards-ai.md`
 
 **Review Points**:
 - ✅ Proper prefixing (`plugin_name_`)
@@ -25,7 +25,7 @@ This context directs Claude Code to examine newly added WordPress plugin feature
 - ✅ File structure and headers
 
 ### 2. Block Development Standards  
-**Check Against**: `02-wp-block-standards-ai.md`
+**Check Against**: `.guidelines/02-wp-block-standards-ai.md`
 
 **Review Points**:
 - ✅ Block-as-container pattern compliance
@@ -38,7 +38,7 @@ This context directs Claude Code to examine newly added WordPress plugin feature
 - ✅ Block variations implementation
 
 ### 3. Architecture Compliance
-**Check Against**: `03-wp-architecture-preferences.md`
+**Check Against**: `.guidelines/03-wp-architecture-preferences.md`
 
 **Review Points**:
 - ✅ Modular organization
@@ -50,7 +50,7 @@ This context directs Claude Code to examine newly added WordPress plugin feature
 - ✅ Progressive enhancement
 
 ### 4. State Management Patterns
-**Check Against**: `04-wp-state-management.md`
+**Check Against**: `.guidelines/04-wp-state-management.md`
 
 **Review Points**:
 - ✅ localStorage primary strategy
@@ -62,7 +62,7 @@ This context directs Claude Code to examine newly added WordPress plugin feature
 - ✅ Warning notifications for storage issues
 
 ### 5. API Design Compliance
-**Check Against**: `05-wp-api-design-patterns.md`
+**Check Against**: `.guidelines/05-wp-api-design-patterns.md`
 
 **Review Points**:
 - ✅ WordPress REST API foundation
@@ -74,7 +74,7 @@ This context directs Claude Code to examine newly added WordPress plugin feature
 - ✅ Permission callbacks
 
 ### 6. Testing Coverage
-**Check Against**: `06-wp-testing-client-heavy.md`
+**Check Against**: `.guidelines/06-wp-testing-client-heavy.md`
 
 **Review Points**:
 - ✅ PHPUnit tests for PHP code
@@ -85,7 +85,7 @@ This context directs Claude Code to examine newly added WordPress plugin feature
 - ✅ Mock implementations
 
 ### 7. Build & Deployment
-**Check Against**: `07-wp-build-deployment.md`
+**Check Against**: `.guidelines/07-wp-build-deployment.md`
 
 **Review Points**:
 - ✅ Proper asset organization
@@ -96,7 +96,7 @@ This context directs Claude Code to examine newly added WordPress plugin feature
 - ✅ Performance optimization
 
 ### 8. Style Isolation
-**Check Against**: `08-wp-block-style-isolation.md`
+**Check Against**: `.guidelines/08-wp-block-style-isolation.md`
 
 **Review Points**:
 - ✅ Block style isolation

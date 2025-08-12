@@ -284,11 +284,19 @@ class RWP_Creator_Suite_Block_Manager {
             return; // Already enqueued
         }
 
+        // Enqueue Font Awesome Brands CSS
+        wp_enqueue_style(
+            'font-awesome-brands',
+            'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/brands.min.css',
+            array(),
+            '6.5.1'
+        );
+
         // Enqueue Caption Writer CSS with performance optimization
         wp_enqueue_style(
             'rwp-caption-writer-style',
             RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/caption-writer.css',
-            array(),
+            array( 'font-awesome-brands' ),
             RWP_CREATOR_SUITE_VERSION,
             'all'
         );

@@ -32,10 +32,6 @@ module.exports = {
 			__dirname,
 			'src/blocks/caption-writer/index.js'
 		),
-		'blocks/caption-writer/style': path.resolve(
-			__dirname,
-			'src/blocks/caption-writer/style.js'
-		),
 		'blocks/caption-writer/editor': path.resolve(
 			__dirname,
 			'src/blocks/caption-writer/editor.js'

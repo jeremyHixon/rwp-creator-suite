@@ -43,35 +43,44 @@
     gap: 1rem;
 }
 
-/* Platform Icons */
+/* Font Awesome is loaded via PHP wp_enqueue_style() for better reliability */
+
+/* Platform Icons using Font Awesome classes */
 .platform-icon {
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: contain;
     display: inline-block;
-    height: 20px;
-    vertical-align: middle;
     width: 20px;
+    height: 20px;
+    text-align: center;
+    line-height: 20px;
+    font-size: 16px;
+    vertical-align: middle;
+    font-family: "Font Awesome 6 Brands", "Font Awesome 6 Free";
 }
 
-.platform-icon.instagram {
-    background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0ibm9uZSI+PHBhdGggc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjEuNSIgZD0iTTcuOCAzaDguNEMxOS40IDMgMjIgNS42IDIyIDguOHY3LjRjMCAzLjItMi42IDUuOC01LjggNS44SDcuOEM0LjYgMjIgMiAxOS40IDIgMTYuMlY4LjhDMiA1LjYgNC42IDMgNy44IDNaTTE3LjUgNy41aC0uMDAxIi8+PHBhdGggc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjEuNSIgZD0iTTE2IDEyYzAgMi4yLTIuNyA0LTUgNHMtNS0xLjgtNS00IDIuNy00IDUtNCA1IDEuOCA1IDRaIi8+PC9zdmc+);
+/* Use Font Awesome standard class approach */
+.platform-icon.instagram::before {
+    content: "\f16d";
+    font-weight: 400;
 }
 
-.platform-icon.tiktok {
-    background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0ibm9uZSI+PHBhdGggc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjEuNSIgZD0iTTkgMTJhNCA0IDAgMSAxIDAtOHY1aDdWMmgzdjdoLTN2N0g5eiIvPjwvc3ZnPg==);
+.platform-icon.tiktok::before {
+    content: "\e07b";
+    font-weight: 400;
 }
 
-.platform-icon.twitter {
-    background-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTIzIDNBMTAuOSAxMC45IDAgMCAxIDE5LjEgNEE0LjQ4IDQuNDggMCAwIDAgMjQuMyAyQzIzLjcgMi43IDIzIDMgMjIuMiAzIDIxIDMgMjAgMi4yIDIwIDFIMTJDMTIgMSAxMS4zIDIuNyAxNS43IDZITOS4MyA2LjcgMTggNyAxNy40IDdIMTdDNyAxNyAzIDEzIDMgOFM2LjcgMiAxMiAzQzE1LjQgMyAyMCAzIDIzIDNaIiBzdHJva2U9IiMzMzMiIHN0cm9rZS13aWR0aD0iMS41IiBmaWxsPSJub25lIi8+Cjwvc3ZnPgo=);
+.platform-icon.twitter::before {
+    content: "\e61b";
+    font-weight: 400;
 }
 
-.platform-icon.linkedin {
-    background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0ibm9uZSI+PHBhdGggc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjEuNSIgZD0iTTE2IDhhNiA2IDAgMCAxIDYgNnY3SDEiLz48Y2lyY2xlIGN4PSI0IiBjeT0iNCIgcj0iMiIgc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjEuNSIvPjxwYXRoIHN0cm9rZT0iIzMzMyIgc3Ryb2tlLXdpZHRoPSIxLjUiIGQ9Ik0yIDloNHYxMkgyeiIvPjwvc3ZnPg==);
+.platform-icon.linkedin::before {
+    content: "\f08c";
+    font-weight: 400;
 }
 
-.platform-icon.facebook {
-    background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgZmlsbD0ibm9uZSI+PHBhdGggc3Ryb2tlPSIjMzMzIiBzdHJva2Utd2lkdGg9IjEuNSIgZD0iTTE4IDJoLTNhNSA1IDAgMCAwLTUgNXYzSDZ2NGg0djhoNHYtOGg1bDEtNGgtNlY3YTEgMSAwIDAgMSAxLTFoM3oiLz48L3N2Zz4=);
+.platform-icon.facebook::before {
+    content: "\f09a";
+    font-weight: 400;
 }
 
 .platform-label {
@@ -129,6 +138,24 @@
     display: flex;
     font-size: 14px;
     gap: 6px;
+}
+
+.platform-icon-label .platform-name-sr {
+    /* Show platform names in the Target Platforms section */
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    clip: auto !important;
+    white-space: normal !important;
+    border: 0 !important;
+    display: inline !important;
+    font-size: 0.875rem;
+    color: #374151;
+    font-weight: 500;
+    user-select: none;
 }
 
 .platform-label-text {
@@ -738,6 +765,20 @@
 .platform-limit-item .platform-icon {
     height: 16px;
     width: 16px;
+}
+
+/* Keep platform names hidden in character counter section */
+.platform-limit-item .platform-name-sr {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+    display: none !important;
 }
 
 .platform-name {

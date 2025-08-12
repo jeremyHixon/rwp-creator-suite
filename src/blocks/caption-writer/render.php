@@ -250,8 +250,13 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                 <?php else : ?>
                     <p class="login-prompt">
                         <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>">
-                            <?php esc_html_e( 'Login to save favorites', 'rwp-creator-suite' ); ?>
+                            <?php esc_html_e( 'Login', 'rwp-creator-suite' ); ?>
                         </a>
+                        <?php esc_html_e( ' or ', 'rwp-creator-suite' ); ?>
+                        <a href="<?php echo esc_url( wp_registration_url() ); ?>">
+                            <?php esc_html_e( 'register', 'rwp-creator-suite' ); ?>
+                        </a>
+                        <?php esc_html_e( 'to save favorites', 'rwp-creator-suite' ); ?>
                     </p>
                 <?php endif; ?>
             </div>

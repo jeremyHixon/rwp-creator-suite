@@ -20,7 +20,17 @@
                 return;
             }
             
-            this.state = new RWPStateManager('caption_writer', {
+            // Initialize state with guest persistence support
+            const initialState = this.getInitialStateWithPersistence(config);
+            
+            this.state = new RWPStateManager('caption_writer', initialState);
+            
+            this.elements = {};
+            this.init();
+        }
+        
+        getInitialStateWithPersistence(config) {
+            const baseState = {
                 description: '',
                 platforms: config.platforms || ['instagram'],
                 tone: config.tone || 'casual',
@@ -32,10 +42,83 @@
                 activeTab: 'generator',
                 characterCount: 0,
                 platformLimits: this.getPlatformLimits(config.platforms || ['instagram'])
-            });
+            };
             
-            this.elements = {};
-            this.init();
+            // For guest users, try to load from localStorage
+            if (!rwpCaptionWriter.isLoggedIn) {
+                const persistedState = this.loadGuestState();
+                if (persistedState) {
+                    // Merge persisted state with base state, prioritizing block attributes
+                    return {
+                        ...baseState,
+                        ...persistedState,
+                        // Always prioritize block attributes over localStorage
+                        platforms: config.platforms || persistedState.platforms || baseState.platforms,
+                        tone: config.tone || persistedState.tone || baseState.tone,
+                        finalCaption: config.finalCaption || persistedState.finalCaption || baseState.finalCaption,
+                    };
+                }
+            }
+            
+            return baseState;
+        }
+        
+        loadGuestState() {
+            try {
+                const key = this.getGuestStorageKey();
+                const stored = localStorage.getItem(key);
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    // Only return if data is recent (within 7 days)
+                    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+                    if (parsed.timestamp && parsed.timestamp > sevenDaysAgo) {
+                        return parsed.state;
+                    } else {
+                        // Clean up old data
+                        localStorage.removeItem(key);
+                    }
+                }
+            } catch (error) {
+                console.warn('Failed to load guest state from localStorage:', error);
+            }
+            return null;
+        }
+        
+        saveGuestState() {
+            // Only save for guest users
+            if (rwpCaptionWriter.isLoggedIn) {
+                return;
+            }
+            
+            try {
+                const key = this.getGuestStorageKey();
+                const currentState = this.state.getState();
+                
+                // Only save relevant state data for guests
+                const stateToSave = {
+                    finalCaption: currentState.finalCaption,
+                    platforms: currentState.platforms,
+                    tone: currentState.tone,
+                    description: currentState.description
+                };
+                
+                const dataToStore = {
+                    state: stateToSave,
+                    timestamp: Date.now()
+                };
+                
+                localStorage.setItem(key, JSON.stringify(dataToStore));
+            } catch (error) {
+                console.warn('Failed to save guest state to localStorage:', error);
+            }
+        }
+        
+        getGuestStorageKey() {
+            // Create a unique key based on the current page/post
+            const pageId = document.body.classList.contains('single') ? 
+                (document.querySelector('article')?.id || 'unknown') : 
+                window.location.pathname;
+            return `rwp_caption_writer_guest_${btoa(pageId).slice(0, 10)}`;
         }
         
         init() {
@@ -43,8 +126,12 @@
             this.setupEventListeners();
             this.loadBuiltInTemplates();
             
+            // Sync UI with persisted state
+            this.syncUIWithState();
+            
             // Initialize platform-based character counter display
-            this.updateCharacterCountDisplay(this.config.platforms || ['instagram']);
+            const currentPlatforms = this.state.getState().platforms;
+            this.updateCharacterCountDisplay(currentPlatforms);
             this.updateCharacterCount();
             
             if (rwpCaptionWriter.isLoggedIn) {
@@ -61,6 +148,19 @@
             
             // Add ARIA labels for better accessibility
             this.enhanceAccessibility();
+        }
+        
+        syncUIWithState() {
+            const currentState = this.state.getState();
+            
+            // Sync platform checkboxes
+            this.elements.platformCheckboxes.forEach(checkbox => {
+                const platform = checkbox.value;
+                checkbox.checked = currentState.platforms.includes(platform);
+            });
+            
+            // Update platform limits based on current state
+            this.updatePlatformLimits(currentState.platforms);
         }
         
         cacheElements() {
@@ -151,32 +251,52 @@
                 });
             }
             
-            // Only set up AI generator input listeners for logged-in users
-            if (rwpCaptionWriter.isLoggedIn) {
-                if (this.elements.descriptionInput) {
-                    this.elements.descriptionInput.addEventListener('input', (e) => {
-                        const value = e.target.value;
-                        this.state.setState({ description: value });
-                        
-                        // Real-time validation feedback
-                        this.validateDescription(value);
-                        
-                        // Update generate button state
-                        this.updateGenerateButtonState();
-                    });
+            // Set up input listeners (for logged-in users and guests)
+            if (this.elements.descriptionInput) {
+                this.elements.descriptionInput.addEventListener('input', (e) => {
+                    const value = e.target.value;
+                    this.state.setState({ description: value });
                     
-                    // Enhanced accessibility - announce character count for screen readers
+                    // Save to localStorage for guests
+                    if (!rwpCaptionWriter.isLoggedIn) {
+                        this.saveGuestState();
+                    }
+                    
+                    // Real-time validation feedback (only for logged-in users)
+                    if (rwpCaptionWriter.isLoggedIn) {
+                        this.validateDescription(value);
+                        this.updateGenerateButtonState();
+                    }
+                });
+                
+                // Set initial description value from state
+                const initialDescription = this.state.getState().description;
+                if (initialDescription) {
+                    this.elements.descriptionInput.value = initialDescription;
+                }
+                
+                // Enhanced accessibility - announce character count for screen readers
+                if (rwpCaptionWriter.isLoggedIn) {
                     this.elements.descriptionInput.addEventListener('blur', (e) => {
                         if (e.target.value.length > 0) {
                             this.announceToScreenReader(`Description entered: ${e.target.value.length} characters`);
                         }
                     });
                 }
+            }
+            
+            if (this.elements.toneSelect) {
+                this.elements.toneSelect.addEventListener('change', (e) => {
+                    this.state.setState({ tone: e.target.value });
+                    
+                    // Save to localStorage for guests
+                    this.saveGuestState();
+                });
                 
-                if (this.elements.toneSelect) {
-                    this.elements.toneSelect.addEventListener('change', (e) => {
-                        this.state.setState({ tone: e.target.value });
-                    });
+                // Set initial tone value from state
+                const initialTone = this.state.getState().tone;
+                if (initialTone && this.elements.toneSelect.value !== initialTone) {
+                    this.elements.toneSelect.value = initialTone;
                 }
             }
             
@@ -192,12 +312,15 @@
                 this.elements.finalCaptionTextarea.addEventListener('input', (e) => {
                     this.state.setState({ finalCaption: e.target.value });
                     this.updateCharacterCount();
+                    
+                    // Save to localStorage for guests
+                    this.saveGuestState();
                 });
                 
-                // Set initial value
-                if (this.config.finalCaption) {
-                    this.elements.finalCaptionTextarea.value = this.config.finalCaption;
-                    this.state.setState({ finalCaption: this.config.finalCaption });
+                // Set initial value from state (which includes localStorage for guests)
+                const initialCaption = this.state.getState().finalCaption;
+                if (initialCaption) {
+                    this.elements.finalCaptionTextarea.value = initialCaption;
                 }
             }
             
@@ -241,6 +364,9 @@
             
             // Update state
             this.state.setState({ platforms: updatedPlatforms });
+            
+            // Save to localStorage for guests
+            this.saveGuestState();
             
             // Update character count limits and display
             this.updatePlatformLimits(updatedPlatforms);
@@ -493,6 +619,9 @@
             if (this.elements.finalCaptionTextarea) {
                 this.elements.finalCaptionTextarea.value = captionText;
                 this.updateCharacterCount();
+                
+                // Save to localStorage for guests
+                this.saveGuestState();
                 
                 // Scroll to the final caption section
                 setTimeout(() => {

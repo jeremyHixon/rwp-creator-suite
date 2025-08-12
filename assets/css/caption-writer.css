@@ -84,10 +84,12 @@
 }
 
 .platform-label {
-    font-weight: 600;
     color: #1f2937;
     font-size: 0.875rem;
     margin-bottom: 0.5rem;
+}
+.platform-label strong {
+    font-weight: 600;
 }
 
 .platform-checkboxes {

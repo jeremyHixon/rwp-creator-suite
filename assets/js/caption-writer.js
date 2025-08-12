@@ -42,6 +42,9 @@
             this.cacheElements();
             this.setupEventListeners();
             this.loadBuiltInTemplates();
+            
+            // Initialize platform-based character counter display
+            this.updateCharacterCountDisplay(this.config.platforms || ['instagram']);
             this.updateCharacterCount();
             
             if (rwpCaptionWriter.isLoggedIn) {
@@ -67,6 +70,9 @@
                 // Tabs
                 tabButtons: container.querySelectorAll('.tab-button'),
                 tabContents: container.querySelectorAll('.tab-content'),
+                
+                // Platform Selection
+                platformCheckboxes: container.querySelectorAll('[data-platform-checkbox]'),
                 
                 // AI Generator
                 descriptionInput: container.querySelector('[data-description]'),
@@ -103,6 +109,13 @@
         }
         
         setupEventListeners() {
+            // Platform selection
+            this.elements.platformCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', (e) => {
+                    this.handlePlatformChange(e.target.value, e.target.checked);
+                });
+            });
+            
             // Tab switching with keyboard navigation
             this.elements.tabButtons.forEach((button, index) => {
                 button.addEventListener('click', (e) => {
@@ -207,6 +220,94 @@
                     this.saveAsTemplate();
                 });
             }
+        }
+        
+        handlePlatformChange(platform, checked) {
+            const currentPlatforms = this.state.getState().platforms;
+            let updatedPlatforms;
+            
+            if (checked) {
+                // Add platform if not already included
+                updatedPlatforms = currentPlatforms.includes(platform) 
+                    ? currentPlatforms 
+                    : [...currentPlatforms, platform];
+            } else {
+                // Remove platform, but ensure at least one remains
+                updatedPlatforms = currentPlatforms.filter(p => p !== platform);
+                if (updatedPlatforms.length === 0) {
+                    // Don't allow removing all platforms - recheck the checkbox
+                    const checkbox = this.container.querySelector(`[data-platform-checkbox="${platform}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                    }
+                    this.showError('At least one platform must be selected');
+                    return;
+                }
+            }
+            
+            // Update state
+            this.state.setState({ platforms: updatedPlatforms });
+            
+            // Update character count limits and display
+            this.updatePlatformLimits(updatedPlatforms);
+            this.updateCharacterCount();
+        }
+        
+        updatePlatformLimits(platforms) {
+            const limits = {};
+            platforms.forEach(platform => {
+                limits[platform] = this.getCharacterLimit(platform);
+            });
+            this.state.setState({ platformLimits: limits });
+            
+            // Update the character counter display
+            this.updateCharacterCountDisplay(platforms);
+        }
+        
+        updateCharacterCountDisplay(platforms) {
+            const counterContainer = this.container.querySelector('[data-multi-platform-counter]');
+            if (!counterContainer) return;
+            
+            // Clear existing platform counters
+            counterContainer.innerHTML = '';
+            
+            // Create current count display
+            const currentCountDiv = document.createElement('div');
+            currentCountDiv.className = 'current-count';
+            currentCountDiv.setAttribute('data-current-count', '');
+            currentCountDiv.textContent = '0';
+            counterContainer.appendChild(currentCountDiv);
+            
+            // Create platform limits container
+            const platformLimitsDiv = document.createElement('div');
+            platformLimitsDiv.className = 'platform-limits';
+            
+            // Create new counters for selected platforms
+            const characterLimits = {
+                'instagram': 2200,
+                'tiktok': 2200,
+                'twitter': 280,
+                'linkedin': 3000,
+                'facebook': 63206
+            };
+            
+            platforms.forEach(platform => {
+                const limit = characterLimits[platform] || 2200;
+                const platformCounter = document.createElement('div');
+                platformCounter.className = 'platform-limit-item';
+                platformCounter.setAttribute('data-platform', platform);
+                platformCounter.setAttribute('data-limit', limit);
+                
+                platformCounter.innerHTML = `
+                    <span class="character-limit">${limit}</span>
+                    <span class="platform-name">${platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
+                    <span class="over-limit-badge" style="display: none;">Over limit!</span>
+                `;
+                
+                platformLimitsDiv.appendChild(platformCounter);
+            });
+            
+            counterContainer.appendChild(platformLimitsDiv);
         }
         
         switchTab(tabName) {
@@ -466,9 +567,8 @@
                     </button>
                 `;
                 
-                // Add click handler
-                const useBtn = templateElement.querySelector('.use-template-btn');
-                useBtn.addEventListener('click', () => {
+                // Add click handler to the entire card
+                templateElement.addEventListener('click', () => {
                     this.selectTemplate(template);
                 });
                 
@@ -511,8 +611,8 @@
                     </button>
                 `;
                 
-                const useBtn = templateElement.querySelector('.use-template-btn');
-                useBtn.addEventListener('click', () => {
+                // Add click handler to the entire card
+                templateElement.addEventListener('click', () => {
                     this.selectTemplate(template);
                 });
                 
@@ -527,33 +627,56 @@
             
             this.state.setState({ characterCount: count });
             
-            // Update multi-platform character counters
-            const platformItems = this.container.querySelectorAll('.platform-limit-item');
-            platformItems.forEach(item => {
-                const platform = item.getAttribute('data-platform');
-                const limit = parseInt(item.getAttribute('data-limit'));
-                const charCountElement = item.querySelector('[data-char-count]');
-                const overLimitBadge = item.querySelector('.over-limit-badge');
+            // Update the current count display
+            const currentCountElement = this.container.querySelector('[data-current-count]');
+            if (currentCountElement) {
+                currentCountElement.textContent = count;
                 
-                if (charCountElement) {
-                    charCountElement.textContent = count;
+                // Apply color coding based on the most restrictive platform
+                const platformItems = this.container.querySelectorAll('.platform-limit-item');
+                let minLimit = Infinity;
+                let hasOverLimit = false;
+                let hasWarning = false;
+                
+                platformItems.forEach(item => {
+                    const limit = parseInt(item.getAttribute('data-limit'));
+                    minLimit = Math.min(minLimit, limit);
                     
-                    // Update color based on limit
+                    const overLimitBadge = item.querySelector('.over-limit-badge');
+                    
+                    // Update over-limit badge for each platform
                     if (count > limit) {
-                        charCountElement.className = 'character-count over-limit';
+                        hasOverLimit = true;
                         item.setAttribute('data-over-limit', 'true');
                         if (overLimitBadge) overLimitBadge.style.display = 'inline';
-                    } else if (count > limit * 0.9) {
-                        charCountElement.className = 'character-count warning';
-                        item.removeAttribute('data-over-limit');
-                        if (overLimitBadge) overLimitBadge.style.display = 'none';
                     } else {
-                        charCountElement.className = 'character-count';
                         item.removeAttribute('data-over-limit');
                         if (overLimitBadge) overLimitBadge.style.display = 'none';
+                        
+                        if (count > limit * 0.9) {
+                            hasWarning = true;
+                        }
                     }
+                });
+                
+                // Apply color to current count based on most restrictive limit
+                if (hasOverLimit) {
+                    currentCountElement.className = 'current-count over-limit';
+                    currentCountElement.style.color = '#ef4444';
+                    currentCountElement.style.backgroundColor = '#fef2f2';
+                    currentCountElement.style.borderColor = '#fecaca';
+                } else if (hasWarning) {
+                    currentCountElement.className = 'current-count warning';
+                    currentCountElement.style.color = '#f59e0b';
+                    currentCountElement.style.backgroundColor = '#fffbeb';
+                    currentCountElement.style.borderColor = '#fed7aa';
+                } else {
+                    currentCountElement.className = 'current-count';
+                    currentCountElement.style.color = '';
+                    currentCountElement.style.backgroundColor = '';
+                    currentCountElement.style.borderColor = '';
                 }
-            });
+            }
             
             // Announce accessibility updates for character count
             this.updateCharacterCountAccessibility();

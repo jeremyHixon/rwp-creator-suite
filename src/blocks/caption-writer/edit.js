@@ -392,20 +392,29 @@ export default function Edit({ attributes, setAttributes }) {
                                     className="final-caption-textarea"
                                 />
                                 <div className="character-counter">
+                                    <div className="current-count" style={{ 
+                                        color: getCharacterCountColor(Math.min(...platforms.map(p => characterLimits[p]))),
+                                        backgroundColor: characterCount > Math.min(...platforms.map(p => characterLimits[p])) ? '#fef2f2' : 
+                                                        characterCount > Math.min(...platforms.map(p => characterLimits[p])) * 0.9 ? '#fffbeb' : '',
+                                        borderColor: characterCount > Math.min(...platforms.map(p => characterLimits[p])) ? '#fecaca' : 
+                                                    characterCount > Math.min(...platforms.map(p => characterLimits[p])) * 0.9 ? '#fed7aa' : ''
+                                    }}>
+                                        {characterCount}
+                                    </div>
                                     <div className="platform-limits">
                                         {platforms.map(platform => {
                                             const limit = characterLimits[platform];
                                             return (
-                                                <div key={platform} className="platform-limit-item">
-                                                    <span 
-                                                        className="character-count"
-                                                        style={{ color: getCharacterCountColor(limit) }}
-                                                    >
-                                                        {characterCount}
-                                                    </span>
-                                                    <span className="character-separator"> / </span>
+                                                <div 
+                                                    key={platform} 
+                                                    className="platform-limit-item"
+                                                    data-over-limit={characterCount > limit ? 'true' : undefined}
+                                                >
                                                     <span className="character-limit">
-                                                        {limit} ({platform.charAt(0).toUpperCase() + platform.slice(1)})
+                                                        {limit}
+                                                    </span>
+                                                    <span className="platform-name">
+                                                        {platform.charAt(0).toUpperCase() + platform.slice(1)}
                                                     </span>
                                                     {characterCount > limit && (
                                                         <span className="over-limit-badge">Over limit!</span>

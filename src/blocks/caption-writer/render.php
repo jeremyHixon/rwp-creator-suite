@@ -37,11 +37,31 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
 <div <?php echo $wrapper_attributes; ?>>
     <div class="caption-writer-app">
         <div class="caption-writer-header">
-            <div class="platform-indicators">
-                <span class="platform-label"><?php esc_html_e( 'Platforms:', 'rwp-creator-suite' ); ?></span>
-                <?php foreach ( $platforms as $platform ) : ?>
-                    <span class="platform-badge"><?php echo esc_html( ucfirst( $platform ) ); ?></span>
-                <?php endforeach; ?>
+            <div class="platform-selection">
+                <span class="platform-label"><?php esc_html_e( 'Target Platforms:', 'rwp-creator-suite' ); ?></span>
+                <div class="platform-checkboxes">
+                    <?php
+                    $available_platforms = array(
+                        'instagram' => 'Instagram',
+                        'tiktok' => 'TikTok/Reels',
+                        'twitter' => 'Twitter/X',
+                        'linkedin' => 'LinkedIn',
+                        'facebook' => 'Facebook'
+                    );
+                    foreach ( $available_platforms as $platform_key => $platform_label ) :
+                        $checked = in_array( $platform_key, $platforms );
+                    ?>
+                        <label class="platform-checkbox">
+                            <input 
+                                type="checkbox" 
+                                value="<?php echo esc_attr( $platform_key ); ?>"
+                                <?php checked( $checked ); ?>
+                                data-platform-checkbox="<?php echo esc_attr( $platform_key ); ?>"
+                            >
+                            <span class="platform-label-text"><?php echo esc_html( $platform_label ); ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
             </div>
         </div>
         
@@ -197,25 +217,26 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
             ><?php echo esc_textarea( $final_caption ); ?></textarea>
             
             <div class="character-counter" data-multi-platform-counter>
-                <?php 
-                $character_limits = array(
-                    'instagram' => 2200,
-                    'tiktok' => 2200,
-                    'twitter' => 280,
-                    'linkedin' => 3000,
-                    'facebook' => 63206
-                );
-                foreach ( $platforms as $platform ) : 
-                    $limit = $character_limits[ $platform ] ?? 2200;
-                ?>
-                    <div class="platform-limit-item" data-platform="<?php echo esc_attr( $platform ); ?>" data-limit="<?php echo esc_attr( $limit ); ?>">
-                        <span class="character-count" data-char-count>0</span>
-                        <span class="character-separator"> / </span>
-                        <span class="character-limit"><?php echo esc_html( $limit ); ?></span>
-                        <span class="platform-name">(<?php echo esc_html( ucfirst( $platform ) ); ?>)</span>
-                        <span class="over-limit-badge" style="display: none;">Over limit!</span>
-                    </div>
-                <?php endforeach; ?>
+                <div class="current-count" data-current-count>0</div>
+                <div class="platform-limits">
+                    <?php 
+                    $character_limits = array(
+                        'instagram' => 2200,
+                        'tiktok' => 2200,
+                        'twitter' => 280,
+                        'linkedin' => 3000,
+                        'facebook' => 63206
+                    );
+                    foreach ( $platforms as $platform ) : 
+                        $limit = $character_limits[ $platform ] ?? 2200;
+                    ?>
+                        <div class="platform-limit-item" data-platform="<?php echo esc_attr( $platform ); ?>" data-limit="<?php echo esc_attr( $limit ); ?>">
+                            <span class="character-limit"><?php echo esc_html( $limit ); ?></span>
+                            <span class="platform-name"><?php echo esc_html( ucfirst( $platform ) ); ?></span>
+                            <span class="over-limit-badge" style="display: none;">Over limit!</span>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
             </div>
             
             <div class="output-actions">

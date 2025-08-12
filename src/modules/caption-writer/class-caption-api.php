@@ -469,7 +469,7 @@ class RWP_Creator_Suite_Caption_API {
         
         $limit = apply_filters( 'rwp_caption_writer_rate_limit', $limit, $identifier );
         
-        $cache_key = 'rwp_caption_rate_limit_' . md5( $identifier );
+        $cache_key = 'rwp_caption_rate_limit_' . hash( 'sha256', $identifier . wp_salt( 'secure_auth' ) );
         $current_count = get_transient( $cache_key );
         
         if ( false === $current_count ) {
@@ -508,7 +508,7 @@ class RWP_Creator_Suite_Caption_API {
         $limit = apply_filters( 'rwp_caption_writer_rate_limit', $limit, $user_id );
         
         // Use the same cache key format as check_rate_limit()
-        $cache_key = 'rwp_caption_rate_limit_' . md5( $user_id );
+        $cache_key = 'rwp_caption_rate_limit_' . hash( 'sha256', $user_id . wp_salt( 'secure_auth' ) );
         $current_count = get_transient( $cache_key );
         
         if ( false === $current_count ) {

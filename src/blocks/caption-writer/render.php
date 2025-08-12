@@ -247,13 +247,10 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                     <button class="btn-secondary" data-save-favorite>
                         <?php esc_html_e( 'Save to Favorites', 'rwp-creator-suite' ); ?>
                     </button>
-                    <button class="btn-secondary" data-save-template>
-                        <?php esc_html_e( 'Save as Template', 'rwp-creator-suite' ); ?>
-                    </button>
                 <?php else : ?>
                     <p class="login-prompt">
                         <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>">
-                            <?php esc_html_e( 'Login to save favorites and templates', 'rwp-creator-suite' ); ?>
+                            <?php esc_html_e( 'Login to save favorites', 'rwp-creator-suite' ); ?>
                         </a>
                     </p>
                 <?php endif; ?>

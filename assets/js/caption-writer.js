@@ -96,7 +96,6 @@
                 // Actions
                 copyBtn: container.querySelector('[data-copy]'),
                 saveFavoriteBtn: container.querySelector('[data-save-favorite]'),
-                saveTemplateBtn: container.querySelector('[data-save-template]'),
                 
                 // Loading/Error
                 loadingDiv: container.querySelector('[data-loading]'),
@@ -215,11 +214,6 @@
                 });
             }
             
-            if (this.elements.saveTemplateBtn) {
-                this.elements.saveTemplateBtn.addEventListener('click', () => {
-                    this.saveAsTemplate();
-                });
-            }
         }
         
         handlePlatformChange(platform, checked) {
@@ -710,11 +704,42 @@
             }
             
             try {
-                await navigator.clipboard.writeText(text);
+                // Check if the modern Clipboard API is available
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    // Fallback for older browsers or non-secure contexts
+                    this.fallbackCopyToClipboard(text);
+                }
                 this.showSuccess(rwpCaptionWriter.strings.copySuccess);
             } catch (error) {
                 console.error('Copy failed:', error);
-                this.showError('Failed to copy caption');
+                // Try fallback method if modern API fails
+                try {
+                    this.fallbackCopyToClipboard(text);
+                    this.showSuccess(rwpCaptionWriter.strings.copySuccess);
+                } catch (fallbackError) {
+                    console.error('Fallback copy failed:', fallbackError);
+                    this.showError('Failed to copy caption');
+                }
+            }
+        }
+        
+        fallbackCopyToClipboard(text) {
+            // Create a temporary textarea element
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+            } finally {
+                document.body.removeChild(textArea);
             }
         }
         
@@ -761,57 +786,6 @@
             }
         }
         
-        async saveAsTemplate() {
-            if (!rwpCaptionWriter.isLoggedIn) {
-                this.showError(rwpCaptionWriter.strings.loginRequired);
-                return;
-            }
-            
-            const text = this.elements.finalCaptionTextarea?.value || this.state.getState().finalCaption;
-            
-            if (!text) {
-                this.showError('No caption to save as template');
-                return;
-            }
-            
-            // Show custom modal instead of native prompt
-            const modalData = await this.showTemplateModal();
-            if (!modalData) {
-                return; // User cancelled
-            }
-            
-            try {
-                const response = await fetch(rwpCaptionWriter.restUrl + 'templates', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-WP-Nonce': rwpCaptionWriter.nonce
-                    },
-                    body: JSON.stringify({
-                        name: modalData.name,
-                        category: modalData.category,
-                        template: text,
-                        platforms: [this.state.getState().platform]
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(result.message || 'Failed to save template');
-                }
-                
-                if (result.success) {
-                    this.showSuccess(result.message || rwpCaptionWriter.strings.templateSuccess);
-                } else {
-                    throw new Error(result.message || 'Unexpected response');
-                }
-                
-            } catch (error) {
-                console.error('Error saving template:', error);
-                this.showError(error.message || 'Failed to save template');
-            }
-        }
         
         async loadUserData() {
             // TODO: Load user favorites and templates in Phase 3
@@ -1240,10 +1214,6 @@
                 this.elements.saveFavoriteBtn.setAttribute('title', 'Save to favorites');
             }
             
-            if (this.elements.saveTemplateBtn) {
-                this.elements.saveTemplateBtn.setAttribute('aria-label', 'Save caption as reusable template');
-                this.elements.saveTemplateBtn.setAttribute('title', 'Save as template');
-            }
         }
         
         addSkipLinks() {
@@ -1394,207 +1364,6 @@
             }
         }
         
-        showTemplateModal() {
-            return new Promise((resolve) => {
-                // Create modal HTML
-                const modal = document.createElement('div');
-                modal.className = 'rwp-modal-overlay';
-                modal.innerHTML = `
-                    <div class="rwp-modal">
-                        <div class="rwp-modal-header">
-                            <h3>Save as Template</h3>
-                            <button class="rwp-modal-close" aria-label="Close">&times;</button>
-                        </div>
-                        <div class="rwp-modal-body">
-                            <form class="rwp-template-form">
-                                <div class="form-field">
-                                    <label for="template-name">Template Name *</label>
-                                    <input type="text" id="template-name" name="name" required maxlength="100">
-                                </div>
-                                <div class="form-field">
-                                    <label for="template-category">Category *</label>
-                                    <select id="template-category" name="category" required>
-                                        <option value="">Select category...</option>
-                                        <option value="business">Business</option>
-                                        <option value="personal">Personal</option>
-                                        <option value="engagement">Engagement</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="rwp-modal-footer">
-                            <button class="btn-secondary" data-action="cancel">Cancel</button>
-                            <button class="btn-primary" data-action="save">Save Template</button>
-                        </div>
-                    </div>
-                `;
-                
-                // Add styles if not already present
-                if (!document.getElementById('rwp-modal-styles')) {
-                    const styles = document.createElement('style');
-                    styles.id = 'rwp-modal-styles';
-                    styles.textContent = `
-                        .rwp-modal-overlay {
-                            position: fixed;
-                            top: 0;
-                            left: 0;
-                            width: 100%;
-                            height: 100%;
-                            background: rgba(0, 0, 0, 0.5);
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            z-index: 100000;
-                            animation: fadeIn 0.2s ease;
-                        }
-                        .rwp-modal {
-                            background: white;
-                            border-radius: 8px;
-                            width: 90%;
-                            max-width: 500px;
-                            max-height: 90vh;
-                            overflow: hidden;
-                            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-                            animation: slideIn 0.3s ease;
-                        }
-                        .rwp-modal-header {
-                            padding: 20px;
-                            border-bottom: 1px solid #e1e1e1;
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: center;
-                        }
-                        .rwp-modal-header h3 {
-                            margin: 0;
-                            font-size: 18px;
-                            font-weight: 600;
-                        }
-                        .rwp-modal-close {
-                            background: none;
-                            border: none;
-                            font-size: 24px;
-                            cursor: pointer;
-                            padding: 0;
-                            width: 30px;
-                            height: 30px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                        }
-                        .rwp-modal-body {
-                            padding: 20px;
-                        }
-                        .form-field {
-                            margin-bottom: 16px;
-                        }
-                        .form-field label {
-                            display: block;
-                            margin-bottom: 6px;
-                            font-weight: 600;
-                        }
-                        .form-field input,
-                        .form-field select {
-                            width: 100%;
-                            padding: 8px 12px;
-                            border: 1px solid #ddd;
-                            border-radius: 4px;
-                            font-size: 14px;
-                        }
-                        .rwp-modal-footer {
-                            padding: 20px;
-                            border-top: 1px solid #e1e1e1;
-                            display: flex;
-                            gap: 12px;
-                            justify-content: flex-end;
-                        }
-                        .btn-primary, .btn-secondary {
-                            padding: 8px 16px;
-                            border-radius: 4px;
-                            font-size: 14px;
-                            cursor: pointer;
-                            border: 1px solid;
-                        }
-                        .btn-primary {
-                            background: #3b82f6;
-                            color: white;
-                            border-color: #3b82f6;
-                        }
-                        .btn-secondary {
-                            background: white;
-                            color: #374151;
-                            border-color: #d1d5db;
-                        }
-                        @keyframes fadeIn {
-                            from { opacity: 0; }
-                            to { opacity: 1; }
-                        }
-                        @keyframes slideIn {
-                            from { transform: translateY(-50px); opacity: 0; }
-                            to { transform: translateY(0); opacity: 1; }
-                        }
-                    `;
-                    document.head.appendChild(styles);
-                }
-                
-                // Add to DOM
-                document.body.appendChild(modal);
-                
-                // Focus first input
-                const nameInput = modal.querySelector('#template-name');
-                nameInput.focus();
-                
-                // Handle events
-                const handleClose = () => {
-                    document.body.removeChild(modal);
-                    resolve(null);
-                };
-                
-                const handleSave = () => {
-                    const form = modal.querySelector('.rwp-template-form');
-                    const formData = new FormData(form);
-                    const data = {
-                        name: formData.get('name')?.trim(),
-                        category: formData.get('category')
-                    };
-                    
-                    if (!data.name || !data.category) {
-                        alert('Please fill in all required fields');
-                        return;
-                    }
-                    
-                    document.body.removeChild(modal);
-                    resolve(data);
-                };
-                
-                // Event listeners
-                modal.querySelector('.rwp-modal-close').addEventListener('click', handleClose);
-                modal.querySelector('[data-action="cancel"]').addEventListener('click', handleClose);
-                modal.querySelector('[data-action="save"]').addEventListener('click', handleSave);
-                
-                // Close on overlay click
-                modal.addEventListener('click', (e) => {
-                    if (e.target === modal) {
-                        handleClose();
-                    }
-                });
-                
-                // Close on escape
-                const handleEscape = (e) => {
-                    if (e.key === 'Escape') {
-                        handleClose();
-                        document.removeEventListener('keydown', handleEscape);
-                    }
-                };
-                document.addEventListener('keydown', handleEscape);
-                
-                // Handle form submission
-                modal.querySelector('.rwp-template-form').addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    handleSave();
-                });
-            });
-        }
         
         escapeHtml(text) {
             const div = document.createElement('div');

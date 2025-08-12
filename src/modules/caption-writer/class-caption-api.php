@@ -2,7 +2,7 @@
 /**
  * Caption Writer API
  * 
- * Handles REST API endpoints for caption generation, templates, and user data.
+ * Handles REST API endpoints for caption generation and user data.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -62,34 +62,6 @@ class RWP_Creator_Suite_Caption_API {
             ),
         ) );
         
-        // Save/get user templates
-        register_rest_route( $this->namespace, '/templates', array(
-            array(
-                'methods'             => 'GET',
-                'callback'            => array( $this, 'get_user_templates' ),
-                'permission_callback' => array( $this, 'check_user_logged_in' ),
-            ),
-            array(
-                'methods'             => 'POST',
-                'callback'            => array( $this, 'save_user_template' ),
-                'permission_callback' => array( $this, 'check_user_logged_in' ),
-                'args'                => $this->get_template_schema(),
-            ),
-        ) );
-        
-        // Delete user template
-        register_rest_route( $this->namespace, '/templates/(?P<id>[a-zA-Z0-9\-]+)', array(
-            'methods'             => 'DELETE',
-            'callback'            => array( $this, 'delete_user_template' ),
-            'permission_callback' => array( $this, 'check_user_logged_in' ),
-            'args'                => array(
-                'id' => array(
-                    'required' => true,
-                    'type'     => 'string',
-                    'sanitize_callback' => 'sanitize_text_field',
-                ),
-            ),
-        ) );
         
         // Save/get user favorites
         register_rest_route( $this->namespace, '/favorites', array(
@@ -209,63 +181,6 @@ class RWP_Creator_Suite_Caption_API {
         ) );
     }
     
-    /**
-     * Get user templates.
-     */
-    public function get_user_templates( $request ) {
-        $template_manager = new RWP_Creator_Suite_Template_Manager();
-        $templates = $template_manager->get_user_templates( get_current_user_id() );
-        
-        return rest_ensure_response( array(
-            'success' => true,
-            'data'    => $templates,
-        ) );
-    }
-    
-    /**
-     * Save user template.
-     */
-    public function save_user_template( $request ) {
-        $template_data = array(
-            'name'      => $request->get_param( 'name' ),
-            'category'  => $request->get_param( 'category' ),
-            'template'  => $request->get_param( 'template' ),
-            'variables' => $request->get_param( 'variables' ),
-            'platforms' => $request->get_param( 'platforms' ),
-        );
-        
-        $template_manager = new RWP_Creator_Suite_Template_Manager();
-        $result = $template_manager->save_user_template( get_current_user_id(), $template_data );
-        
-        if ( is_wp_error( $result ) ) {
-            return $result;
-        }
-        
-        return rest_ensure_response( array(
-            'success' => true,
-            'message' => __( 'Template saved successfully', 'rwp-creator-suite' ),
-            'template_id' => $result,
-        ) );
-    }
-    
-    /**
-     * Delete user template.
-     */
-    public function delete_user_template( $request ) {
-        $template_id = $request->get_param( 'id' );
-        
-        $template_manager = new RWP_Creator_Suite_Template_Manager();
-        $result = $template_manager->delete_user_template( get_current_user_id(), $template_id );
-        
-        if ( is_wp_error( $result ) ) {
-            return $result;
-        }
-        
-        return rest_ensure_response( array(
-            'success' => true,
-            'message' => __( 'Template deleted successfully', 'rwp-creator-suite' ),
-        ) );
-    }
     
     /**
      * Get user favorites.
@@ -531,45 +446,6 @@ class RWP_Creator_Suite_Caption_API {
         return true;
     }
     
-    /**
-     * Get template schema for validation.
-     */
-    private function get_template_schema() {
-        return array(
-            'name' => array(
-                'required' => true,
-                'type'     => 'string',
-                'sanitize_callback' => 'sanitize_text_field',
-            ),
-            'category' => array(
-                'required' => true,
-                'type'     => 'string',
-                'enum'     => array( 'business', 'personal', 'engagement', 'other' ),
-                'sanitize_callback' => 'sanitize_text_field',
-            ),
-            'template' => array(
-                'required' => true,
-                'type'     => 'string',
-                'sanitize_callback' => 'sanitize_textarea_field',
-            ),
-            'variables' => array(
-                'type'     => 'array',
-                'items'    => array(
-                    'type' => 'string',
-                    'sanitize_callback' => 'sanitize_text_field',
-                ),
-                'default'  => array(),
-            ),
-            'platforms' => array(
-                'type'     => 'array',
-                'items'    => array(
-                    'type' => 'string',
-                    'enum' => array( 'instagram', 'tiktok', 'twitter', 'linkedin', 'facebook' ),
-                ),
-                'default'  => array( 'instagram' ),
-            ),
-        );
-    }
     
     /**
      * Check rate limiting for AI generation.

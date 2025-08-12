@@ -1,0 +1,251 @@
+# Claude Code WordPress Plugin Review Context
+
+## Overview
+This context directs Claude Code to examine newly added WordPress plugin features against established best practices and provide concise, actionable fix recommendations.
+
+## Primary Objectives
+1. **Review Code Compliance** - Check against WordPress coding standards and project architecture
+2. **Identify Issues** - Flag deviations from established patterns
+3. **Provide Action Steps** - Give specific, implementable fixes
+4. **Maintain Quality** - Ensure consistency with existing codebase
+
+## Review Categories
+
+### 1. WordPress Coding Standards Compliance
+**Check Against**: `01-wp-coding-standards-ai.md`
+
+**Review Points**:
+- ✅ Proper prefixing (`plugin_name_`)
+- ✅ Sanitization/escaping (`sanitize_*`, `esc_*`)
+- ✅ Nonce verification for forms/AJAX
+- ✅ Capability checks (`current_user_can()`)
+- ✅ Database security (`$wpdb->prepare()`)
+- ✅ Internationalization (`__()`, `_e()`)
+- ✅ Naming conventions (classes, functions, variables)
+- ✅ File structure and headers
+
+### 2. Block Development Standards  
+**Check Against**: `02-wp-block-standards-ai.md`
+
+**Review Points**:
+- ✅ Block-as-container pattern compliance
+- ✅ Proper `block.json` structure
+- ✅ Editor vs Save component separation
+- ✅ WordPress component usage only
+- ✅ No external UI libraries in blocks
+- ✅ Placeholder components for editor
+- ✅ App mounting strategy
+- ✅ Block variations implementation
+
+### 3. Architecture Compliance
+**Check Against**: `03-wp-architecture-preferences.md`
+
+**Review Points**:
+- ✅ Modular organization
+- ✅ Service-based structure
+- ✅ Client-side heavy approach
+- ✅ Cache-friendly patterns
+- ✅ No destructive changes
+- ✅ Block-app integration
+- ✅ Progressive enhancement
+
+### 4. State Management Patterns
+**Check Against**: `04-wp-state-management.md`
+
+**Review Points**:
+- ✅ localStorage primary strategy
+- ✅ Database only for user preferences
+- ✅ Graceful fallbacks
+- ✅ Guest-to-user transitions
+- ✅ Form persistence
+- ✅ Auto-save implementation
+- ✅ Warning notifications for storage issues
+
+### 5. API Design Compliance
+**Check Against**: `05-wp-api-design-patterns.md`
+
+**Review Points**:
+- ✅ WordPress REST API foundation
+- ✅ Consistent response formats
+- ✅ Proper nonce handling
+- ✅ Guest vs authenticated patterns
+- ✅ Cache-friendly headers
+- ✅ Error handling
+- ✅ Permission callbacks
+
+### 6. Testing Coverage
+**Check Against**: `06-wp-testing-client-heavy.md`
+
+**Review Points**:
+- ✅ PHPUnit tests for PHP code
+- ✅ Jest tests for JavaScript
+- ✅ API endpoint testing
+- ✅ State management testing
+- ✅ Integration tests
+- ✅ Mock implementations
+
+### 7. Build & Deployment
+**Check Against**: `07-wp-build-deployment.md`
+
+**Review Points**:
+- ✅ Proper asset organization
+- ✅ Module-based structure
+- ✅ Environment configuration
+- ✅ Cache busting
+- ✅ Database migrations
+- ✅ Performance optimization
+
+### 8. Style Isolation
+**Check Against**: `08-wp-block-style-isolation.md`
+
+**Review Points**:
+- ✅ Block style isolation
+- ✅ Tailwind/DaisyUI scoping
+- ✅ Light theme consistency
+- ✅ Minimalistic design
+- ✅ Editor/frontend consistency
+- ✅ Theme compatibility
+
+## Review Process
+
+### Step 1: Initial Scan
+```bash
+# Examine the feature branch or changed files
+git diff main --name-only
+git diff main --stat
+```
+
+### Step 2: Code Analysis
+1. **Identify file types** (PHP, JS, CSS, block.json)
+2. **Check file organization** against modular structure
+3. **Review naming conventions** and prefixing
+4. **Analyze security practices** (sanitization, escaping, nonces)
+5. **Verify WordPress compliance** (hooks, functions, patterns)
+
+### Step 3: Architecture Review
+1. **Check module integration** with existing services
+2. **Verify client-side patterns** (localStorage, state management)
+3. **Review API endpoints** for consistency
+4. **Validate block implementation** (container pattern)
+5. **Assess cache compatibility**
+
+### Step 4: Issue Identification
+For each issue found:
+1. **Category** - Which standard/pattern is violated
+2. **Severity** - Critical/High/Medium/Low
+3. **Location** - Specific file and line
+4. **Description** - What's wrong and why
+5. **Fix Steps** - Concrete actions to resolve
+
+## Output Format
+
+### Issue Report Structure
+```markdown
+## 🔍 WordPress Plugin Feature Review
+
+### ✅ Compliant Areas
+- [List areas that follow standards correctly]
+
+### ⚠️ Issues Found
+
+#### Issue #1: [Brief Description]
+**Category**: [Coding Standards/Architecture/Security/etc.]
+**Severity**: [Critical/High/Medium/Low]
+**File**: `path/to/file.php:123`
+**Problem**: [Detailed explanation]
+
+**Fix Steps**:
+1. [Specific action 1]
+2. [Specific action 2]
+3. [Verification step]
+
+**Code Example**:
+```php
+// Before (problematic)
+[current code]
+
+// After (fixed)
+[corrected code]
+```
+
+#### Issue #2: [Brief Description]
+[Same format as above]
+
+### 🚀 Recommendations
+- [Optional improvements or optimizations]
+- [Performance suggestions]
+- [Architecture enhancements]
+
+### ✅ Verification Checklist
+- [ ] Security: All inputs sanitized, outputs escaped
+- [ ] Standards: Naming, prefixing, structure correct
+- [ ] Architecture: Follows modular patterns
+- [ ] Performance: No negative cache impact
+- [ ] Testing: Adequate test coverage
+```
+
+## Critical Rules for Claude Code
+
+### 1. **No False Positives**
+- Only flag actual violations of documented standards
+- Don't suggest changes that aren't explicitly required
+- Verify issues before reporting
+
+### 2. **Specific Fixes Only**
+- Provide exact code changes needed
+- Include file paths and line numbers
+- Give complete, working examples
+
+### 3. **Prioritize by Impact**
+- Security issues = Critical
+- Architecture violations = High
+- Style/convention issues = Medium
+- Optimization suggestions = Low
+
+### 4. **Preserve Working Code**
+- Don't suggest removing functional features
+- Maintain backward compatibility
+- Follow additive development principle
+
+### 5. **WordPress Context Awareness**
+- Understand WordPress hooks and filters
+- Respect WordPress coding patterns
+- Consider plugin ecosystem impact
+
+## Pre-Review Checklist
+
+Before starting review, verify:
+- [ ] Understanding of the feature being added
+- [ ] Access to relevant files and git history
+- [ ] Knowledge of existing plugin architecture
+- [ ] Familiarity with WordPress best practices
+- [ ] Understanding of project-specific patterns
+
+## Post-Review Actions
+
+After providing recommendations:
+1. **Offer to implement fixes** if requested
+2. **Provide testing guidance** for changes
+3. **Suggest additional improvements** if relevant
+4. **Document new patterns** if applicable
+
+## Emergency Flags
+
+Immediately flag these critical issues:
+- 🚨 **SQL injection vulnerabilities** (unprepared queries)
+- 🚨 **XSS vulnerabilities** (unescaped output)
+- 🚨 **CSRF vulnerabilities** (missing nonces)
+- 🚨 **Privilege escalation** (missing capability checks)
+- 🚨 **Data exposure** (inappropriate data access)
+- 🚨 **Breaking changes** (removing existing functionality)
+
+## Usage Instructions
+
+1. **Examine the codebase** using standard tools (grep, find, git diff)
+2. **Identify new/changed features** 
+3. **Apply this review framework** systematically
+4. **Generate specific, actionable recommendations**
+5. **Prioritize fixes** by severity and impact
+6. **Provide complete code examples** for fixes
+
+Remember: Be thorough but practical. Focus on real issues that matter for security, functionality, and maintainability.

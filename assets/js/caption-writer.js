@@ -13,10 +13,10 @@
             this.container = container;
             this.config = config;
             
-            // Check for required dependencies
+            // Check for required dependencies with graceful fallback
             if (typeof RWPStateManager === 'undefined') {
-                console.error('CaptionWriter: RWPStateManager dependency not loaded');
-                this.showError('Required dependencies not loaded. Please refresh the page.');
+                console.warn('CaptionWriter: RWPStateManager dependency not loaded, using fallback');
+                this.initializeFallbackMode();
                 return;
             }
             
@@ -26,6 +26,9 @@
             this.state = new RWPStateManager('caption_writer', initialState);
             
             this.elements = {};
+            // Detect user state and adapt UI accordingly
+            this.isLoggedIn = this.detectUserLoginState();
+            
             this.init();
         }
         
@@ -45,7 +48,9 @@
             };
             
             // For guest users, try to load from localStorage
-            if (!rwpCaptionWriter.isLoggedIn) {
+            // Check login state client-side for cache compatibility
+            const isLoggedIn = this.detectUserLoginState();
+            if (!isLoggedIn) {
                 const persistedState = this.loadGuestState();
                 if (persistedState) {
                     // Merge persisted state with base state, prioritizing block attributes
@@ -86,7 +91,7 @@
         
         saveGuestState() {
             // Only save for guest users
-            if (rwpCaptionWriter.isLoggedIn) {
+            if (this.detectUserLoginState()) {
                 return;
             }
             
@@ -94,11 +99,12 @@
                 const key = this.getGuestStorageKey();
                 const currentState = this.state.getState();
                 
-                // Only save relevant state data for guests
+                // Only save non-personal preference data for guests
                 const stateToSave = {
                     finalCaption: currentState.finalCaption,
                     platforms: currentState.platforms,
                     tone: currentState.tone,
+                    // Note: description is saved for convenience but contains no personal data
                     description: currentState.description
                 };
                 
@@ -134,13 +140,11 @@
             this.updateCharacterCountDisplay(currentPlatforms);
             this.updateCharacterCount();
             
-            if (rwpCaptionWriter.isLoggedIn) {
-                this.updateGenerateButtonState();
-                this.loadUserData();
-                this.loadInitialQuota();
+            // Adapt UI based on user login state (detected client-side)
+            if (this.isLoggedIn) {
+                this.setupLoggedInExperience();
             } else {
-                // For guests, show teaser instead of functional AI generator
-                this.handleGuestExperience();
+                this.setupGuestExperience();
             }
             
             // Update character limit when platform changes
@@ -244,10 +248,15 @@
                 });
             });
             
-            // AI Generator (only for logged-in users)
-            if (this.elements.generateBtn && rwpCaptionWriter.isLoggedIn) {
+            // AI Generator (setup for all users, functionality based on login state)
+            if (this.elements.generateBtn) {
                 this.elements.generateBtn.addEventListener('click', () => {
-                    this.generateCaptions();
+                    if (this.isLoggedIn) {
+                        this.generateCaptions();
+                    } else {
+                        // Show login prompt for guests
+                        this.showError('Please log in to use the AI generator');
+                    }
                 });
             }
             
@@ -263,7 +272,7 @@
                     }
                     
                     // Real-time validation feedback (only for logged-in users)
-                    if (rwpCaptionWriter.isLoggedIn) {
+                    if (this.isLoggedIn) {
                         this.validateDescription(value);
                         this.updateGenerateButtonState();
                     }
@@ -276,7 +285,7 @@
                 }
                 
                 // Enhanced accessibility - announce character count for screen readers
-                if (rwpCaptionWriter.isLoggedIn) {
+                if (this.isLoggedIn) {
                     this.elements.descriptionInput.addEventListener('blur', (e) => {
                         if (e.target.value.length > 0) {
                             this.announceToScreenReader(`Description entered: ${e.target.value.length} characters`);
@@ -289,8 +298,12 @@
                 this.elements.toneSelect.addEventListener('change', (e) => {
                     this.state.setState({ tone: e.target.value });
                     
-                    // Save to localStorage for guests
-                    this.saveGuestState();
+                    // Save preferences based on user status
+                    if (this.isLoggedIn) {
+                        this.saveUserPreferences();
+                    } else {
+                        this.saveGuestState();
+                    }
                 });
                 
                 // Set initial tone value from state
@@ -365,8 +378,12 @@
             // Update state
             this.state.setState({ platforms: updatedPlatforms });
             
-            // Save to localStorage for guests
-            this.saveGuestState();
+            // Save preferences based on user status
+            if (this.isLoggedIn) {
+                this.saveUserPreferences();
+            } else {
+                this.saveGuestState();
+            }
             
             // Update character count limits and display
             this.updatePlatformLimits(updatedPlatforms);
@@ -446,7 +463,7 @@
             // Load tab-specific data
             if (tabName === 'templates' && this.state.getState().templates.length === 0) {
                 this.renderTemplates();
-            } else if (tabName === 'favorites' && rwpCaptionWriter.isLoggedIn) {
+            } else if (tabName === 'favorites' && this.isLoggedIn) {
                 this.loadFavorites();
             }
         }
@@ -873,8 +890,8 @@
         }
         
         async saveToFavorites() {
-            if (!rwpCaptionWriter.isLoggedIn) {
-                this.showError(rwpCaptionWriter.strings.loginRequired);
+            if (!this.isLoggedIn) {
+                this.showError('Please log in to save favorites');
                 return;
             }
             
@@ -916,12 +933,86 @@
         }
         
         
+        detectUserLoginState() {
+            // Detect user login state client-side for cache compatibility
+            // Check for WordPress admin bar or other login indicators
+            const adminBar = document.getElementById('wpadminbar');
+            const bodyClasses = document.body.classList;
+            
+            // Multiple detection methods for reliability
+            return !!(adminBar || 
+                     bodyClasses.contains('logged-in') ||
+                     document.querySelector('.wp-toolbar') ||
+                     (typeof window.wp !== 'undefined' && window.wp.api));
+        }
+        
+        async loadUserPreferences() {
+            if (!this.isLoggedIn) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(rwpCaptionWriter.restUrl + 'preferences', {
+                    method: 'GET',
+                    headers: {
+                        'X-WP-Nonce': rwpCaptionWriter.nonce
+                    }
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success && result.data) {
+                        // Only load preference data, not personal information
+                        const preferences = {
+                            tone: result.data.preferred_tone || 'casual',
+                            platforms: result.data.preferred_platforms || ['instagram']
+                        };
+                        
+                        // Update state with preferences (not overriding block attributes)
+                        const currentState = this.state.getState();
+                        this.state.setState({
+                            tone: currentState.tone || preferences.tone,
+                            platforms: currentState.platforms.length > 0 ? currentState.platforms : preferences.platforms
+                        });
+                    }
+                }
+            } catch (error) {
+                console.log('Could not load user preferences:', error);
+            }
+        }
+        
+        async saveUserPreferences() {
+            if (!this.isLoggedIn) {
+                return;
+            }
+            
+            try {
+                const currentState = this.state.getState();
+                const preferences = {
+                    preferred_tone: currentState.tone,
+                    preferred_platforms: currentState.platforms
+                };
+                
+                await fetch(rwpCaptionWriter.restUrl + 'preferences', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-WP-Nonce': rwpCaptionWriter.nonce
+                    },
+                    body: JSON.stringify(preferences)
+                });
+            } catch (error) {
+                console.log('Could not save user preferences:', error);
+            }
+        }
+        
         async loadUserData() {
-            // TODO: Load user favorites and templates in Phase 3
+            // Load user favorites and templates (non-personal data)
+            await this.loadUserPreferences();
         }
         
         async loadInitialQuota() {
-            if (!rwpCaptionWriter.isLoggedIn) {
+            if (!this.isLoggedIn) {
                 return;
             }
             
@@ -1242,13 +1333,21 @@
                     button.setAttribute('aria-controls', `panel-${button.dataset.tab}`);
                     button.id = `tab-${button.dataset.tab}`;
                     
-                    // Add descriptive aria-label
+                    // Add descriptive aria-label with enhanced descriptions
                     const tabNames = {
-                        'generator': 'AI Caption Generator',
-                        'templates': 'Template Library',
-                        'favorites': 'Saved Favorites'
+                        'generator': 'AI Caption Generator - Generate custom captions using artificial intelligence',
+                        'templates': 'Template Library - Choose from pre-made caption templates',
+                        'favorites': 'Saved Favorites - Access your saved caption favorites'
                     };
                     button.setAttribute('aria-label', tabNames[button.dataset.tab] || button.textContent);
+                    
+                    // Add role description for better context
+                    const roleDescriptions = {
+                        'generator': 'Generate AI-powered captions',
+                        'templates': 'Browse caption templates',
+                        'favorites': 'View saved captions'
+                    };
+                    button.setAttribute('aria-roledescription', roleDescriptions[button.dataset.tab] || '');
                 });
             }
             
@@ -1470,26 +1569,127 @@
             }
         }
         
-        handleGuestExperience() {
-            // For guests, disable AI generator functionality and show only templates
-            // The PHP template already handles showing the teaser overlay for the AI generator
+        initializeFallbackMode() {
+            // Initialize without RWPStateManager using basic object state
+            this.state = {
+                _state: {
+                    description: '',
+                    platforms: ['instagram'],
+                    tone: 'casual',
+                    generatedCaptions: [],
+                    templates: [],
+                    favorites: [],
+                    finalCaption: '',
+                    isGenerating: false,
+                    activeTab: 'generator',
+                    characterCount: 0
+                },
+                getState: function() { return this._state; },
+                setState: function(newState) { 
+                    Object.assign(this._state, newState);
+                }
+            };
             
-            // Disable any AI-related inputs that might still be present
-            const aiInputs = this.container.querySelectorAll('[data-description], [data-tone], [data-generate]');
-            aiInputs.forEach(input => {
-                input.disabled = true;
-            });
+            this.elements = {};
+            this.initWithoutStateManager();
+        }
+        
+        initWithoutStateManager() {
+            // Basic initialization without full state management
+            this.cacheElements();
+            this.loadBuiltInTemplates();
             
-            // Ensure templates tab is available for guests
+            // Show user-friendly message about limited functionality
+            const errorDiv = this.container.querySelector('[data-error]');
+            if (errorDiv) {
+                errorDiv.style.display = 'block';
+                errorDiv.querySelector('.error-message').textContent = 
+                    'Limited functionality mode. Some features may not work as expected.';
+            }
+        }
+        
+        setupLoggedInExperience() {
+            // Show AI generator tab and make it active
+            const generatorTab = this.container.querySelector('[data-tab="generator"]');
             const templatesTab = this.container.querySelector('[data-tab="templates"]');
+            const favoritesTab = this.container.querySelector('[data-tab="favorites"]');
+            
+            if (generatorTab) {
+                generatorTab.classList.add('active');
+            }
             if (templatesTab) {
-                templatesTab.style.display = 'block';
+                templatesTab.classList.remove('active');
+            }
+            if (favoritesTab) {
+                favoritesTab.style.display = 'block';
             }
             
-            // Hide favorites tab for guests (already handled by PHP, but ensure JS consistency)
+            // Show AI generator content and hide guest teaser
+            const generatorContent = this.container.querySelector('[data-content="generator"]');
+            const aiGeneratorSection = this.container.querySelector('.ai-generator-logged-in');
+            const guestTeaser = this.container.querySelector('.ai-generator-guest-teaser');
+            const templatesContent = this.container.querySelector('[data-content="templates"]');
+            
+            if (generatorContent) {
+                generatorContent.classList.add('active');
+            }
+            if (aiGeneratorSection) {
+                aiGeneratorSection.style.display = 'block';
+            }
+            if (guestTeaser) {
+                guestTeaser.style.display = 'none';
+            }
+            if (templatesContent) {
+                templatesContent.classList.remove('active');
+            }
+            
+            // Show save to favorites button and hide login prompt
+            const saveFavoriteBtn = this.container.querySelector('[data-save-favorite]');
+            const loginPrompt = this.container.querySelector('.login-prompt');
+            
+            if (saveFavoriteBtn) {
+                saveFavoriteBtn.style.display = 'block';
+            }
+            if (loginPrompt) {
+                loginPrompt.style.display = 'none';
+            }
+            
+            // Initialize logged-in user functionality
+            this.updateGenerateButtonState();
+            this.loadUserData();
+            this.loadInitialQuota();
+        }
+        
+        setupGuestExperience() {
+            // Templates tab remains active (set in PHP), AI generator shows teaser
+            // This is the default state from PHP rendering
+            
+            // Ensure favorites tab is hidden
             const favoritesTab = this.container.querySelector('[data-tab="favorites"]');
             if (favoritesTab) {
                 favoritesTab.style.display = 'none';
+            }
+            
+            // Ensure guest teaser is visible and AI section is hidden
+            const aiGeneratorSection = this.container.querySelector('.ai-generator-logged-in');
+            const guestTeaser = this.container.querySelector('.ai-generator-guest-teaser');
+            
+            if (aiGeneratorSection) {
+                aiGeneratorSection.style.display = 'none';
+            }
+            if (guestTeaser) {
+                guestTeaser.style.display = 'block';
+            }
+            
+            // Ensure save favorites button is hidden and login prompt is shown
+            const saveFavoriteBtn = this.container.querySelector('[data-save-favorite]');
+            const loginPrompt = this.container.querySelector('.login-prompt');
+            
+            if (saveFavoriteBtn) {
+                saveFavoriteBtn.style.display = 'none';
+            }
+            if (loginPrompt) {
+                loginPrompt.style.display = 'block';
             }
         }
         

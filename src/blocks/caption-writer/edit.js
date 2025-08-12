@@ -13,7 +13,7 @@ import {
     TabPanel,
     CheckboxControl
 } from '@wordpress/components';
-import { useState, useEffect } from '@wordpress/element';
+import { useState, useEffect, useMemo, useCallback } from '@wordpress/element';
 import { InspectorControls } from '@wordpress/block-editor';
 
 export default function Edit({ attributes, setAttributes }) {
@@ -28,19 +28,21 @@ export default function Edit({ attributes, setAttributes }) {
     const [activeTab, setActiveTab] = useState('generator');
     const [error, setError] = useState('');
     const [hasError, setHasError] = useState(false);
+    const [isRetrying, setIsRetrying] = useState(false);
+    const [retryCount, setRetryCount] = useState(0);
     
     const blockProps = useBlockProps({
         className: 'caption-writer-editor'
     });
     
-    // Character limits for different platforms
-    const platformLimits = {
+    // Character limits for different platforms - cached for performance
+    const platformLimits = useMemo(() => ({
         instagram: 2200,
         tiktok: 2200,
         twitter: 280,
         linkedin: 3000,
         facebook: 63206
-    };
+    }), []);
     
     // Update character limits when platforms change
     useEffect(() => {
@@ -106,15 +108,50 @@ export default function Edit({ attributes, setAttributes }) {
         setTemplates(builtInTemplates);
     }, []);
     
+    // Comprehensive input validation function
+    const validateCaptionInput = useCallback((desc, selectedTone, selectedPlatforms) => {
+        const errors = [];
+        
+        // Description validation
+        if (!desc || desc.trim().length === 0) {
+            errors.push(__('Please enter a description for your content', 'rwp-creator-suite'));
+        } else if (desc.trim().length < 10) {
+            errors.push(__('Description must be at least 10 characters long', 'rwp-creator-suite'));
+        } else if (desc.trim().length > 500) {
+            errors.push(__('Description must be less than 500 characters', 'rwp-creator-suite'));
+        }
+        
+        // Platform validation
+        if (!selectedPlatforms || selectedPlatforms.length === 0) {
+            errors.push(__('Please select at least one platform', 'rwp-creator-suite'));
+        }
+        
+        // Tone validation
+        const validTones = ['casual', 'witty', 'inspirational', 'question', 'professional'];
+        if (!selectedTone || !validTones.includes(selectedTone)) {
+            errors.push(__('Please select a valid tone', 'rwp-creator-suite'));
+        }
+        
+        return {
+            isValid: errors.length === 0,
+            message: errors.join('. ')
+        };
+    }, []);
+    
     const generateCaptions = async () => {
-        if (!description.trim()) {
-            setError(__('Please enter a description for your content', 'rwp-creator-suite'));
+        
+        // Validate input comprehensively
+        const validation = validateCaptionInput(description, tone, platforms);
+        if (!validation.isValid) {
+            setError(validation.message);
+            setHasError(true);
             return;
         }
         
-        // Check for required dependencies
+        // Check for required dependencies with fallback
         if (typeof rwpCaptionWriter === 'undefined') {
-            setError(__('Caption writer not properly loaded. Please refresh the page.', 'rwp-creator-suite'));
+            console.warn('Caption writer dependencies not loaded, attempting fallback');
+            setError(__('Caption writer service temporarily unavailable. Please try again.', 'rwp-creator-suite'));
             setHasError(true);
             return;
         }
@@ -124,6 +161,13 @@ export default function Edit({ attributes, setAttributes }) {
         setHasError(false);
         
         try {
+            // Sanitize inputs before API call
+            const sanitizedData = {
+                description: description.trim(),
+                tone: tone,
+                platforms: platforms.filter(p => ['instagram', 'tiktok', 'twitter', 'linkedin', 'facebook'].includes(p))
+            };
+            
             // Make API call to generate captions
             const response = await fetch(rwpCaptionWriter.restUrl + 'captions/generate', {
                 method: 'POST',
@@ -131,11 +175,7 @@ export default function Edit({ attributes, setAttributes }) {
                     'Content-Type': 'application/json',
                     'X-WP-Nonce': rwpCaptionWriter.nonce
                 },
-                body: JSON.stringify({
-                    description: description,
-                    tone: tone,
-                    platforms: platforms
-                })
+                body: JSON.stringify(sanitizedData)
             });
             
             if (!response.ok) {
@@ -153,6 +193,12 @@ export default function Edit({ attributes, setAttributes }) {
             }
         } catch (error) {
             console.error('Error generating captions:', error);
+            
+            // Implement automatic retry for network errors
+            if (shouldRetry(error) && !isRetrying) {
+                await retryApiCall(error);
+                return;
+            }
             
             // Provide user-friendly error messages
             let userMessage = __('Failed to generate captions. Please try again.', 'rwp-creator-suite');
@@ -192,11 +238,25 @@ export default function Edit({ attributes, setAttributes }) {
         });
     };
     
-    const getCharacterCountColor = (limit) => {
+    const getCharacterCountColor = useCallback((limit) => {
         if (characterCount > limit) return '#d63638';
         if (characterCount > limit * 0.9) return '#dba617';
         return '#1e1e1e';
-    };
+    }, [characterCount]);
+    
+    // Memoize platform limit calculations for performance
+    const currentPlatformLimits = useMemo(() => {
+        const limits = {};
+        platforms.forEach(platform => {
+            limits[platform] = platformLimits[platform] || 2200;
+        });
+        return limits;
+    }, [platforms, platformLimits]);
+    
+    // Memoize minimum limit calculation
+    const minPlatformLimit = useMemo(() => {
+        return Math.min(...platforms.map(p => currentPlatformLimits[p]));
+    }, [platforms, currentPlatformLimits]);
     
     const togglePlatform = (platform) => {
         const updatedPlatforms = platforms.includes(platform)
@@ -318,12 +378,14 @@ export default function Edit({ attributes, setAttributes }) {
                                             <Button
                                                 isPrimary
                                                 onClick={generateCaptions}
-                                                disabled={!description.trim() || isGenerating}
-                                                isBusy={isGenerating}
+                                                disabled={!description.trim() || isGenerating || isRetrying}
+                                                isBusy={isGenerating || isRetrying}
                                                 className="generate-button"
                                             >
                                                 {isGenerating ? 
                                                     __('Generating...', 'rwp-creator-suite') : 
+                                                    isRetrying ? 
+                                                    __('Retrying...', 'rwp-creator-suite') + ` (${retryCount}/3)` :
                                                     __('Generate Captions', 'rwp-creator-suite')
                                                 }
                                             </Button>
@@ -393,17 +455,17 @@ export default function Edit({ attributes, setAttributes }) {
                                 />
                                 <div className="character-counter">
                                     <div className="current-count" style={{ 
-                                        color: getCharacterCountColor(Math.min(...platforms.map(p => characterLimits[p]))),
-                                        backgroundColor: characterCount > Math.min(...platforms.map(p => characterLimits[p])) ? '#fef2f2' : 
-                                                        characterCount > Math.min(...platforms.map(p => characterLimits[p])) * 0.9 ? '#fffbeb' : '',
-                                        borderColor: characterCount > Math.min(...platforms.map(p => characterLimits[p])) ? '#fecaca' : 
-                                                    characterCount > Math.min(...platforms.map(p => characterLimits[p])) * 0.9 ? '#fed7aa' : ''
+                                        color: getCharacterCountColor(minPlatformLimit),
+                                        backgroundColor: characterCount > minPlatformLimit ? '#fef2f2' : 
+                                                        characterCount > minPlatformLimit * 0.9 ? '#fffbeb' : '',
+                                        borderColor: characterCount > minPlatformLimit ? '#fecaca' : 
+                                                    characterCount > minPlatformLimit * 0.9 ? '#fed7aa' : ''
                                     }}>
                                         {characterCount}
                                     </div>
                                     <div className="platform-limits">
                                         {platforms.map(platform => {
-                                            const limit = characterLimits[platform];
+                                            const limit = currentPlatformLimits[platform];
                                             return (
                                                 <div 
                                                     key={platform} 

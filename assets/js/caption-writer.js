@@ -436,8 +436,9 @@
                 platformCounter.setAttribute('data-limit', limit);
                 
                 platformCounter.innerHTML = `
+                    <span class="platform-icon ${platform}" aria-hidden="true"></span>
+                    <span class="platform-name-sr">${platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
                     <span class="character-limit">${limit}</span>
-                    <span class="platform-name">${platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
                     <span class="over-limit-badge" style="display: none;">Over limit!</span>
                 `;
                 

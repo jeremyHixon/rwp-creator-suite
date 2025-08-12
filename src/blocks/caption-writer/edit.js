@@ -299,13 +299,17 @@ export default function Edit({ attributes, setAttributes }) {
                                     { label: 'LinkedIn', value: 'linkedin' },
                                     { label: 'Facebook', value: 'facebook' }
                                 ].map(platform => (
-                                    <CheckboxControl
-                                        key={platform.value}
-                                        label={platform.label}
-                                        checked={platforms.includes(platform.value)}
-                                        onChange={() => togglePlatform(platform.value)}
-                                        style={{marginBottom: '4px'}}
-                                    />
+                                    <div key={platform.value} className="platform-checkbox-with-icon" style={{marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px'}}>
+                                        <CheckboxControl
+                                            checked={platforms.includes(platform.value)}
+                                            onChange={() => togglePlatform(platform.value)}
+                                            style={{margin: '0'}}
+                                        />
+                                        <div className="platform-icon-label" style={{display: 'flex', alignItems: 'center', gap: '6px'}}>
+                                            <span className={`platform-icon ${platform.value}`} style={{width: '16px', height: '16px'}} aria-hidden="true"></span>
+                                            <span className="platform-name-sr">{platform.label}</span>
+                                        </div>
+                                    </div>
                                 ))}
                             </div>
                         </PanelRow>
@@ -472,11 +476,10 @@ export default function Edit({ attributes, setAttributes }) {
                                                     className="platform-limit-item"
                                                     data-over-limit={characterCount > limit ? 'true' : undefined}
                                                 >
+                                                    <span className={`platform-icon ${platform}`} style={{width: '16px', height: '16px'}} aria-hidden="true"></span>
+                                                    <span className="platform-name-sr">{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
                                                     <span className="character-limit">
                                                         {limit}
-                                                    </span>
-                                                    <span className="platform-name">
-                                                        {platform.charAt(0).toUpperCase() + platform.slice(1)}
                                                     </span>
                                                     {characterCount > limit && (
                                                         <span className="over-limit-badge">Over limit!</span>

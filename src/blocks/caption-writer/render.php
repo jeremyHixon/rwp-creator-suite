@@ -59,7 +59,10 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                                 <?php checked( $checked ); ?>
                                 data-platform-checkbox="<?php echo esc_attr( $platform_key ); ?>"
                             >
-                            <span class="platform-label-text"><?php echo esc_html( $platform_label ); ?></span>
+                            <div class="platform-icon-label">
+                                <span class="platform-icon <?php echo esc_attr( $platform_key ); ?>" aria-hidden="true"></span>
+                                <span class="platform-name-sr"><?php echo esc_html( $platform_label ); ?></span>
+                            </div>
                         </label>
                     <?php endforeach; ?>
                 </div>
@@ -226,8 +229,9 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                         $limit = $character_limits[ $platform ] ?? 2200;
                     ?>
                         <div class="platform-limit-item" data-platform="<?php echo esc_attr( $platform ); ?>" data-limit="<?php echo esc_attr( $limit ); ?>">
+                            <span class="platform-icon <?php echo esc_attr( $platform ); ?>" aria-hidden="true"></span>
+                            <span class="platform-name-sr"><?php echo esc_html( ucfirst( $platform ) ); ?></span>
                             <span class="character-limit"><?php echo esc_html( $limit ); ?></span>
-                            <span class="platform-name"><?php echo esc_html( ucfirst( $platform ) ); ?></span>
                             <span class="over-limit-badge" style="display: none;">Over limit!</span>
                         </div>
                     <?php endforeach; ?>

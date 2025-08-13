@@ -1013,9 +1013,8 @@
         }
         
         async loadInitialQuota() {
-            if (!this.isLoggedIn) {
-                return;
-            }
+            // Load quota for both logged-in users and guests
+            // Guests have rate limits too
             
             try {
                 // Use the dedicated quota endpoint
@@ -1029,7 +1028,9 @@
                 const result = await response.json();
                 
                 if (response.ok && result.success && result.data) {
-                    this.showQuotaInfo(result.data.remaining_quota);
+                    if (typeof result.data.remaining !== 'undefined') {
+                        this.showQuotaInfo(result.data.remaining);
+                    }
                 }
                 
             } catch (error) {
@@ -1692,6 +1693,9 @@
             if (loginPrompt) {
                 loginPrompt.style.display = 'block';
             }
+            
+            // Load quota for guests too
+            this.loadInitialQuota();
         }
         
         

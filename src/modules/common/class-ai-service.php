@@ -494,6 +494,187 @@ class RWP_Creator_Suite_AI_Service {
     }
     
     /**
+     * Check shared rate limiting for AI features.
+     */
+    public function check_rate_limit( $feature = 'ai_generation' ) {
+        $user_id = get_current_user_id();
+        $is_guest = ! $user_id;
+        
+        if ( $is_guest ) {
+            // Use IP-based rate limiting for guests
+            $identifier = $this->get_client_ip();
+            $limit = get_option( 'rwp_creator_suite_rate_limit_guest', 5 );
+        } else {
+            $identifier = $user_id;
+            // Check if user is premium
+            $is_premium = apply_filters( 'rwp_creator_suite_is_premium_user', false, $user_id );
+            $limit = $is_premium 
+                ? get_option( 'rwp_creator_suite_rate_limit_premium', 50 )
+                : get_option( 'rwp_creator_suite_rate_limit_free', 10 );
+        }
+        
+        // Apply filters for customization
+        $limit = apply_filters( 'rwp_creator_suite_rate_limit', $limit, $identifier, $feature );
+        
+        // Use shared transient key for all AI features
+        $transient_key = 'rwp_ai_rate_limit_' . hash( 'sha256', $identifier . wp_salt( 'secure_auth' ) );
+        $current_usage = get_transient( $transient_key );
+        
+        if ( false === $current_usage ) {
+            $current_usage = 0;
+        }
+        
+        if ( $current_usage >= $limit ) {
+            return new WP_Error(
+                'rate_limit_exceeded',
+                sprintf(
+                    __( 'Rate limit exceeded. You can make %d AI requests per hour.', 'rwp-creator-suite' ),
+                    $limit
+                ),
+                array( 'status' => 429 )
+            );
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Track usage for shared rate limiting.
+     */
+    public function track_usage( $usage_count = 1, $feature = 'ai_generation' ) {
+        $user_id = get_current_user_id();
+        $is_guest = ! $user_id;
+        
+        if ( $is_guest ) {
+            $identifier = $this->get_client_ip();
+        } else {
+            $identifier = $user_id;
+        }
+        
+        // Update shared rate limiting counter
+        $transient_key = 'rwp_ai_rate_limit_' . hash( 'sha256', $identifier . wp_salt( 'secure_auth' ) );
+        $current_usage = get_transient( $transient_key );
+        
+        if ( false === $current_usage ) {
+            $current_usage = 0;
+        }
+        
+        $new_usage = $current_usage + $usage_count;
+        set_transient( $transient_key, $new_usage, HOUR_IN_SECONDS );
+        
+        // Track detailed usage statistics for logged-in users
+        if ( ! $is_guest ) {
+            $this->track_detailed_usage( $user_id, $feature, $usage_count );
+        }
+    }
+    
+    /**
+     * Get usage statistics for current user.
+     */
+    public function get_usage_stats() {
+        $user_id = get_current_user_id();
+        $is_guest = ! $user_id;
+        
+        if ( $is_guest ) {
+            // For guests, only show rate limit info
+            $identifier = $this->get_client_ip();
+            $transient_key = 'rwp_ai_rate_limit_' . hash( 'sha256', $identifier . wp_salt( 'secure_auth' ) );
+            $current_usage = get_transient( $transient_key );
+            $limit = get_option( 'rwp_creator_suite_rate_limit_guest', 5 );
+            
+            return array(
+                'current_hour_usage' => $current_usage ? $current_usage : 0,
+                'hourly_limit' => $limit,
+                'remaining' => max( 0, $limit - ( $current_usage ? $current_usage : 0 ) ),
+                'is_guest' => true,
+            );
+        }
+        
+        // For logged-in users
+        $is_premium = apply_filters( 'rwp_creator_suite_is_premium_user', false, $user_id );
+        $limit = $is_premium 
+            ? get_option( 'rwp_creator_suite_rate_limit_premium', 50 )
+            : get_option( 'rwp_creator_suite_rate_limit_free', 10 );
+            
+        $transient_key = 'rwp_ai_rate_limit_' . hash( 'sha256', $user_id . wp_salt( 'secure_auth' ) );
+        $current_usage = get_transient( $transient_key );
+        
+        // Get detailed usage stats
+        $total_usage = get_user_meta( $user_id, 'rwp_ai_total_usage', true );
+        $current_month = date( 'Y-m' );
+        $monthly_usage = get_user_meta( $user_id, "rwp_ai_usage_{$current_month}", true );
+        
+        return array(
+            'current_hour_usage' => $current_usage ? $current_usage : 0,
+            'hourly_limit' => $limit,
+            'remaining' => max( 0, $limit - ( $current_usage ? $current_usage : 0 ) ),
+            'total_usage' => $total_usage ? $total_usage : 0,
+            'monthly_usage' => $monthly_usage ? $monthly_usage : 0,
+            'is_premium' => $is_premium,
+            'is_guest' => false,
+        );
+    }
+    
+    /**
+     * Track detailed usage statistics for logged-in users.
+     */
+    private function track_detailed_usage( $user_id, $feature, $usage_count ) {
+        // Track total usage across all features
+        $total_usage = get_user_meta( $user_id, 'rwp_ai_total_usage', true );
+        if ( ! $total_usage ) {
+            $total_usage = 0;
+        }
+        update_user_meta( $user_id, 'rwp_ai_total_usage', $total_usage + $usage_count );
+        
+        // Track monthly usage
+        $current_month = date( 'Y-m' );
+        $monthly_usage = get_user_meta( $user_id, "rwp_ai_usage_{$current_month}", true );
+        if ( ! $monthly_usage ) {
+            $monthly_usage = 0;
+        }
+        update_user_meta( $user_id, "rwp_ai_usage_{$current_month}", $monthly_usage + $usage_count );
+        
+        // Track feature-specific usage
+        $feature_key = "rwp_ai_usage_{$feature}_{$current_month}";
+        $feature_usage = get_user_meta( $user_id, $feature_key, true );
+        if ( ! $feature_usage ) {
+            $feature_usage = 0;
+        }
+        update_user_meta( $user_id, $feature_key, $feature_usage + $usage_count );
+    }
+    
+    /**
+     * Get client IP address for guest rate limiting.
+     */
+    private function get_client_ip() {
+        // Check for various headers that might contain the real IP
+        $ip_headers = array(
+            'HTTP_CF_CONNECTING_IP',     // Cloudflare
+            'HTTP_CLIENT_IP',            // Proxy
+            'HTTP_X_FORWARDED_FOR',      // Load balancer/proxy
+            'HTTP_X_FORWARDED',          // Proxy
+            'HTTP_X_CLUSTER_CLIENT_IP',  // Cluster
+            'HTTP_FORWARDED_FOR',        // Proxy
+            'HTTP_FORWARDED',            // Proxy
+            'REMOTE_ADDR'                // Standard
+        );
+        
+        foreach ( $ip_headers as $header ) {
+            if ( ! empty( $_SERVER[ $header ] ) ) {
+                $ip_list = explode( ',', $_SERVER[ $header ] );
+                $ip = trim( $ip_list[0] );
+                
+                if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+                    return $ip;
+                }
+            }
+        }
+        
+        // Fallback to REMOTE_ADDR
+        return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
+    }
+    
+    /**
      * Log errors securely with fallback.
      */
     private function log_error( $message ) {

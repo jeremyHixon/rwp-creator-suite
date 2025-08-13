@@ -2,7 +2,7 @@
 /**
  * Plugin Name: RWP Creator Suite
  * Description: A suite of tools for content creators including streamlined user authentication.
- * Version: 1.4.0
+ * Version: 1.5.0
  * Author: Jeremy Hixon
  * Author URI: https://jeremyhixon.com
  * Text Domain: rwp-creator-suite
@@ -17,7 +17,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Define plugin constants
-define( 'RWP_CREATOR_SUITE_VERSION', '1.4.0' );
+define( 'RWP_CREATOR_SUITE_VERSION', '1.5.0' );
 define( 'RWP_CREATOR_SUITE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RWP_CREATOR_SUITE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'RWP_CREATOR_SUITE_PLUGIN_FILE', __FILE__ );
@@ -94,6 +94,10 @@ class RWP_Creator_Suite {
         // Additional hooks
         add_action( 'init', array( $this, 'load_textdomain' ) );
         add_action( 'init', array( $this, 'maybe_redirect_wp_login' ) );
+        
+        // User data cleanup hooks
+        add_action( 'delete_user', array( $this, 'cleanup_user_data' ) );
+        add_action( 'wpmu_delete_user', array( $this, 'cleanup_user_data' ) );
     }
 
     /**
@@ -182,6 +186,126 @@ class RWP_Creator_Suite {
 
         // Flush rewrite rules
         flush_rewrite_rules();
+    }
+
+    /**
+     * Clean up user data when user is deleted.
+     *
+     * @param int $user_id The ID of the user being deleted.
+     */
+    public function cleanup_user_data( $user_id ) {
+        if ( ! $user_id || ! is_numeric( $user_id ) ) {
+            return;
+        }
+
+        // Log the cleanup action
+        error_log( "RWP Creator Suite: Cleaning up data for deleted user ID: {$user_id}" );
+
+        // Clean up user meta data
+        $this->cleanup_user_meta_data( $user_id );
+
+        // Clean up user-specific transients and cache
+        $this->cleanup_user_transients( $user_id );
+
+        // Clean up audit logs mentioning this user
+        $this->cleanup_user_audit_logs( $user_id );
+
+        // Fire action for other components to clean up
+        do_action( 'rwp_creator_suite_user_data_cleanup', $user_id );
+    }
+
+    /**
+     * Clean up user meta data.
+     *
+     * @param int $user_id User ID.
+     */
+    private function cleanup_user_meta_data( $user_id ) {
+        $meta_keys_to_delete = array(
+            // Registration and authentication
+            'rwp_creator_suite_registration_method',
+            'rwp_creator_suite_auto_login',
+            'rwp_creator_suite_original_url',
+            'rwp_creator_suite_last_login',
+            
+            // Caption writer data
+            'rwp_caption_favorites',
+            'rwp_caption_preferences',
+            'rwp_caption_templates',
+            'rwp_templates_cache_time',
+            'rwp_templates_updated',
+            
+            // Instagram analyzer
+            'instagram_analyzer_whitelist',
+        );
+
+        foreach ( $meta_keys_to_delete as $meta_key ) {
+            delete_user_meta( $user_id, $meta_key );
+        }
+
+        // Clean up usage tracking meta (pattern-based)
+        global $wpdb;
+        $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$wpdb->usermeta} 
+            WHERE user_id = %d 
+            AND meta_key LIKE 'rwp_caption_usage_%%'",
+            $user_id
+        ) );
+    }
+
+    /**
+     * Clean up user-specific transients and cache.
+     *
+     * @param int $user_id User ID.
+     */
+    private function cleanup_user_transients( $user_id ) {
+        global $wpdb;
+
+        // Get user email for rate limiting cleanup
+        $user_email = get_userdata( $user_id );
+        if ( $user_email && $user_email->user_email ) {
+            $email_hash = md5( $user_email->user_email );
+            
+            // Clean up rate limiting transients
+            delete_transient( "rwp_creator_suite_reg_{$email_hash}" );
+            delete_transient( "rwp_creator_suite_login_{$email_hash}" );
+        }
+
+        // Clean up user-specific cached templates and favorites
+        $cache_keys_to_delete = array(
+            "user_templates_{$user_id}",
+            "user_favorites_{$user_id}",
+        );
+
+        foreach ( $cache_keys_to_delete as $cache_key ) {
+            wp_cache_delete( $cache_key, 'rwp_caption_writer' );
+            delete_transient( $cache_key );
+        }
+
+        // Clean up any remaining user-specific transients
+        $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$wpdb->options} 
+            WHERE option_name LIKE '_transient_%%_user_{$user_id}_%%' 
+            OR option_name LIKE '_transient_timeout_%%_user_{$user_id}_%%'"
+        ) );
+    }
+
+    /**
+     * Clean up audit logs mentioning the deleted user.
+     *
+     * @param int $user_id User ID.
+     */
+    private function cleanup_user_audit_logs( $user_id ) {
+        $audit_log = get_option( 'rwp_api_key_audit', array() );
+        
+        if ( ! empty( $audit_log ) && is_array( $audit_log ) ) {
+            // Remove entries for this user
+            $audit_log = array_filter( $audit_log, function( $entry ) use ( $user_id ) {
+                return ! isset( $entry['user_id'] ) || $entry['user_id'] != $user_id;
+            } );
+            
+            // Re-index array and update option
+            update_option( 'rwp_api_key_audit', array_values( $audit_log ) );
+        }
     }
 
     /**

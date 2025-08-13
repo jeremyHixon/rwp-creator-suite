@@ -78,6 +78,24 @@ A comprehensive WordPress plugin designed for content creators, providing stream
 
 ## Changelog
 
+### Version 1.5.0 (2025-08)
+#### New Features
+- **GDPR Compliance & User Data Cleanup**: Comprehensive user data deletion when WordPress users are deleted
+  - Automatic cleanup of all plugin-specific user metadata (registration method, auto-login settings, original URL, last login)
+  - Complete removal of Caption Writer user data (favorites, preferences, templates, usage tracking)
+  - Rate limiting transient cleanup tied to user email addresses
+  - User-specific cache and template data removal
+  - API key audit log cleanup for deleted users
+  - Extensible cleanup system with `rwp_creator_suite_user_data_cleanup` action hook
+  - Comprehensive logging for audit trail and debugging
+
+#### Technical Improvements
+- Added `cleanup_user_data()` method with WordPress `delete_user` and `wpmu_delete_user` hooks
+- Implemented modular cleanup system with separate methods for meta data, transients, and audit logs
+- Enhanced data privacy compliance for content creator workflows
+- Added defensive programming with user ID validation and error logging
+- Created extensible architecture for future cleanup requirements
+
 ### Version 1.4.0 (2025-08)
 #### New Features
 - **Caption Writer Block**: Complete implementation of an AI-powered Gutenberg block for generating Instagram captions

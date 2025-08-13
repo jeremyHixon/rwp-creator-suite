@@ -130,6 +130,9 @@ class RWP_Creator_Suite {
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-template-manager.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-caption-api.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-admin-settings.php';
+
+        // Shortcodes Module
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/class-shortcodes.php';
     }
 
     /**

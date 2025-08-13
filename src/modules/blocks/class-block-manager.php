@@ -48,6 +48,14 @@ class RWP_Creator_Suite_Block_Manager {
                 'render_callback' => array( $this, 'render_caption_writer_block' ),
             )
         );
+        
+        // Register Content Repurposer block from build directory
+        register_block_type( 
+            RWP_CREATOR_SUITE_PLUGIN_DIR . 'build/blocks/content-repurposer',
+            array(
+                'render_callback' => array( $this, 'render_content_repurposer_block' ),
+            )
+        );
     }
 
     /**
@@ -69,7 +77,8 @@ class RWP_Creator_Suite_Block_Manager {
         $block_types = array(
             'instagram-analyzer' => 'rwp-creator-suite/instagram-analyzer',
             'instagram-banner' => 'rwp-creator-suite/instagram-banner', 
-            'caption-writer' => 'rwp-creator-suite/caption-writer'
+            'caption-writer' => 'rwp-creator-suite/caption-writer',
+            'content-repurposer' => 'rwp-creator-suite/content-repurposer'
         );
         
         foreach ( $block_types as $key => $block_name ) {
@@ -98,6 +107,10 @@ class RWP_Creator_Suite_Block_Manager {
         if ( isset( $blocks_present['caption-writer'] ) ) {
             $this->enqueue_caption_writer_assets();
         }
+        
+        if ( isset( $blocks_present['content-repurposer'] ) ) {
+            $this->enqueue_content_repurposer_assets();
+        }
     }
     
     /**
@@ -107,7 +120,8 @@ class RWP_Creator_Suite_Block_Manager {
         // State manager is used by multiple blocks
         $needs_state_manager = isset( $blocks_present['instagram-analyzer'] ) || 
                               isset( $blocks_present['instagram-banner'] ) || 
-                              isset( $blocks_present['caption-writer'] );
+                              isset( $blocks_present['caption-writer'] ) ||
+                              isset( $blocks_present['content-repurposer'] );
         
         if ( $needs_state_manager && ! isset( $this->enqueued_assets['state-manager'] ) ) {
             wp_enqueue_script(
@@ -277,6 +291,16 @@ class RWP_Creator_Suite_Block_Manager {
     }
     
     /**
+     * Render Content Repurposer block.
+     */
+    public function render_content_repurposer_block( $attributes, $content ) {
+        // Include the render template
+        ob_start();
+        include RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/blocks/content-repurposer/render.php';
+        return ob_get_clean();
+    }
+    
+    /**
      * Enqueue Caption Writer specific assets.
      */
     private function enqueue_caption_writer_assets() {
@@ -348,6 +372,65 @@ class RWP_Creator_Suite_Block_Manager {
     }
     
     /**
+     * Enqueue Content Repurposer specific assets.
+     */
+    private function enqueue_content_repurposer_assets() {
+        if ( isset( $this->enqueued_assets['content-repurposer'] ) ) {
+            return; // Already enqueued
+        }
+
+        // Enqueue Content Repurposer CSS
+        wp_enqueue_style(
+            'rwp-content-repurposer-style',
+            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/content-repurposer.css',
+            array(),
+            RWP_CREATOR_SUITE_VERSION,
+            'all'
+        );
+
+        // Enqueue Content Repurposer app (state manager already loaded by shared dependencies)
+        wp_enqueue_script(
+            'rwp-content-repurposer-app',
+            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/content-repurposer.js',
+            array( 'rwp-state-manager' ),
+            RWP_CREATOR_SUITE_VERSION,
+            true
+        );
+        
+        $this->enqueued_assets['content-repurposer'] = true;
+
+        // Localize script with WordPress data
+        wp_localize_script(
+            'rwp-content-repurposer-app',
+            'rwpContentRepurposer',
+            array(
+                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                'restUrl' => rest_url( 'rwp-creator-suite/v1/' ),
+                'nonce' => wp_create_nonce( 'wp_rest' ),
+                'isLoggedIn' => is_user_logged_in(),
+                'currentUserId' => get_current_user_id(),
+                'strings' => array(
+                    'inputPrompt' => __( 'Paste your long-form content to repurpose', 'rwp-creator-suite' ),
+                    'processing' => __( 'Repurposing content...', 'rwp-creator-suite' ),
+                    'repurposed' => __( 'Repurposed Content', 'rwp-creator-suite' ),
+                    'loginRequired' => __( 'Login required for unlimited usage', 'rwp-creator-suite' ),
+                    'copySuccess' => __( 'Content copied to clipboard!', 'rwp-creator-suite' ),
+                    'errorGeneral' => __( 'Something went wrong. Please try again.', 'rwp-creator-suite' ),
+                    'errorContent' => __( 'Please enter content to repurpose', 'rwp-creator-suite' ),
+                    'errorPlatforms' => __( 'Please select at least one platform', 'rwp-creator-suite' ),
+                    'rateLimitExceeded' => __( 'Rate limit exceeded. Please try again later.', 'rwp-creator-suite' ),
+                ),
+                'characterLimits' => array(
+                    'twitter' => 280,
+                    'linkedin' => 3000,
+                    'facebook' => 63206,
+                    'instagram' => 2200,
+                ),
+            )
+        );
+    }
+    
+    /**
      * Add preload hints for better performance.
      */
     public function add_preload_hints( $urls, $relation_type ) {
@@ -363,6 +446,17 @@ class RWP_Creator_Suite_Block_Manager {
             );
             $urls[] = array(
                 'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/caption-writer.css',
+                'as'   => 'style',
+            );
+        }
+        
+        if ( isset( $this->enqueued_assets['content-repurposer'] ) ) {
+            $urls[] = array(
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/content-repurposer.js',
+                'as'   => 'script',
+            );
+            $urls[] = array(
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/content-repurposer.css',
                 'as'   => 'style',
             );
         }

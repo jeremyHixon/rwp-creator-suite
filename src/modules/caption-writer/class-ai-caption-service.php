@@ -9,57 +9,26 @@ defined( 'ABSPATH' ) || exit;
 
 class RWP_Creator_Suite_AI_Caption_Service {
 
-    private $api_key;
-    private $model = 'gpt-3.5-turbo';
-    private $api_provider = 'openai'; // openai, claude, local
-    private $key_manager;
+    private $ai_service;
     
     /**
      * Constructor.
      */
     public function __construct() {
-        $this->api_provider = get_option( 'rwp_creator_suite_ai_provider', 'mock' );
-        $this->model = get_option( 'rwp_creator_suite_ai_model', 'gpt-3.5-turbo' );
-        
-        // Initialize secure key manager
-        $this->key_manager = new RWP_Creator_Suite_Key_Manager();
-        
-        // Get API key securely based on provider
-        if ( $this->api_provider === 'openai' || $this->api_provider === 'claude' ) {
-            $this->api_key = $this->key_manager->get_api_key( $this->api_provider );
-        }
+        // Use the new centralized AI service
+        $this->ai_service = new RWP_Creator_Suite_AI_Service();
     }
     
     /**
      * Generate captions using AI service.
      */
     public function generate_captions( $description, $tone, $platform ) {
-        if ( empty( $this->api_key ) && $this->api_provider !== 'local' && $this->api_provider !== 'mock' ) {
-            return new WP_Error( 
-                'no_api_key', 
-                __( 'AI service not configured. Please check plugin settings.', 'rwp-creator-suite' ),
-                array( 'status' => 500 )
-            );
-        }
-        
-        $character_limit = $this->get_character_limit( $platform );
-        $prompt = $this->build_prompt( $description, $tone, $platform, $character_limit );
-        
-        switch ( $this->api_provider ) {
-            case 'openai':
-                return $this->generate_with_openai( $prompt );
-            case 'claude':
-                return $this->generate_with_claude( $prompt );
-            case 'local':
-                return $this->generate_with_local_model( $prompt );
-            case 'mock':
-            default:
-                return $this->generate_mock_captions( $description, $tone, $platform );
-        }
+        return $this->ai_service->generate_captions( $description, $tone, $platform );
     }
     
     /**
      * Generate captions using OpenAI API.
+     * @deprecated Use centralized AI service instead
      */
     private function generate_with_openai( $prompt ) {
         $response = wp_remote_post( 'https://api.openai.com/v1/chat/completions', array(

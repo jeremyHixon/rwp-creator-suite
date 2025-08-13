@@ -44,6 +44,7 @@ class RWP_Creator_Suite {
     private $block_manager;
     private $caption_api;
     private $caption_admin;
+    private $repurposer_api;
 
     /**
      * Get single instance of the plugin.
@@ -81,6 +82,7 @@ class RWP_Creator_Suite {
         $this->block_manager = new RWP_Creator_Suite_Block_Manager();
         $this->caption_api = new RWP_Creator_Suite_Caption_API();
         $this->caption_admin = new RWP_Creator_Suite_Caption_Admin_Settings();
+        $this->repurposer_api = new RWP_Creator_Suite_Content_Repurposer_API();
 
         // Initialize all components
         $this->wp_login_integration->init();
@@ -90,6 +92,7 @@ class RWP_Creator_Suite {
         $this->block_manager->init();
         $this->caption_api->init();
         $this->caption_admin->init();
+        $this->repurposer_api->init();
 
         // Additional hooks
         add_action( 'init', array( $this, 'load_textdomain' ) );
@@ -106,6 +109,7 @@ class RWP_Creator_Suite {
     private function load_dependencies() {
         // Common Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-error-logger.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-ai-service.php';
 
         // User Registration Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/user-registration/class-username-generator.php';
@@ -134,6 +138,9 @@ class RWP_Creator_Suite {
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-template-manager.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-caption-api.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-admin-settings.php';
+        
+        // Content Repurposer Module
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/content-repurposer/class-content-repurposer-api.php';
 
         // Shortcodes Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/class-shortcodes.php';

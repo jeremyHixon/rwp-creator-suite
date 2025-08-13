@@ -1,0 +1,400 @@
+/**
+ * Content Repurposer Block - Frontend Styles
+ */
+
+.wp-block-rwp-creator-suite-content-repurposer {
+    max-width: 800px;
+    margin: 2rem 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    .rwp-content-repurposer-container {
+        background: #ffffff;
+        border: 1px solid #e2e4e7;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .rwp-repurposer-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+
+        .rwp-repurposer-title {
+            margin: 0 0 1rem 0;
+            font-size: 1.75rem;
+            font-weight: 600;
+        }
+
+        .rwp-repurposer-description {
+            margin: 0;
+            font-size: 1.1rem;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+    }
+
+    .rwp-repurposer-form {
+        padding: 2rem;
+    }
+
+    .rwp-form-group {
+        margin-bottom: 1.5rem;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    .rwp-form-label {
+        display: block;
+        font-weight: 600;
+        color: #1e1e1e;
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+    }
+
+    .rwp-content-input {
+        width: 100%;
+        min-height: 120px;
+        padding: 0.75rem;
+        border: 2px solid #e2e4e7;
+        border-radius: 4px;
+        font-size: 1rem;
+        line-height: 1.5;
+        resize: vertical;
+        transition: border-color 0.2s ease;
+
+        &:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+    }
+
+    .rwp-character-count {
+        text-align: right;
+        font-size: 0.875rem;
+        color: #757575;
+        margin-top: 0.25rem;
+
+        .rwp-count-current {
+            font-weight: 600;
+
+            &.rwp-count-warning {
+                color: #f59e0b;
+            }
+
+            &.rwp-count-error {
+                color: #dc2626;
+            }
+        }
+    }
+
+    .rwp-platform-selection {
+        .rwp-platform-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .rwp-platform-option {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            border: 2px solid #e2e4e7;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #fafafa;
+
+            &:hover {
+                border-color: #667eea;
+                background: #f8faff;
+            }
+
+            input[type="checkbox"] {
+                margin-right: 0.5rem;
+                margin-top: 0;
+            }
+
+            input[type="checkbox"]:checked + .rwp-platform-label {
+                font-weight: 600;
+                color: #667eea;
+            }
+
+            &:has(input:checked) {
+                border-color: #667eea;
+                background: #f8faff;
+            }
+        }
+
+        .rwp-platform-label {
+            font-size: 0.875rem;
+            color: #374151;
+            transition: color 0.2s ease;
+        }
+    }
+
+    .rwp-tone-select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e2e4e7;
+        border-radius: 4px;
+        font-size: 1rem;
+        background: white;
+        transition: border-color 0.2s ease;
+
+        &:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+    }
+
+    .rwp-form-actions {
+        text-align: center;
+        margin-top: 2rem;
+    }
+
+    .rwp-repurpose-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+        min-width: 200px;
+
+        &:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        &:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .rwp-button-loading {
+            display: none;
+        }
+
+        &.rwp-loading {
+            .rwp-button-text {
+                display: none;
+            }
+            
+            .rwp-button-loading {
+                display: inline;
+            }
+        }
+    }
+
+    .rwp-usage-stats {
+        border-top: 1px solid #e2e4e7;
+        background: #f8f9fa;
+        padding: 1.5rem 2rem;
+
+        h4 {
+            margin: 0 0 1rem 0;
+            color: #374151;
+            font-size: 1.1rem;
+        }
+
+        .rwp-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .rwp-stat-item {
+            text-align: center;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e2e4e7;
+
+            .rwp-stat-value {
+                display: block;
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: #667eea;
+            }
+
+            .rwp-stat-label {
+                display: block;
+                font-size: 0.875rem;
+                color: #6b7280;
+                margin-top: 0.25rem;
+            }
+        }
+    }
+
+    .rwp-results-container {
+        border-top: 1px solid #e2e4e7;
+        padding: 2rem;
+
+        .rwp-results-title {
+            margin: 0 0 1.5rem 0;
+            color: #1e1e1e;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+    }
+
+    .rwp-platform-result {
+        margin-bottom: 2rem;
+        border: 1px solid #e2e4e7;
+        border-radius: 6px;
+        overflow: hidden;
+
+        &.rwp-result-error {
+            border-color: #fca5a5;
+            background: #fef2f2;
+        }
+
+        .rwp-platform-header {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-bottom: 1px solid #e2e4e7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            .rwp-platform-name {
+                font-weight: 600;
+                color: #374151;
+                text-transform: capitalize;
+            }
+
+            .rwp-character-limit {
+                font-size: 0.875rem;
+                color: #6b7280;
+            }
+        }
+
+        .rwp-platform-content {
+            padding: 1.5rem;
+        }
+
+        .rwp-content-versions {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .rwp-content-version {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            padding: 1rem;
+            position: relative;
+
+            .rwp-version-text {
+                line-height: 1.6;
+                margin-bottom: 0.75rem;
+                color: #374151;
+            }
+
+            .rwp-version-meta {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: 0.875rem;
+                color: #6b7280;
+            }
+
+            .rwp-copy-button {
+                background: #f3f4f6;
+                color: #374151;
+                border: 1px solid #d1d5db;
+                padding: 0.5rem 1rem;
+                border-radius: 4px;
+                font-size: 0.875rem;
+                cursor: pointer;
+                transition: all 0.2s ease;
+
+                &:hover {
+                    background: #e5e7eb;
+                }
+
+                &.rwp-copied {
+                    background: #d1fae5;
+                    color: #065f46;
+                    border-color: #a7f3d0;
+                }
+            }
+        }
+
+        .rwp-error-text {
+            color: #dc2626;
+            font-style: italic;
+        }
+    }
+
+    .rwp-error-message {
+        background: #fef2f2;
+        border: 1px solid #fca5a5;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-top: 1rem;
+
+        .rwp-error-content {
+            color: #dc2626;
+            font-weight: 500;
+        }
+    }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+    .wp-block-rwp-creator-suite-content-repurposer {
+        .rwp-repurposer-header {
+            padding: 1.5rem;
+
+            .rwp-repurposer-title {
+                font-size: 1.5rem;
+            }
+
+            .rwp-repurposer-description {
+                font-size: 1rem;
+            }
+        }
+
+        .rwp-repurposer-form {
+            padding: 1.5rem;
+        }
+
+        .rwp-platform-selection {
+            .rwp-platform-checkboxes {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .rwp-usage-stats {
+            .rwp-stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .rwp-results-container {
+            padding: 1.5rem;
+        }
+
+        .rwp-platform-result {
+            .rwp-platform-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+        }
+    }
+}

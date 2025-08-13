@@ -100,6 +100,18 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
             'default' => 50,
         ) );
         
+        register_setting( $this->settings_group, 'rwp_creator_suite_rate_limit_guest', array(
+            'type' => 'integer',
+            'sanitize_callback' => 'absint',
+            'default' => 5,
+        ) );
+        
+        register_setting( $this->settings_group, 'rwp_creator_suite_allow_guest_repurpose', array(
+            'type' => 'boolean',
+            'sanitize_callback' => 'rest_sanitize_boolean',
+            'default' => false,
+        ) );
+        
         // Add settings sections
         add_settings_section(
             'rwp_caption_ai_section',
@@ -112,6 +124,13 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
             'rwp_caption_rate_limit_section',
             __( 'Rate Limiting', 'rwp-creator-suite' ),
             array( $this, 'render_rate_limit_section_description' ),
+            $this->settings_page
+        );
+        
+        add_settings_section(
+            'rwp_content_repurposer_section',
+            __( 'Content Repurposer Settings', 'rwp-creator-suite' ),
+            array( $this, 'render_content_repurposer_section_description' ),
             $this->settings_page
         );
         
@@ -162,6 +181,22 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
             array( $this, 'render_rate_limit_premium_field' ),
             $this->settings_page,
             'rwp_caption_rate_limit_section'
+        );
+        
+        add_settings_field(
+            'rate_limit_guest',
+            __( 'Guest User Rate Limit (per hour)', 'rwp-creator-suite' ),
+            array( $this, 'render_rate_limit_guest_field' ),
+            $this->settings_page,
+            'rwp_caption_rate_limit_section'
+        );
+        
+        add_settings_field(
+            'allow_guest_repurpose',
+            __( 'Allow Guest Content Repurposing', 'rwp-creator-suite' ),
+            array( $this, 'render_allow_guest_repurpose_field' ),
+            $this->settings_page,
+            'rwp_content_repurposer_section'
         );
     }
     
@@ -252,6 +287,13 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
      */
     public function render_rate_limit_section_description() {
         echo '<p>' . esc_html__( 'Set rate limits to control API usage and costs.', 'rwp-creator-suite' ) . '</p>';
+    }
+    
+    /**
+     * Render content repurposer section description.
+     */
+    public function render_content_repurposer_section_description() {
+        echo '<p>' . esc_html__( 'Configure settings for the Content Repurposer feature.', 'rwp-creator-suite' ) . '</p>';
     }
     
     /**
@@ -386,6 +428,45 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
                class="small-text">
         <p class="description">
             <?php esc_html_e( 'Maximum AI generations per hour for premium users.', 'rwp-creator-suite' ); ?>
+        </p>
+        <?php
+    }
+    
+    /**
+     * Render rate limit guest field.
+     */
+    public function render_rate_limit_guest_field() {
+        $value = get_option( 'rwp_creator_suite_rate_limit_guest', 5 );
+        ?>
+        <input type="number" 
+               name="rwp_creator_suite_rate_limit_guest" 
+               id="rwp_creator_suite_rate_limit_guest"
+               value="<?php echo esc_attr( $value ); ?>" 
+               min="1" 
+               max="100"
+               class="small-text">
+        <p class="description">
+            <?php esc_html_e( 'Maximum AI generations per hour for guest users.', 'rwp-creator-suite' ); ?>
+        </p>
+        <?php
+    }
+    
+    /**
+     * Render allow guest repurpose field.
+     */
+    public function render_allow_guest_repurpose_field() {
+        $value = get_option( 'rwp_creator_suite_allow_guest_repurpose', false );
+        ?>
+        <label for="rwp_creator_suite_allow_guest_repurpose">
+            <input type="checkbox" 
+                   name="rwp_creator_suite_allow_guest_repurpose" 
+                   id="rwp_creator_suite_allow_guest_repurpose"
+                   value="1" 
+                   <?php checked( $value ); ?>>
+            <?php esc_html_e( 'Allow non-logged-in users to use content repurposing (with rate limits)', 'rwp-creator-suite' ); ?>
+        </label>
+        <p class="description">
+            <?php esc_html_e( 'When enabled, guests can use the content repurposer with stricter rate limits.', 'rwp-creator-suite' ); ?>
         </p>
         <?php
     }

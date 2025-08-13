@@ -36,5 +36,17 @@ module.exports = {
 			__dirname,
 			'src/blocks/caption-writer/editor.js'
 		),
+		'blocks/content-repurposer/index': path.resolve(
+			__dirname,
+			'src/blocks/content-repurposer/index.js'
+		),
+		'blocks/content-repurposer/style': path.resolve(
+			__dirname,
+			'src/blocks/content-repurposer/style.js'
+		),
+		'blocks/content-repurposer/editor': path.resolve(
+			__dirname,
+			'src/blocks/content-repurposer/editor.js'
+		),
 	},
 };

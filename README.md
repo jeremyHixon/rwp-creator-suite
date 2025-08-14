@@ -78,6 +78,32 @@ A comprehensive WordPress plugin designed for content creators, providing stream
 
 ## Changelog
 
+### Version 1.5.1 (2025-08)
+#### New Features
+- **Content Repurposer Block**: New AI-powered Gutenberg block for transforming long-form content into platform-specific social media posts
+  - Multi-platform support for Twitter, LinkedIn, Instagram, and Facebook
+  - Configurable tone options (professional, casual, enthusiastic, etc.)
+  - AI-powered content adaptation using OpenAI integration
+  - Guest access enabled with shared quota system
+  - Real-time content transformation with platform-specific formatting
+  - Usage statistics and quota tracking
+
+#### Improvements
+- **Enhanced User Experience**: Simplified interface with streamlined button layouts for better usability
+- **Guest User Optimization**: Improved experience for non-registered users accessing plugin features
+- **Shared AI Quota System**: Implemented shared quota management for AI services across all users
+
+#### Security & Performance
+- **Security Fixes**: Applied security enhancements and vulnerability patches
+- **Interface Simplification**: Reduced complexity in user interfaces for better accessibility
+
+#### Technical Improvements
+- Added `RWP_Creator_Suite_Content_Repurposer_API` class for handling content transformation endpoints
+- Enhanced AI service integration for content repurposing capabilities
+- Improved guest access handling for content repurposing features
+- Enhanced button layouts and interface responsiveness
+- Optimized quota sharing system for AI-powered features
+
 ### Version 1.5.0 (2025-08)
 #### New Features
 - **GDPR Compliance & User Data Cleanup**: Comprehensive user data deletion when WordPress users are deleted

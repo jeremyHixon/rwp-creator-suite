@@ -150,7 +150,7 @@
                 guestExhaustedMessage: container.querySelector('.rwp-guest-exhausted-message'),
                 contentInput: container.querySelector('.rwp-content-input'),
                 guestContentInput: container.querySelector('.rwp-guest-content-input'),
-                characterCount: container.querySelector('.rwp-count-current'),
+                characterCount: container.querySelectorAll('.rwp-count-current'),
                 platformCheckboxes: container.querySelectorAll('.rwp-platform-checkbox'),
                 toneSelect: container.querySelector('.rwp-tone-select'),
                 guestToneSelect: container.querySelector('.rwp-guest-tone-select'),
@@ -319,28 +319,41 @@
             if (!this.elements.characterCount) return;
             
             const count = content.length;
-            this.elements.characterCount.textContent = count.toLocaleString();
             
-            // Update character count styling based on limits
-            this.elements.characterCount.className = 'rwp-count-current';
-            if (count > 8000) {
-                this.elements.characterCount.classList.add('rwp-count-warning');
-            }
-            if (count > 9500) {
-                this.elements.characterCount.classList.add('rwp-count-error');
-            }
+            // Update all character count elements (both logged-in and guest forms)
+            this.elements.characterCount.forEach(element => {
+                element.textContent = count.toLocaleString();
+                
+                // Update character count styling based on limits
+                element.className = 'rwp-count-current';
+                if (count > 8000) {
+                    element.classList.add('rwp-count-warning');
+                }
+                if (count > 9500) {
+                    element.classList.add('rwp-count-error');
+                }
+            });
         }
         
         updateButtonState(isProcessing) {
-            if (!this.elements.repurposeButton) return;
+            // Update both logged-in and guest buttons
+            const buttons = [this.elements.repurposeButton, this.elements.guestRepurposeButton].filter(Boolean);
             
-            this.elements.repurposeButton.disabled = isProcessing;
-            
-            if (isProcessing) {
-                this.elements.repurposeButton.classList.add('rwp-loading');
-            } else {
-                this.elements.repurposeButton.classList.remove('rwp-loading');
-            }
+            buttons.forEach(button => {
+                button.disabled = isProcessing;
+                
+                if (isProcessing) {
+                    button.dataset.originalText = button.textContent;
+                    button.textContent = 'Repurposing...';
+                    button.classList.add('rwp-loading');
+                } else {
+                    if (button.dataset.originalText) {
+                        button.textContent = button.dataset.originalText;
+                        delete button.dataset.originalText;
+                    }
+                    button.classList.remove('rwp-loading');
+                }
+            });
         }
         
         async repurposeContent() {
@@ -526,7 +539,9 @@
                             <div class="rwp-preview-overlay">
                                 <div class="rwp-upgrade-badge">
                                     <span class="rwp-lock-icon">🔒</span>
-                                    <span class="rwp-upgrade-text">Sign up to see full version</span>
+                                    <span class="rwp-upgrade-text">
+                                        <a href="#rwp-upgrade-cta" class="rwp-scroll-to-upgrade">Sign up to see full version</a>
+                                    </span>
                                 </div>
                             </div>
                             <div class="rwp-version-meta">
@@ -649,36 +664,21 @@
             if (!this.elements.usageStats || !stats) return;
             
             const remaining = stats.remaining || 0;
-            const isLimited = remaining <= 3;
+            const quotaText = this.elements.usageStats.querySelector('.quota-text');
             
-            const statsHTML = `
-                <div class="rwp-stats-grid">
-                    <div class="rwp-stat-item">
-                        <span class="rwp-stat-value">${stats.current_hour_usage || 0}</span>
-                        <span class="rwp-stat-label">Used This Hour</span>
-                    </div>
-                    <div class="rwp-stat-item">
-                        <span class="rwp-stat-value ${isLimited ? 'rwp-stat-warning' : ''}">${remaining}</span>
-                        <span class="rwp-stat-label">Remaining</span>
-                    </div>
-                    ${!stats.is_guest ? `
-                        <div class="rwp-stat-item">
-                            <span class="rwp-stat-value">${stats.total_usage || 0}</span>
-                            <span class="rwp-stat-label">Total Used</span>
-                        </div>
-                        <div class="rwp-stat-item">
-                            <span class="rwp-stat-value">${stats.monthly_usage || 0}</span>
-                            <span class="rwp-stat-label">This Month</span>
-                        </div>
-                    ` : ''}
-                </div>
-                ${stats.is_guest ? `<p class="rwp-guest-notice">Sign in for unlimited usage!</p>` : ''}
-            `;
+            if (!quotaText) return;
             
-            this.elements.usageStats.innerHTML = `
-                <h4>Usage Statistics</h4>
-                <div class="rwp-stats-content">${statsHTML}</div>
-            `;
+            // Use green dot icon like caption writer
+            const icon = '🟢';
+            
+            // Update quota text with simple format like caption writer
+            if (remaining === 0) {
+                quotaText.innerHTML = `${icon} <strong>Daily limit reached.</strong> Please try again later or upgrade your plan.`;
+            } else {
+                quotaText.innerHTML = `${icon} Remaining AI generations: <strong>${remaining}</strong>`;
+            }
+            
+            // Show the quota display
             this.elements.usageStats.style.display = 'block';
         }
         

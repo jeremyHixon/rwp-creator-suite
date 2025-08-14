@@ -174,7 +174,6 @@
 }
 
 .wp-block-rwp-creator-suite-content-repurposer .rwp-form-actions {
-    text-align: center;
     margin-top: 2rem;
 }
 
@@ -206,11 +205,11 @@
     cursor: not-allowed;
 }
 
-.wp-block-rwp-creator-suite-content-repurposer .rwp-repurpose-button.loading {
+.wp-block-rwp-creator-suite-content-repurposer .rwp-repurpose-button.rwp-loading {
     color: transparent;
 }
 
-.wp-block-rwp-creator-suite-content-repurposer .rwp-repurpose-button.loading::after {
+.wp-block-rwp-creator-suite-content-repurposer .rwp-repurpose-button.rwp-loading::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -242,39 +241,8 @@
     gap: 0.5rem;
 }
 
-.wp-block-rwp-creator-suite-content-repurposer .rwp-usage-stats h4 {
-    margin: 0 0 1rem 0;
-    color: #1e40af;
-    font-size: 1rem;
+.wp-block-rwp-creator-suite-content-repurposer .rwp-usage-stats strong {
     font-weight: 600;
-}
-
-.wp-block-rwp-creator-suite-content-repurposer .rwp-stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-}
-
-.wp-block-rwp-creator-suite-content-repurposer .rwp-stat-item {
-    text-align: center;
-    padding: 0.75rem;
-    background: white;
-    border-radius: 4px;
-    border: 1px solid #e2e4e7;
-}
-
-.wp-block-rwp-creator-suite-content-repurposer .rwp-stat-item .rwp-stat-value {
-    display: block;
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #667eea;
-}
-
-.wp-block-rwp-creator-suite-content-repurposer .rwp-stat-item .rwp-stat-label {
-    display: block;
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin-top: 0.25rem;
 }
 
 .wp-block-rwp-creator-suite-content-repurposer .rwp-results-container {
@@ -304,7 +272,6 @@
     border-radius: 0.5rem;
     padding: 1.25rem;
     transition: all 0.2s ease;
-    cursor: pointer;
     background: #f9fafb;
 }
 
@@ -893,6 +860,18 @@
     font-size: 1rem;
 }
 
+.wp-block-rwp-creator-suite-content-repurposer .rwp-scroll-to-upgrade {
+    color: #92400e;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-scroll-to-upgrade:hover {
+    color: #78350f;
+    text-decoration: underline;
+}
+
 .wp-block-rwp-creator-suite-content-repurposer .rwp-guest-results-upgrade {
     background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
     border: 1px solid #bfdbfe;
@@ -992,6 +971,24 @@
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-repurpose-button.rwp-loading {
+    color: transparent;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-repurpose-button.rwp-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
 /* Mobile Responsive Adjustments */

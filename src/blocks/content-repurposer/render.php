@@ -110,6 +110,12 @@ $block_id = uniqid( 'rwp-content-repurposer-' );
                         <?php esc_html_e( 'Repurposing...', 'rwp-creator-suite' ); ?>
                     </span>
                 </button>
+                
+                <?php if ( $show_usage_stats ) : ?>
+                    <div class="rwp-usage-stats" data-quota-display style="display: none;">
+                        <span class="quota-text"></span>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -249,14 +255,6 @@ $block_id = uniqid( 'rwp-content-repurposer-' );
             </div>
         </div>
 
-        <?php if ( $show_usage_stats ) : ?>
-            <div class="rwp-usage-stats" style="display: none;">
-                <h4><?php esc_html_e( 'Usage Statistics', 'rwp-creator-suite' ); ?></h4>
-                <div class="rwp-stats-content">
-                    <!-- Usage stats will be populated by JavaScript -->
-                </div>
-            </div>
-        <?php endif; ?>
 
         <div class="rwp-results-container" style="display: none;">
             <h4 class="rwp-results-title">
@@ -267,7 +265,7 @@ $block_id = uniqid( 'rwp-content-repurposer-' );
             </div>
             
             <!-- Guest upgrade prompts in results -->
-            <div class="rwp-guest-results-upgrade" style="display: none;">
+            <div id="rwp-upgrade-cta" class="rwp-guest-results-upgrade" style="display: none;">
                 <div class="rwp-upgrade-prompt">
                     <h5><?php esc_html_e( 'Want full content for all platforms?', 'rwp-creator-suite' ); ?></h5>
                     <p><?php esc_html_e( 'Sign up for free to get complete LinkedIn, Facebook, and Instagram versions of your content!', 'rwp-creator-suite' ); ?></p>

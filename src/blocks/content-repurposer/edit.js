@@ -8,7 +8,7 @@ export default function Edit() {
 	return (
 		<div { ...blockProps }>
 			<Placeholder
-				icon={ <Icon icon="admin-page" /> }
+				icon={ <Icon icon="admin-post" /> }
 				label={ __(
 					'Content Repurposer',
 					'rwp-creator-suite'

@@ -55,6 +55,12 @@ class RWP_Creator_Suite_Content_Repurposer_API {
                     'default'           => false,
                     'sanitize_callback' => 'rest_sanitize_boolean',
                 ),
+                'nonce' => array(
+                    'required'          => false,
+                    'type'              => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                    'validate_callback' => array( $this, 'validate_nonce' ),
+                ),
             ),
         ) );
         
@@ -74,10 +80,20 @@ class RWP_Creator_Suite_Content_Repurposer_API {
         $tone = $request->get_param( 'tone' );
         $is_guest = $request->get_param( 'is_guest' ) === true;
         
-        // Check shared rate limiting
-        $rate_limit_result = $this->ai_service->check_rate_limit( 'content_repurposing' );
-        if ( is_wp_error( $rate_limit_result ) ) {
-            return $rate_limit_result;
+        // Check rate limiting - for guests, use client-side attempt tracking
+        if ( $is_guest && ! is_user_logged_in() ) {
+            // For guests, we rely on client-side enforcement (3 attempts)
+            // Server-side check is more lenient to avoid conflicts
+            $guest_limit_result = $this->check_guest_attempts( $request );
+            if ( is_wp_error( $guest_limit_result ) ) {
+                return $guest_limit_result;
+            }
+        } else {
+            // For logged-in users, use the shared rate limiting system
+            $rate_limit_result = $this->ai_service->check_rate_limit( 'content_repurposing' );
+            if ( is_wp_error( $rate_limit_result ) ) {
+                return $rate_limit_result;
+            }
         }
         
         // Generate repurposed content
@@ -95,11 +111,27 @@ class RWP_Creator_Suite_Content_Repurposer_API {
         // Track usage in shared system
         $this->ai_service->track_usage( count( $platforms ), 'content_repurposing' );
         
-        return rest_ensure_response( array(
+        $response_data = array(
             'success' => true,
             'data' => $result,
             'usage' => $this->ai_service->get_usage_stats(),
-        ) );
+        );
+        
+        $response = rest_ensure_response( $response_data );
+        
+        // Add security headers based on user type
+        if ( $is_guest && ! is_user_logged_in() ) {
+            // Prevent caching of guest preview data
+            $response->header( 'Cache-Control', 'private, no-cache, no-store, must-revalidate' );
+            $response->header( 'X-Guest-Preview', '1' );
+            $response->header( 'X-Content-Type-Options', 'nosniff' );
+        } else {
+            // For authenticated users, allow some caching but mark as private
+            $response->header( 'Cache-Control', 'private, max-age=300' );
+            $response->header( 'X-Content-Type-Options', 'nosniff' );
+        }
+        
+        return $response;
     }
     
     /**
@@ -127,10 +159,7 @@ class RWP_Creator_Suite_Content_Repurposer_API {
                         $preview_length = $this->get_preview_length( $platform );
                         
                         // Create preview text (first X characters + ellipsis)
-                        $preview_text = mb_substr( $full_text, 0, $preview_length );
-                        if ( mb_strlen( $full_text ) > $preview_length ) {
-                            $preview_text .= '...';
-                        }
+                        $preview_text = mb_substr( $full_text, 0, $preview_length ) . '...';
                         
                         // Modify version data for guest preview
                         $version['is_preview'] = true;
@@ -179,8 +208,16 @@ class RWP_Creator_Suite_Content_Repurposer_API {
      * Check if user has permission to use the API.
      */
     public function check_permissions( $request ) {
-        // Allow both logged-in users and guests (with rate limiting)
+        // For logged-in users, verify nonce for security
         if ( is_user_logged_in() ) {
+            $nonce = $request->get_param( 'nonce' );
+            if ( ! empty( $nonce ) && ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+                return new WP_Error( 
+                    'rest_forbidden', 
+                    __( 'Invalid security token.', 'rwp-creator-suite' ), 
+                    array( 'status' => 403 ) 
+                );
+            }
             return true;
         }
         
@@ -265,5 +302,87 @@ class RWP_Creator_Suite_Content_Repurposer_API {
         }
         
         return true;
+    }
+    
+    /**
+     * Validate nonce parameter.
+     */
+    public function validate_nonce( $nonce, $request, $param ) {
+        // Only validate nonce if user is logged in
+        if ( ! is_user_logged_in() ) {
+            return true; // Skip nonce validation for guests
+        }
+        
+        // If user is logged in but no nonce provided, it's invalid
+        if ( empty( $nonce ) ) {
+            return new WP_Error(
+                'missing_nonce',
+                __( 'Security token is required for authenticated requests.', 'rwp-creator-suite' )
+            );
+        }
+        
+        return true; // Actual verification happens in check_permissions
+    }
+    
+    /**
+     * Check guest attempts from client-side tracking.
+     * This provides a lightweight server-side validation that aligns with client-side limits.
+     */
+    private function check_guest_attempts( $request ) {
+        // For guests, we mainly rely on client-side enforcement
+        // This is just a basic server-side safety net with a higher limit
+        $ip = $this->get_client_ip();
+        $transient_key = 'rwp_guest_repurposer_' . hash( 'sha256', $ip . wp_salt( 'secure_auth' ) );
+        $attempts = get_transient( $transient_key );
+        
+        if ( false === $attempts ) {
+            $attempts = 0;
+        }
+        
+        // Use a higher limit (10) to avoid conflicts with client-side 3-attempt system
+        // This catches only extreme abuse cases
+        if ( $attempts >= 10 ) {
+            return new WP_Error(
+                'guest_limit_exceeded',
+                __( 'Too many requests. Please try again later or create a free account.', 'rwp-creator-suite' ),
+                array( 'status' => 429 )
+            );
+        }
+        
+        // Increment attempts counter (expires after 1 hour)
+        set_transient( $transient_key, $attempts + 1, HOUR_IN_SECONDS );
+        
+        return true;
+    }
+    
+    /**
+     * Get client IP address for guest rate limiting.
+     */
+    private function get_client_ip() {
+        $ip_headers = array(
+            'HTTP_CF_CONNECTING_IP',     // Cloudflare
+            'HTTP_CLIENT_IP',            // Proxy
+            'HTTP_X_FORWARDED_FOR',      // Load balancer/proxy
+            'HTTP_X_FORWARDED',          // Proxy
+            'HTTP_X_CLUSTER_CLIENT_IP',  // Cluster
+            'HTTP_FORWARDED_FOR',        // Proxy
+            'HTTP_FORWARDED',            // Proxy
+            'REMOTE_ADDR'                // Standard
+        );
+        
+        foreach ( $ip_headers as $header ) {
+            if ( ! empty( $_SERVER[ $header ] ) ) {
+                $ips = explode( ',', $_SERVER[ $header ] );
+                $ip = trim( $ips[0] );
+                
+                // Validate IP
+                if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+                    return $ip;
+                }
+            }
+        }
+        
+        // Fallback to REMOTE_ADDR
+        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
     }
 }

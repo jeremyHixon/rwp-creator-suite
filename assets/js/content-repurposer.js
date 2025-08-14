@@ -154,10 +154,8 @@
                 platformCheckboxes: container.querySelectorAll('.rwp-platform-checkbox'),
                 toneSelect: container.querySelector('.rwp-tone-select'),
                 guestToneSelect: container.querySelector('.rwp-guest-tone-select'),
-                repurposeButton: container.querySelector('.rwp-repurpose-button'),
+                repurposeButton: container.querySelector('.rwp-repurpose-button:not(.rwp-guest-repurpose-button)'),
                 guestRepurposeButton: container.querySelector('.rwp-guest-repurpose-button'),
-                buttonText: container.querySelector('.rwp-button-text'),
-                buttonLoading: container.querySelector('.rwp-button-loading'),
                 usageStats: container.querySelector('.rwp-usage-stats'),
                 resultsContainer: container.querySelector('.rwp-results-container'),
                 resultsContent: container.querySelector('.rwp-results-content'),
@@ -342,16 +340,17 @@
             buttons.forEach(button => {
                 button.disabled = isProcessing;
                 
+                const buttonText = button.querySelector('.rwp-button-text');
+                const buttonLoading = button.querySelector('.rwp-button-loading');
+                
                 if (isProcessing) {
-                    button.dataset.originalText = button.textContent;
-                    button.textContent = 'Repurposing...';
                     button.classList.add('rwp-loading');
+                    if (buttonText) buttonText.style.display = 'none';
+                    if (buttonLoading) buttonLoading.style.display = 'inline';
                 } else {
-                    if (button.dataset.originalText) {
-                        button.textContent = button.dataset.originalText;
-                        delete button.dataset.originalText;
-                    }
                     button.classList.remove('rwp-loading');
+                    if (buttonText) buttonText.style.display = 'inline';
+                    if (buttonLoading) buttonLoading.style.display = 'none';
                 }
             });
         }
@@ -384,7 +383,8 @@
                     body: JSON.stringify({
                         content: state.content,
                         platforms: state.platforms,
-                        tone: state.tone
+                        tone: state.tone,
+                        nonce: this.isLoggedIn ? this.getNonce() : null
                     })
                 });
                 
@@ -439,7 +439,8 @@
                         content: state.content,
                         platforms: platforms,
                         tone: state.tone,
-                        is_guest: true
+                        is_guest: true,
+                        nonce: this.isLoggedIn ? this.getNonce() : null
                     })
                 });
                 
@@ -537,7 +538,7 @@
                         <div class="rwp-content-version rwp-guest-preview">
                             <div class="rwp-version-text">${this.escapeHtml(version.preview_text)}</div>
                             <div class="rwp-version-meta">
-                                <span class="rwp-character-count">Preview • Full version ~${version.estimated_length} chars</span>
+                                <span class="rwp-character-count">Preview • Full version ${version.estimated_length} / ${characterLimit} characters</span>
                             </div>
                         </div>
                     `;

@@ -97,6 +97,7 @@ class RWP_Creator_Suite {
         // Additional hooks
         add_action( 'init', array( $this, 'load_textdomain' ) );
         add_action( 'init', array( $this, 'maybe_redirect_wp_login' ) );
+        add_action( 'init', array( $this, 'ensure_guest_access_enabled' ) );
         
         // User data cleanup hooks
         add_action( 'delete_user', array( $this, 'cleanup_user_data' ) );
@@ -162,6 +163,21 @@ class RWP_Creator_Suite {
     }
 
     /**
+     * Ensure guest access is enabled for content repurposer.
+     */
+    public function ensure_guest_access_enabled() {
+        // Only run on admin and if option doesn't exist
+        if ( ! is_admin() && get_option( 'rwp_creator_suite_allow_guest_repurpose' ) !== false ) {
+            return;
+        }
+        
+        // Set default to enabled for freemium experience
+        if ( get_option( 'rwp_creator_suite_allow_guest_repurpose' ) === false ) {
+            update_option( 'rwp_creator_suite_allow_guest_repurpose', 1 );
+        }
+    }
+
+    /**
      * Plugin activation.
      */
     public function activate() {
@@ -173,6 +189,11 @@ class RWP_Creator_Suite {
         // Set default user role to subscriber
         if ( get_option( 'default_role' ) !== 'subscriber' ) {
             update_option( 'default_role', 'subscriber' );
+        }
+
+        // Enable guest content repurposing for freemium experience
+        if ( ! get_option( 'rwp_creator_suite_allow_guest_repurpose' ) ) {
+            update_option( 'rwp_creator_suite_allow_guest_repurpose', 1 );
         }
 
         // Flush rewrite rules

@@ -671,6 +671,362 @@
     }
 }
 
+/* Guest Form Styles */
+.wp-block-rwp-creator-suite-content-repurposer .rwp-repurposer-guest {
+    background: #f0f9ff;
+    border-radius: 0.75rem;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #bfdbfe;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-attempts-counter {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    padding: 0.75rem 1rem;
+    background: #eff6ff;
+    border-radius: 0.5rem;
+    border: 1px solid #bfdbfe;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-attempts-remaining {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1e40af;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-attempts-count {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #3b82f6;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-upgrade-hint {
+    text-align: center;
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-upgrade-hint p {
+    font-size: 0.8125rem;
+    color: #1e40af;
+    margin: 0;
+    font-style: italic;
+}
+
+/* Guest Attempts Exhausted Styles */
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-exhausted-message {
+    background: linear-gradient(135deg, #f0f9ff 0%, #eff6ff 100%);
+    border-radius: 0.75rem;
+    padding: 2.5rem;
+    text-align: center;
+    border: 1px solid #bfdbfe;
+    margin: 1.5rem 0;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-exhausted-content {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-exhausted-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-exhausted-content h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.75rem;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-exhausted-content p {
+    font-size: 1rem;
+    color: #6b7280;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-upgrade-benefits {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin: 1.5rem 0 2rem 0;
+    text-align: left;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-upgrade-benefit {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: white;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    font-size: 0.875rem;
+    color: #374151;
+    font-weight: 500;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-benefit-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-upgrade-cta-button {
+    display: inline-block;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: white;
+    text-decoration: none;
+    padding: 1rem 2.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-upgrade-cta-button:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-exhausted-login-note {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-exhausted-login-note a {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-exhausted-login-note a:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+/* Guest Results with Previews */
+.wp-block-rwp-creator-suite-content-repurposer .rwp-platform-result.rwp-guest-limited {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    border: 1px solid #d1d5db;
+    position: relative;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-platform-result.rwp-guest-limited::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-preview-badge {
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-content-version.rwp-guest-preview {
+    background: white;
+    border: 2px dashed #d1d5db;
+    position: relative;
+    overflow: hidden;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-content-version.rwp-guest-preview::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: linear-gradient(transparent, rgba(255, 255, 255, 0.9));
+    pointer-events: none;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-preview-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(2px);
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-upgrade-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #fef3c7;
+    color: #92400e;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    border: 1px solid #fcd34d;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-lock-icon {
+    font-size: 1rem;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-results-upgrade {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border: 1px solid #bfdbfe;
+    border-radius: 0.75rem;
+    padding: 2rem;
+    margin-top: 1.5rem;
+    text-align: center;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-upgrade-prompt h5 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1e40af;
+    margin-bottom: 0.75rem;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-upgrade-prompt p {
+    font-size: 0.875rem;
+    color: #1e40af;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-upgrade-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-upgrade-button {
+    display: inline-block;
+    background: #3b82f6;
+    color: white;
+    text-decoration: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-upgrade-button:hover {
+    background: #2563eb;
+    color: white;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-upgrade-separator {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-login-link {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-login-link:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+/* Guest Button Styling */
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-repurpose-button {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 0.875rem 1.75rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 140px;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-repurpose-button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-repurpose-button:active {
+    background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+    transform: translateY(0);
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-repurpose-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 640px) {
+    .wp-block-rwp-creator-suite-content-repurposer .rwp-repurposer-guest {
+        padding: 1.5rem;
+    }
+    
+    .wp-block-rwp-creator-suite-content-repurposer .rwp-guest-exhausted-message {
+        padding: 2rem 1.5rem;
+    }
+    
+    .wp-block-rwp-creator-suite-content-repurposer .rwp-upgrade-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .wp-block-rwp-creator-suite-content-repurposer .rwp-upgrade-benefits {
+        gap: 0.5rem;
+    }
+    
+    .wp-block-rwp-creator-suite-content-repurposer .rwp-upgrade-benefit {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8125rem;
+    }
+    
+    .wp-block-rwp-creator-suite-content-repurposer .rwp-guest-results-upgrade {
+        padding: 1.5rem;
+    }
+    
+    .wp-block-rwp-creator-suite-content-repurposer .rwp-preview-overlay {
+        padding: 0.75rem;
+    }
+}
+
 /* Reduce Motion */
 @media (prefers-reduced-motion: reduce) {
     *,
@@ -685,5 +1041,12 @@
     .wp-block-rwp-creator-suite-content-repurposer .loading-spinner {
         animation: none;
         border: 3px solid #3b82f6;
+    }
+    
+    .wp-block-rwp-creator-suite-content-repurposer .rwp-guest-cta-button:hover,
+    .wp-block-rwp-creator-suite-content-repurposer .rwp-upgrade-cta-button:hover,
+    .wp-block-rwp-creator-suite-content-repurposer .rwp-guest-repurpose-button:hover,
+    .wp-block-rwp-creator-suite-content-repurposer .rwp-upgrade-button:hover {
+        transform: none !important;
     }
 }

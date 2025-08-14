@@ -26,6 +26,7 @@
             
             this.elements = {};
             this.isLoggedIn = this.detectUserLoginState();
+            this.guestAttempts = this.getGuestAttempts();
             
             this.init();
         }
@@ -66,6 +67,54 @@
             );
         }
         
+        getGuestAttempts() {
+            if (this.isLoggedIn) return { attempts: 0, remaining: Infinity, firstUse: null };
+            
+            try {
+                const stored = localStorage.getItem('content_repurposer_attempts');
+                const attempts = stored ? parseInt(stored, 10) : 0;
+                
+                const firstUseStored = localStorage.getItem('content_repurposer_first_use');
+                const firstUse = firstUseStored ? parseInt(firstUseStored, 10) : null;
+                
+                const remaining = Math.max(0, 3 - attempts);
+                
+                return { attempts, remaining, firstUse };
+            } catch (error) {
+                console.warn('Failed to load guest attempts:', error);
+                return { attempts: 0, remaining: 3, firstUse: null };
+            }
+        }
+        
+        updateGuestAttempts() {
+            if (this.isLoggedIn) return;
+            
+            try {
+                const newAttempts = this.guestAttempts.attempts + 1;
+                const firstUse = this.guestAttempts.firstUse || Date.now();
+                
+                localStorage.setItem('content_repurposer_attempts', newAttempts.toString());
+                localStorage.setItem('content_repurposer_first_use', firstUse.toString());
+                
+                this.guestAttempts = {
+                    attempts: newAttempts,
+                    remaining: Math.max(0, 3 - newAttempts),
+                    firstUse
+                };
+                
+                this.updateAttemptsDisplay();
+            } catch (error) {
+                console.warn('Failed to update guest attempts:', error);
+            }
+        }
+        
+        updateAttemptsDisplay() {
+            const attemptsCountEl = this.container.querySelector('.rwp-attempts-count');
+            if (attemptsCountEl) {
+                attemptsCountEl.textContent = this.guestAttempts.remaining;
+            }
+        }
+        
         initializeFallbackMode() {
             // Simple fallback for when dependencies aren't available
             this.container.innerHTML = `
@@ -96,44 +145,65 @@
             
             this.elements = {
                 loggedInForm: container.querySelector('.rwp-repurposer-logged-in'),
+                guestForm: container.querySelector('.rwp-repurposer-guest'),
                 guestTeaser: container.querySelector('.rwp-repurposer-guest-teaser'),
+                guestExhaustedMessage: container.querySelector('.rwp-guest-exhausted-message'),
                 contentInput: container.querySelector('.rwp-content-input'),
+                guestContentInput: container.querySelector('.rwp-guest-content-input'),
                 characterCount: container.querySelector('.rwp-count-current'),
                 platformCheckboxes: container.querySelectorAll('.rwp-platform-checkbox'),
                 toneSelect: container.querySelector('.rwp-tone-select'),
+                guestToneSelect: container.querySelector('.rwp-guest-tone-select'),
                 repurposeButton: container.querySelector('.rwp-repurpose-button'),
+                guestRepurposeButton: container.querySelector('.rwp-guest-repurpose-button'),
                 buttonText: container.querySelector('.rwp-button-text'),
                 buttonLoading: container.querySelector('.rwp-button-loading'),
                 usageStats: container.querySelector('.rwp-usage-stats'),
                 resultsContainer: container.querySelector('.rwp-results-container'),
                 resultsContent: container.querySelector('.rwp-results-content'),
+                guestResultsUpgrade: container.querySelector('.rwp-guest-results-upgrade'),
                 errorMessage: container.querySelector('.rwp-error-message'),
-                errorContent: container.querySelector('.rwp-error-content')
+                errorContent: container.querySelector('.rwp-error-content'),
+                attemptsCount: container.querySelector('.rwp-attempts-count')
             };
         }
         
         setupUserStateDisplay() {
             if (this.isLoggedIn) {
-                // Show logged-in form, hide guest teaser
-                if (this.elements.loggedInForm) {
-                    this.elements.loggedInForm.style.display = 'block';
-                }
-                if (this.elements.guestTeaser) {
-                    this.elements.guestTeaser.style.display = 'none';
-                }
+                // Show logged-in form, hide all guest elements
+                this.showElement(this.elements.loggedInForm);
+                this.hideElement(this.elements.guestForm);
+                this.hideElement(this.elements.guestTeaser);
+                this.hideElement(this.elements.guestExhaustedMessage);
             } else {
-                // Show guest teaser, hide logged-in form
-                if (this.elements.loggedInForm) {
-                    this.elements.loggedInForm.style.display = 'none';
-                }
-                if (this.elements.guestTeaser) {
-                    this.elements.guestTeaser.style.display = 'block';
+                // Guest user logic based on attempts remaining
+                this.hideElement(this.elements.loggedInForm);
+                
+                if (this.guestAttempts.remaining > 0) {
+                    // Show guest form with attempts remaining
+                    this.showElement(this.elements.guestForm);
+                    this.hideElement(this.elements.guestTeaser);
+                    this.hideElement(this.elements.guestExhaustedMessage);
+                    this.updateAttemptsDisplay();
+                } else {
+                    // Show exhausted message, hide forms
+                    this.hideElement(this.elements.guestForm);
+                    this.hideElement(this.elements.guestTeaser);
+                    this.showElement(this.elements.guestExhaustedMessage);
                 }
             }
         }
         
+        showElement(element) {
+            if (element) element.style.display = 'block';
+        }
+        
+        hideElement(element) {
+            if (element) element.style.display = 'none';
+        }
+        
         bindEvents() {
-            // Content input events
+            // Content input events for logged-in users
             if (this.elements.contentInput) {
                 this.elements.contentInput.addEventListener('input', (e) => {
                     const content = e.target.value;
@@ -142,9 +212,25 @@
                 });
                 
                 this.elements.contentInput.addEventListener('paste', () => {
-                    // Update character count after paste
                     setTimeout(() => {
                         const content = this.elements.contentInput.value;
+                        this.state.setState({ content });
+                        this.updateCharacterCount(content);
+                    }, 10);
+                });
+            }
+            
+            // Content input events for guest users
+            if (this.elements.guestContentInput) {
+                this.elements.guestContentInput.addEventListener('input', (e) => {
+                    const content = e.target.value;
+                    this.state.setState({ content });
+                    this.updateCharacterCount(content);
+                });
+                
+                this.elements.guestContentInput.addEventListener('paste', () => {
+                    setTimeout(() => {
+                        const content = this.elements.guestContentInput.value;
                         this.state.setState({ content });
                         this.updateCharacterCount(content);
                     }, 10);
@@ -161,17 +247,29 @@
                 });
             });
             
-            // Tone selection event
+            // Tone selection events
             if (this.elements.toneSelect) {
                 this.elements.toneSelect.addEventListener('change', (e) => {
                     this.state.setState({ tone: e.target.value });
                 });
             }
             
-            // Repurpose button event
+            if (this.elements.guestToneSelect) {
+                this.elements.guestToneSelect.addEventListener('change', (e) => {
+                    this.state.setState({ tone: e.target.value });
+                });
+            }
+            
+            // Repurpose button events
             if (this.elements.repurposeButton) {
                 this.elements.repurposeButton.addEventListener('click', () => {
                     this.repurposeContent();
+                });
+            }
+            
+            if (this.elements.guestRepurposeButton) {
+                this.elements.guestRepurposeButton.addEventListener('click', () => {
+                    this.repurposeContentGuest();
                 });
             }
             
@@ -297,6 +395,70 @@
             }
         }
         
+        async repurposeContentGuest() {
+            if (this.guestAttempts.remaining <= 0) {
+                this.setupUserStateDisplay();
+                return;
+            }
+            
+            const state = this.state.getState();
+            
+            // Validate input
+            const validation = this.validateInput(state);
+            if (!validation.valid) {
+                this.showError(validation.message);
+                return;
+            }
+            
+            this.state.setState({ 
+                isProcessing: true, 
+                error: null,
+                repurposedContent: {}
+            });
+            
+            try {
+                // For guest users, always request all platforms but will get limited results
+                const platforms = ['twitter', 'linkedin', 'facebook', 'instagram'];
+                
+                const response = await this.makeAPIRequest('/repurpose-content', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        content: state.content,
+                        platforms: platforms,
+                        tone: state.tone,
+                        is_guest: true
+                    })
+                });
+                
+                if (response.success) {
+                    // Update guest attempts after successful request
+                    this.updateGuestAttempts();
+                    
+                    this.state.setState({ 
+                        repurposedContent: response.data,
+                        isProcessing: false
+                    });
+                    this.showGuestResults();
+                    
+                    // Check if exhausted after this attempt
+                    if (this.guestAttempts.remaining <= 0) {
+                        setTimeout(() => {
+                            this.setupUserStateDisplay();
+                        }, 1000);
+                    }
+                } else {
+                    throw new Error(response.message || 'Failed to repurpose content');
+                }
+                
+            } catch (error) {
+                console.error('Guest content repurposing error:', error);
+                this.state.setState({ 
+                    isProcessing: false,
+                    error: error.message
+                });
+            }
+        }
+        
         validateInput(state) {
             if (!state.content || state.content.trim().length === 0) {
                 return {
@@ -344,27 +506,56 @@
             });
             
             this.elements.resultsContent.innerHTML = resultsHTML;
-            this.showResults();
+            if (this.isLoggedIn) {
+                this.displayResults();
+            } else {
+                this.displayGuestResults();
+            }
         }
         
         renderPlatformSuccess(platform, platformName, versions, characterLimit) {
-            const versionsHTML = versions.map((version, index) => `
-                <div class="rwp-content-version">
-                    <div class="rwp-version-text">${this.escapeHtml(version.text)}</div>
-                    <div class="rwp-version-meta">
-                        <span class="rwp-character-count">${version.character_count} / ${characterLimit} characters</span>
-                        <button type="button" class="rwp-copy-button" data-content="${this.escapeHtml(version.text)}">
-                            Copy
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+            const isGuest = !this.isLoggedIn;
+            const isTwitter = platform === 'twitter';
+            
+            const versionsHTML = versions.map((version, index) => {
+                // For guest users, show preview for non-Twitter platforms
+                if (isGuest && !isTwitter && version.is_preview) {
+                    return `
+                        <div class="rwp-content-version rwp-guest-preview">
+                            <div class="rwp-version-text">${this.escapeHtml(version.preview_text)}</div>
+                            <div class="rwp-preview-overlay">
+                                <div class="rwp-upgrade-badge">
+                                    <span class="rwp-lock-icon">🔒</span>
+                                    <span class="rwp-upgrade-text">Sign up to see full version</span>
+                                </div>
+                            </div>
+                            <div class="rwp-version-meta">
+                                <span class="rwp-character-count">Preview • Full version ~${version.estimated_length} chars</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Full version for logged-in users or Twitter for guests
+                    return `
+                        <div class="rwp-content-version">
+                            <div class="rwp-version-text">${this.escapeHtml(version.text)}</div>
+                            <div class="rwp-version-meta">
+                                <span class="rwp-character-count">${version.character_count} / ${characterLimit} characters</span>
+                                <button type="button" class="rwp-copy-button" data-content="${this.escapeHtml(version.text)}">
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
             
             return `
-                <div class="rwp-platform-result">
+                <div class="rwp-platform-result ${isGuest && !isTwitter ? 'rwp-guest-limited' : ''}">
                     <div class="rwp-platform-header">
                         <span class="rwp-platform-name">${platformName}</span>
                         <span class="rwp-character-limit">Limit: ${characterLimit} chars</span>
+                        ${isGuest && !isTwitter ? '<span class="rwp-preview-badge">Preview</span>' : ''}
                     </div>
                     <div class="rwp-platform-content">
                         <div class="rwp-content-versions">
@@ -391,9 +582,36 @@
             `;
         }
         
+        displayResults() {
+            if (this.elements.resultsContainer) {
+                this.elements.resultsContainer.style.display = 'block';
+            }
+        }
+        
         showResults() {
             if (this.elements.resultsContainer) {
                 this.elements.resultsContainer.style.display = 'block';
+                this.elements.resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+        
+        displayGuestResults() {
+            if (this.elements.resultsContainer) {
+                this.elements.resultsContainer.style.display = 'block';
+                // Show the upgrade prompt for guest users
+                if (this.elements.guestResultsUpgrade) {
+                    this.elements.guestResultsUpgrade.style.display = 'block';
+                }
+            }
+        }
+        
+        showGuestResults() {
+            if (this.elements.resultsContainer) {
+                this.elements.resultsContainer.style.display = 'block';
+                // Show the upgrade prompt for guest users
+                if (this.elements.guestResultsUpgrade) {
+                    this.elements.guestResultsUpgrade.style.display = 'block';
+                }
                 this.elements.resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         }
@@ -414,7 +632,8 @@
         }
         
         async loadUsageStats() {
-            if (!this.state.getState().showUsageStats) return;
+            // Skip usage stats for guest users
+            if (!this.isLoggedIn || !this.state.getState().showUsageStats) return;
             
             try {
                 const response = await this.makeAPIRequest('/repurpose-usage');

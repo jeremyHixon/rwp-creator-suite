@@ -33,15 +33,6 @@ $block_id = uniqid( 'rwp-content-repurposer-' );
     data-show-usage="<?php echo esc_attr( $show_usage_stats ? '1' : '0' ); ?>"
 >
     <div class="rwp-content-repurposer-container">
-        <div class="rwp-repurposer-header">
-            <h3 class="rwp-repurposer-title">
-                <?php esc_html_e( 'Content Repurposer', 'rwp-creator-suite' ); ?>
-            </h3>
-            <p class="rwp-repurposer-description">
-                <?php esc_html_e( 'Transform your long-form content into engaging social media posts optimized for different platforms.', 'rwp-creator-suite' ); ?>
-            </p>
-        </div>
-
         <div class="rwp-repurposer-form">
             <div class="rwp-form-group">
                 <label for="<?php echo esc_attr( $block_id ); ?>-content" class="rwp-form-label">

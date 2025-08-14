@@ -1,20 +1,13 @@
-/**
- * WordPress dependencies
- */
 import { registerBlockType } from '@wordpress/blocks';
-
-/**
- * Internal dependencies
- */
-import edit from './edit';
-import save from './save';
 import metadata from './block.json';
+import Edit from './edit';
+import save from './save';
+import './editor';
 
-/**
- * Register the Content Repurposer block.
- */
-registerBlockType( metadata.name, {
-	...metadata,
-	edit,
-	save,
-} );
+const { name } = metadata;
+
+registerBlockType(name, {
+    ...metadata,
+    edit: Edit,
+    save,
+});

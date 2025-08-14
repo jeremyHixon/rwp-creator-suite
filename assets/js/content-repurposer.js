@@ -536,14 +536,6 @@
                     return `
                         <div class="rwp-content-version rwp-guest-preview">
                             <div class="rwp-version-text">${this.escapeHtml(version.preview_text)}</div>
-                            <div class="rwp-preview-overlay">
-                                <div class="rwp-upgrade-badge">
-                                    <span class="rwp-lock-icon">🔒</span>
-                                    <span class="rwp-upgrade-text">
-                                        <a href="#rwp-upgrade-cta" class="rwp-scroll-to-upgrade">Sign up to see full version</a>
-                                    </span>
-                                </div>
-                            </div>
                             <div class="rwp-version-meta">
                                 <span class="rwp-character-count">Preview • Full version ~${version.estimated_length} chars</span>
                             </div>
@@ -565,6 +557,18 @@
                 }
             }).join('');
             
+            // Add single CTA per platform for guest previews
+            const platformCTA = (isGuest && !isTwitter) ? `
+                <div class="rwp-platform-upgrade-cta">
+                    <div class="rwp-upgrade-badge">
+                        <span class="rwp-lock-icon">🔒</span>
+                        <span class="rwp-upgrade-text">
+                            <a href="#rwp-upgrade-cta" class="rwp-scroll-to-upgrade">Sign up to see full version</a>
+                        </span>
+                    </div>
+                </div>
+            ` : '';
+            
             return `
                 <div class="rwp-platform-result ${isGuest && !isTwitter ? 'rwp-guest-limited' : ''}">
                     <div class="rwp-platform-header">
@@ -576,6 +580,7 @@
                         <div class="rwp-content-versions">
                             ${versionsHTML}
                         </div>
+                        ${platformCTA}
                     </div>
                 </div>
             `;

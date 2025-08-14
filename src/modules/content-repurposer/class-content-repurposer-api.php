@@ -69,6 +69,25 @@ class RWP_Creator_Suite_Content_Repurposer_API {
             'callback'            => array( $this, 'get_usage_stats' ),
             'permission_callback' => array( $this, 'check_permissions' ),
         ) );
+        
+        register_rest_route( 'rwp-creator-suite/v1', '/recover-guest-content', array(
+            'methods'             => 'POST',
+            'callback'            => array( $this, 'recover_guest_content' ),
+            'permission_callback' => array( $this, 'check_logged_in_permissions' ),
+            'args'                => array(
+                'content_key' => array(
+                    'required'          => false,
+                    'type'              => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                ),
+                'nonce' => array(
+                    'required'          => false,
+                    'type'              => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                    'validate_callback' => array( $this, 'validate_nonce' ),
+                ),
+            ),
+        ) );
     }
     
     /**
@@ -102,8 +121,9 @@ class RWP_Creator_Suite_Content_Repurposer_API {
             return $result;
         }
         
-        // Apply guest limitations (full Twitter + previews for other platforms)
+        // Store full content for guest users before applying limitations
         if ( $is_guest ) {
+            $this->store_guest_full_content( $result, $request );
             $result = $this->apply_guest_limitations( $result );
         }
         
@@ -131,6 +151,61 @@ class RWP_Creator_Suite_Content_Repurposer_API {
         }
         
         return $response;
+    }
+    
+    /**
+     * Store full AI response for guest users before applying limitations.
+     * This allows recovery of full content when the user registers or logs in.
+     * 
+     * @param array $result The full repurposed content result
+     * @param WP_REST_Request $request The original request
+     */
+    private function store_guest_full_content( $result, $request ) {
+        if ( ! is_array( $result ) ) {
+            return;
+        }
+        
+        $ip = $this->get_client_ip();
+        $content_hash = hash( 'sha256', $request->get_param( 'content' ) );
+        $storage_key = 'rwp_guest_full_content_' . hash( 'sha256', $ip . $content_hash . wp_salt( 'secure_auth' ) );
+        
+        // Store the full content with metadata
+        $storage_data = array(
+            'full_content' => $result,
+            'original_content' => $request->get_param( 'content' ),
+            'platforms' => $request->get_param( 'platforms' ),
+            'tone' => $request->get_param( 'tone' ),
+            'timestamp' => time(),
+            'ip_hash' => hash( 'sha256', $ip . wp_salt( 'secure_auth' ) )
+        );
+        
+        // Store for 30 minutes - long enough for user registration/login but not too long for privacy
+        set_transient( $storage_key, $storage_data, 30 * MINUTE_IN_SECONDS );
+        
+        // Also store the key in user session/cookie for easy retrieval
+        $this->set_guest_content_key( $storage_key );
+    }
+    
+    /**
+     * Set guest content key for later retrieval.
+     * 
+     * @param string $storage_key The storage key
+     */
+    private function set_guest_content_key( $storage_key ) {
+        // Use a secure cookie that expires in 30 minutes
+        $cookie_name = 'rwp_guest_content_key';
+        $cookie_value = base64_encode( $storage_key );
+        $expire_time = time() + ( 30 * MINUTE_IN_SECONDS );
+        
+        setcookie( 
+            $cookie_name, 
+            $cookie_value, 
+            $expire_time, 
+            COOKIEPATH, 
+            COOKIE_DOMAIN, 
+            is_ssl(), 
+            true // httponly
+        );
     }
     
     /**
@@ -201,6 +276,140 @@ class RWP_Creator_Suite_Content_Repurposer_API {
             'success' => true,
             'data' => $stats,
         ) );
+    }
+    
+    /**
+     * Recover full content for newly logged-in users who previously used guest mode.
+     */
+    public function recover_guest_content( $request ) {
+        if ( ! is_user_logged_in() ) {
+            return new WP_Error(
+                'not_logged_in',
+                __( 'You must be logged in to recover guest content.', 'rwp-creator-suite' ),
+                array( 'status' => 401 )
+            );
+        }
+        
+        // Try to get content key from request parameter or cookie
+        $content_key = $request->get_param( 'content_key' );
+        
+        if ( empty( $content_key ) ) {
+            $content_key = $this->get_guest_content_key_from_cookie();
+        }
+        
+        if ( empty( $content_key ) ) {
+            return new WP_Error(
+                'no_content_key',
+                __( 'No guest content found to recover.', 'rwp-creator-suite' ),
+                array( 'status' => 404 )
+            );
+        }
+        
+        // Decode the content key if it's base64 encoded
+        if ( base64_encode( base64_decode( $content_key, true ) ) === $content_key ) {
+            $content_key = base64_decode( $content_key );
+        }
+        
+        // Retrieve stored content
+        $stored_data = get_transient( $content_key );
+        
+        if ( false === $stored_data || ! is_array( $stored_data ) ) {
+            return new WP_Error(
+                'content_expired',
+                __( 'Guest content has expired or is not available.', 'rwp-creator-suite' ),
+                array( 'status' => 404 )
+            );
+        }
+        
+        // Validate the stored data structure
+        if ( ! isset( $stored_data['full_content'] ) || ! isset( $stored_data['timestamp'] ) ) {
+            return new WP_Error(
+                'invalid_content',
+                __( 'Stored content is invalid.', 'rwp-creator-suite' ),
+                array( 'status' => 500 )
+            );
+        }
+        
+        // Additional security check - ensure content isn't too old (30 minutes max)
+        if ( ( time() - $stored_data['timestamp'] ) > ( 30 * MINUTE_IN_SECONDS ) ) {
+            delete_transient( $content_key );
+            return new WP_Error(
+                'content_expired',
+                __( 'Guest content has expired.', 'rwp-creator-suite' ),
+                array( 'status' => 410 )
+            );
+        }
+        
+        // Clean up the stored content after successful retrieval
+        delete_transient( $content_key );
+        $this->clear_guest_content_cookie();
+        
+        return rest_ensure_response( array(
+            'success' => true,
+            'data' => array(
+                'content' => $stored_data['original_content'],
+                'platforms' => $stored_data['platforms'],
+                'tone' => $stored_data['tone'],
+                'repurposed_content' => $stored_data['full_content'],
+                'recovered_at' => time()
+            ),
+            'message' => __( 'Guest content successfully recovered!', 'rwp-creator-suite' )
+        ) );
+    }
+    
+    /**
+     * Get guest content key from cookie.
+     */
+    private function get_guest_content_key_from_cookie() {
+        $cookie_name = 'rwp_guest_content_key';
+        
+        if ( isset( $_COOKIE[ $cookie_name ] ) ) {
+            return sanitize_text_field( $_COOKIE[ $cookie_name ] );
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Clear guest content cookie.
+     */
+    private function clear_guest_content_cookie() {
+        $cookie_name = 'rwp_guest_content_key';
+        
+        setcookie( 
+            $cookie_name, 
+            '', 
+            time() - 3600, 
+            COOKIEPATH, 
+            COOKIE_DOMAIN, 
+            is_ssl(), 
+            true 
+        );
+    }
+    
+    /**
+     * Check permissions for logged-in users only.
+     */
+    public function check_logged_in_permissions( $request ) {
+        if ( ! is_user_logged_in() ) {
+            return new WP_Error(
+                'rest_forbidden',
+                __( 'You must be logged in to use this endpoint.', 'rwp-creator-suite' ),
+                array( 'status' => 401 )
+            );
+        }
+        
+        // Verify nonce for security
+        $nonce = $request->get_param( 'nonce' );
+        if ( ! empty( $nonce ) && ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+            return new WP_Error( 
+                'rest_forbidden', 
+                __( 'Invalid security token.', 'rwp-creator-suite' ), 
+                array( 'status' => 403 ) 
+            );
+        }
+        
+        return true;
     }
     
     /**

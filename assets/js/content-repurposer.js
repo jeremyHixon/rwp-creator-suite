@@ -56,43 +56,57 @@
                     console.log('Is logged in:', this.isLoggedIn);
                     console.log('Has lastGenerated:', parsedState.lastGenerated);
                     
-                    // For logged-in users who just authenticated, transfer guest data
+                    // For logged-in users who just authenticated, check for server-stored full content first
                     if (this.isLoggedIn && parsedState.lastGenerated) {
                         // Check if the guest data is recent (within last 30 minutes)
                         const thirtyMinutesAgo = Date.now() - (30 * 60 * 1000);
                         console.log('Time check - lastGenerated:', parsedState.lastGenerated, 'thirtyMinutesAgo:', thirtyMinutesAgo);
                         
-                        if (parsedState.lastGenerated > thirtyMinutesAgo && parsedState.repurposedContent) {
-                            console.log('Guest data is recent, converting...');
-                            // Convert guest preview data to full content for logged-in user
-                            const convertedContent = this.convertGuestDataForLoggedInUser(parsedState.repurposedContent);
+                        if (parsedState.lastGenerated > thirtyMinutesAgo) {
+                            console.log('Recent guest data found, attempting to recover full content from server...');
                             
-                            // Only clear guest state after successful transfer if we have content
-                            if (Object.keys(convertedContent).length > 0) {
-                                console.log('Clearing guest state and transferring data');
-                                localStorage.removeItem('rwp_content_repurposer_guest_state');
-                                // Also clear any existing logged-in user state to prevent overwriting converted data
-                                localStorage.removeItem('rwp_content_repurposer_state');
-                                console.log('Guest state cleared. Remaining localStorage:', localStorage.getItem('rwp_content_repurposer_guest_state'));
-                                
-                                const finalState = { 
-                                    ...baseState, 
-                                    content: parsedState.content || '',
-                                    platforms: parsedState.platforms || baseState.platforms,
-                                    tone: parsedState.tone || baseState.tone,
-                                    repurposedContent: convertedContent,
-                                    ...config 
-                                };
-                                
-                                console.log('Final state being returned:', finalState);
-                                console.log('Final repurposed content in state:', JSON.stringify(finalState.repurposedContent, null, 2));
-                                
-                                return finalState;
-                            } else {
-                                console.log('No converted content, not transferring');
-                            }
+                            // Try to recover full content from server storage
+                            this.recoverGuestContentFromServer()
+                                .then(recoveredContent => {
+                                    if (recoveredContent) {
+                                        console.log('Full content recovered from server:', recoveredContent);
+                                        // Clear local guest state since we got the full content
+                                        localStorage.removeItem('rwp_content_repurposer_guest_state');
+                                        localStorage.removeItem('rwp_content_repurposer_state');
+                                        
+                                        // Add recovery info for display
+                                        const enhancedContent = {
+                                            ...recoveredContent.repurposed_content,
+                                            _recoveryInfo: {
+                                                wasRecovered: true,
+                                                message: 'Your previous content has been fully restored with all platforms included!'
+                                            }
+                                        };
+                                        
+                                        // Update the app state with recovered content
+                                        this.state.setState({
+                                            content: recoveredContent.content || '',
+                                            platforms: recoveredContent.platforms || baseState.platforms,
+                                            tone: recoveredContent.tone || baseState.tone,
+                                            repurposedContent: enhancedContent
+                                        });
+                                        
+                                        return;
+                                    }
+                                    
+                                    // If server recovery failed, fall back to local conversion
+                                    console.log('Server recovery failed, falling back to local guest data conversion...');
+                                    this.fallbackToLocalGuestData(parsedState, baseState, config);
+                                })
+                                .catch(error => {
+                                    console.log('Error recovering from server, falling back to local conversion:', error);
+                                    this.fallbackToLocalGuestData(parsedState, baseState, config);
+                                });
+                            
+                            // Return base state for now, recovery will update via setState
+                            return baseState;
                         } else {
-                            console.log('Guest data is too old or missing repurposed content');
+                            console.log('Guest data is too old');
                         }
                     }
                     
@@ -106,6 +120,60 @@
             }
             
             return baseState;
+        }
+        
+        async recoverGuestContentFromServer() {
+            if (!this.isLoggedIn) {
+                console.log('Not logged in, skipping server recovery');
+                return null;
+            }
+            
+            try {
+                const response = await this.makeAPIRequest('/recover-guest-content', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        nonce: this.getNonce()
+                    })
+                });
+                
+                if (response.success && response.data) {
+                    console.log('Successfully recovered guest content from server');
+                    return response.data;
+                }
+                
+                console.log('Server recovery failed:', response.message || 'No data available');
+                return null;
+            } catch (error) {
+                console.log('Error during server recovery:', error);
+                return null;
+            }
+        }
+        
+        fallbackToLocalGuestData(parsedState, baseState, config) {
+            if (parsedState.repurposedContent) {
+                console.log('Guest data is recent, converting locally...');
+                // Convert guest preview data to full content for logged-in user
+                const convertedContent = this.convertGuestDataForLoggedInUser(parsedState.repurposedContent);
+                
+                // Only clear guest state after successful transfer if we have content
+                if (Object.keys(convertedContent).length > 0) {
+                    console.log('Clearing guest state and transferring data');
+                    localStorage.removeItem('rwp_content_repurposer_guest_state');
+                    // Also clear any existing logged-in user state to prevent overwriting converted data
+                    localStorage.removeItem('rwp_content_repurposer_state');
+                    console.log('Guest state cleared. Remaining localStorage:', localStorage.getItem('rwp_content_repurposer_guest_state'));
+                    
+                    // Update state with local converted content
+                    this.state.setState({
+                        content: parsedState.content || '',
+                        platforms: parsedState.platforms || baseState.platforms,
+                        tone: parsedState.tone || baseState.tone,
+                        repurposedContent: convertedContent
+                    });
+                } else {
+                    console.log('No converted content, not transferring');
+                }
+            }
         }
         
         detectUserLoginState() {
@@ -605,7 +673,7 @@
             console.log('Processing results for display');
             let resultsHTML = '';
             
-            // Check for upgrade message
+            // Check for upgrade message or content recovery message
             if (repurposedContent._upgradeInfo && repurposedContent._upgradeInfo.hasPreviewContent) {
                 console.log('Adding upgrade success message');
                 resultsHTML += `
@@ -613,6 +681,16 @@
                         <div class="rwp-upgrade-success-content">
                             <span class="rwp-success-icon">✅</span>
                             <strong>Registration successful!</strong> ${repurposedContent._upgradeInfo.message}
+                        </div>
+                    </div>
+                `;
+            } else if (repurposedContent._recoveryInfo && repurposedContent._recoveryInfo.wasRecovered) {
+                console.log('Adding content recovery message');
+                resultsHTML += `
+                    <div class="rwp-recovery-success-message">
+                        <div class="rwp-recovery-success-content">
+                            <span class="rwp-success-icon">🎉</span>
+                            <strong>Welcome back!</strong> ${repurposedContent._recoveryInfo.message}
                         </div>
                     </div>
                 `;

@@ -20,13 +20,15 @@
                 return;
             }
             
-            // Initialize state with guest persistence support
+            // Set login state and guest attempts first
+            this.isLoggedIn = this.detectUserLoginState();
+            this.guestAttempts = this.getGuestAttempts();
+            
+            // Initialize state with guest persistence support (now that login state is known)
             const initialState = this.getInitialStateWithPersistence(config);
             this.state = new RWPStateManager('content_repurposer', initialState);
             
             this.elements = {};
-            this.isLoggedIn = this.detectUserLoginState();
-            this.guestAttempts = this.getGuestAttempts();
             
             this.init();
         }
@@ -46,22 +48,34 @@
             // Check for stored guest state (for both guest and newly logged-in users)
             try {
                 const stored = localStorage.getItem('rwp_content_repurposer_guest_state');
+                console.log('Checking stored guest state:', stored);
+                
                 if (stored) {
                     const parsedState = JSON.parse(stored);
+                    console.log('Parsed guest state:', parsedState);
+                    console.log('Is logged in:', this.isLoggedIn);
+                    console.log('Has lastGenerated:', parsedState.lastGenerated);
                     
                     // For logged-in users who just authenticated, transfer guest data
                     if (this.isLoggedIn && parsedState.lastGenerated) {
                         // Check if the guest data is recent (within last 30 minutes)
                         const thirtyMinutesAgo = Date.now() - (30 * 60 * 1000);
+                        console.log('Time check - lastGenerated:', parsedState.lastGenerated, 'thirtyMinutesAgo:', thirtyMinutesAgo);
+                        
                         if (parsedState.lastGenerated > thirtyMinutesAgo && parsedState.repurposedContent) {
+                            console.log('Guest data is recent, converting...');
                             // Convert guest preview data to full content for logged-in user
                             const convertedContent = this.convertGuestDataForLoggedInUser(parsedState.repurposedContent);
                             
                             // Only clear guest state after successful transfer if we have content
                             if (Object.keys(convertedContent).length > 0) {
+                                console.log('Clearing guest state and transferring data');
                                 localStorage.removeItem('rwp_content_repurposer_guest_state');
+                                // Also clear any existing logged-in user state to prevent overwriting converted data
+                                localStorage.removeItem('rwp_content_repurposer_state');
+                                console.log('Guest state cleared. Remaining localStorage:', localStorage.getItem('rwp_content_repurposer_guest_state'));
                                 
-                                return { 
+                                const finalState = { 
                                     ...baseState, 
                                     content: parsedState.content || '',
                                     platforms: parsedState.platforms || baseState.platforms,
@@ -69,7 +83,16 @@
                                     repurposedContent: convertedContent,
                                     ...config 
                                 };
+                                
+                                console.log('Final state being returned:', finalState);
+                                console.log('Final repurposed content in state:', JSON.stringify(finalState.repurposedContent, null, 2));
+                                
+                                return finalState;
+                            } else {
+                                console.log('No converted content, not transferring');
                             }
+                        } else {
+                            console.log('Guest data is too old or missing repurposed content');
                         }
                     }
                     
@@ -86,10 +109,39 @@
         }
         
         detectUserLoginState() {
-            return (
-                typeof rwpContentRepurposer !== 'undefined' &&
-                rwpContentRepurposer.isLoggedIn
-            );
+            // Try multiple methods to detect login state
+            let isLoggedIn = false;
+            
+            // Method 1: Check rwpContentRepurposer global
+            if (typeof rwpContentRepurposer !== 'undefined' && rwpContentRepurposer.isLoggedIn) {
+                isLoggedIn = true;
+            }
+            
+            // Method 2: Check WordPress admin bar (wp-admin-bar is present for logged-in users)
+            if (!isLoggedIn && document.getElementById('wpadminbar')) {
+                isLoggedIn = true;
+            }
+            
+            // Method 3: Check for WordPress user ID in body class
+            if (!isLoggedIn && document.body.classList.contains('logged-in')) {
+                isLoggedIn = true;
+            }
+            
+            // Method 4: Check if there's a WordPress user ID in cookies
+            if (!isLoggedIn && document.cookie.includes('wordpress_logged_in_')) {
+                isLoggedIn = true;
+            }
+            
+            console.log('Detecting login state:', {
+                rwpContentRepurposerExists: typeof rwpContentRepurposer !== 'undefined',
+                rwpContentRepurposer: typeof rwpContentRepurposer !== 'undefined' ? rwpContentRepurposer : 'undefined',
+                adminBarExists: !!document.getElementById('wpadminbar'),
+                hasLoggedInClass: document.body.classList.contains('logged-in'),
+                hasWordPressCookie: document.cookie.includes('wordpress_logged_in_'),
+                finalIsLoggedIn: isLoggedIn
+            });
+            
+            return isLoggedIn;
         }
         
         getGuestAttempts() {
@@ -160,7 +212,9 @@
             
             // Set up state change listener
             this.state.subscribe((newState) => {
-                this.updateUI();
+                console.log('State subscription triggered with state:', newState);
+                console.log('Is logged in during subscription:', this.isLoggedIn);
+                this.updateUI(newState);
                 this.persistGuestState(newState);
             });
         }
@@ -304,8 +358,9 @@
             });
         }
         
-        updateUI() {
-            const state = this.state.getState();
+        updateUI(providedState = null) {
+            const state = providedState || this.state.getState();
+            console.log('updateUI called with state:', state);
             
             // Update form fields for logged-in users
             if (this.elements.contentInput && this.elements.contentInput.value !== state.content) {
@@ -338,6 +393,7 @@
             this.updateButtonState(state.isProcessing);
             
             // Update results
+            console.log('About to update results with:', state.repurposedContent);
             this.updateResults(state.repurposedContent);
             
             // Update error display
@@ -535,17 +591,23 @@
         }
         
         updateResults(repurposedContent) {
+            console.log('updateResults called with:', repurposedContent);
+            console.log('Results content element exists:', !!this.elements.resultsContent);
+            
             if (!this.elements.resultsContent || !repurposedContent || Object.keys(repurposedContent).length === 0) {
+                console.log('Hiding results - missing data or elements');
                 if (this.elements.resultsContainer) {
                     this.elements.resultsContainer.style.display = 'none';
                 }
                 return;
             }
             
+            console.log('Processing results for display');
             let resultsHTML = '';
             
             // Check for upgrade message
             if (repurposedContent._upgradeInfo && repurposedContent._upgradeInfo.hasPreviewContent) {
+                console.log('Adding upgrade success message');
                 resultsHTML += `
                     <div class="rwp-upgrade-success-message">
                         <div class="rwp-upgrade-success-content">
@@ -582,9 +644,19 @@
             const isGuest = !this.isLoggedIn;
             const isTwitter = platform === 'twitter';
             
+            console.log(`Rendering platform success for ${platform}:`, { 
+                isGuest, 
+                isTwitter, 
+                versionsCount: versions.length,
+                versions 
+            });
+            
             const versionsHTML = versions.map((version, index) => {
+                console.log(`Processing version ${index} for ${platform}:`, JSON.stringify(version, null, 2));
+                
                 // For guest users, show preview for non-Twitter platforms
                 if (isGuest && !isTwitter && version.is_preview) {
+                    console.log(`Rendering guest preview for ${platform}`);
                     return `
                         <div class="rwp-content-version rwp-guest-preview">
                             <div class="rwp-version-text">${this.escapeHtml(version.preview_text)}</div>
@@ -595,6 +667,7 @@
                     `;
                 } else {
                     // Full version for logged-in users or Twitter for guests
+                    console.log(`Rendering full version for ${platform}:`, version.text?.substring(0, 50) + '...');
                     return `
                         <div class="rwp-content-version">
                             <div class="rwp-version-text">${this.escapeHtml(version.text)}</div>
@@ -805,7 +878,10 @@
         }
         
         persistGuestState(state) {
-            if (this.isLoggedIn) return;
+            if (this.isLoggedIn) {
+                console.log('Skipping guest state persistence - user is logged in');
+                return;
+            }
             
             try {
                 const stateToStore = {
@@ -872,38 +948,50 @@
         
         convertGuestDataForLoggedInUser(guestRepurposedContent) {
             if (!guestRepurposedContent || Object.keys(guestRepurposedContent).length === 0) {
+                console.log('No guest repurposed content to convert');
                 return {};
             }
+            
+            console.log('Converting guest data:', guestRepurposedContent);
             
             const convertedContent = {};
             let hasPreviewContent = false;
             
             Object.entries(guestRepurposedContent).forEach(([platform, data]) => {
+                // Skip internal properties
+                if (platform.startsWith('_')) return;
+                
                 if (data.success && data.versions) {
                     convertedContent[platform] = {
                         success: true,
                         versions: data.versions.map(version => {
                             // For Twitter, guest users already got full content
                             if (platform === 'twitter' && version.text) {
+                                console.log(`Twitter content preserved for ${platform}:`, version.text.substring(0, 50) + '...');
                                 return version;
                             }
                             
                             // For other platforms with preview content, show upgrade prompt
                             if (version.is_preview && version.preview_text) {
                                 hasPreviewContent = true;
+                                const convertedText = `${version.preview_text}\n\n[Click "Repurpose Content" again to generate the full version now that you're logged in!]`;
+                                console.log(`Converting preview content for ${platform}:`, convertedText.substring(0, 50) + '...');
                                 return {
-                                    text: `${version.preview_text}\n\n[Click "Repurpose Content" again to generate the full version now that you're logged in!]`,
-                                    character_count: version.estimated_length || version.preview_text.length,
+                                    text: convertedText,
+                                    character_count: version.estimated_length || convertedText.length,
                                     is_converted_from_preview: true,
                                     show_regenerate_prompt: true
                                 };
                             }
                             
+                            // Fallback for any other content
+                            console.log(`Preserving other content for ${platform}:`, version);
                             return version;
                         })
                     };
                 } else {
                     // Preserve error states
+                    console.log(`Preserving error state for ${platform}:`, data);
                     convertedContent[platform] = data;
                 }
             });
@@ -915,6 +1003,14 @@
                     message: "Welcome! You can now regenerate this content to see the full versions."
                 };
             }
+            
+            console.log('Converted content:', convertedContent);
+            
+            // Debug the actual structure of converted content
+            Object.entries(convertedContent).forEach(([platform, data]) => {
+                if (platform.startsWith('_')) return;
+                console.log(`Final converted structure for ${platform}:`, JSON.stringify(data, null, 2));
+            });
             
             return convertedContent;
         }

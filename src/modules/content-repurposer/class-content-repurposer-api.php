@@ -80,10 +80,9 @@ class RWP_Creator_Suite_Content_Repurposer_API {
         $tone = $request->get_param( 'tone' );
         $is_guest = $request->get_param( 'is_guest' ) === true;
         
-        // Check rate limiting - for guests, use client-side attempt tracking
-        if ( $is_guest && ! is_user_logged_in() ) {
-            // For guests, we rely on client-side enforcement (3 attempts)
-            // Server-side check is more lenient to avoid conflicts
+        // Check rate limiting based on request type
+        if ( $is_guest ) {
+            // For guest requests, use dedicated guest rate limiting
             $guest_limit_result = $this->check_guest_attempts( $request );
             if ( is_wp_error( $guest_limit_result ) ) {
                 return $guest_limit_result;
@@ -104,7 +103,7 @@ class RWP_Creator_Suite_Content_Repurposer_API {
         }
         
         // Apply guest limitations (full Twitter + previews for other platforms)
-        if ( $is_guest && ! is_user_logged_in() ) {
+        if ( $is_guest ) {
             $result = $this->apply_guest_limitations( $result );
         }
         
@@ -119,8 +118,8 @@ class RWP_Creator_Suite_Content_Repurposer_API {
         
         $response = rest_ensure_response( $response_data );
         
-        // Add security headers based on user type
-        if ( $is_guest && ! is_user_logged_in() ) {
+        // Add security headers based on request type
+        if ( $is_guest ) {
             // Prevent caching of guest preview data
             $response->header( 'Cache-Control', 'private, no-cache, no-store, must-revalidate' );
             $response->header( 'X-Guest-Preview', '1' );

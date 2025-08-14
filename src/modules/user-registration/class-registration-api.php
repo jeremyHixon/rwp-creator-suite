@@ -144,6 +144,23 @@ class RWP_Creator_Suite_Registration_API {
      */
     public function handle_registration( $request ) {
         try {
+            // Verify nonce for security
+            $nonce = $request->get_param( 'nonce' );
+            if ( $nonce && ! wp_verify_nonce( $nonce, 'rwp_creator_suite_registration' ) ) {
+                RWP_Creator_Suite_Error_Logger::log_security_event(
+                    'Invalid nonce in registration request',
+                    array( 
+                        'email' => $request->get_param( 'email' ),
+                        'user_agent' => $request->get_header( 'User-Agent' )
+                    )
+                );
+                return new WP_Error(
+                    'invalid_nonce',
+                    'Security check failed. Please refresh the page and try again.',
+                    array( 'status' => 403 )
+                );
+            }
+            
             // Rate limiting check
             if ( ! $this->check_rate_limit( $request->get_param( 'email' ) ) ) {
                 return new WP_Error(
@@ -195,6 +212,22 @@ class RWP_Creator_Suite_Registration_API {
      */
     public function handle_login( $request ) {
         try {
+            // Verify nonce for security
+            $nonce = $request->get_param( 'nonce' );
+            if ( $nonce && ! wp_verify_nonce( $nonce, 'rwp_creator_suite_login' ) ) {
+                RWP_Creator_Suite_Error_Logger::log_security_event(
+                    'Invalid nonce in login request',
+                    array( 
+                        'email' => $request->get_param( 'email' ),
+                        'user_agent' => $request->get_header( 'User-Agent' )
+                    )
+                );
+                return new WP_Error(
+                    'invalid_nonce',
+                    'Security check failed. Please refresh the page and try again.',
+                    array( 'status' => 403 )
+                );
+            }
             $auto_login = new RWP_Creator_Suite_Auto_Login();
 
             $result = $auto_login->login_user(
@@ -279,7 +312,7 @@ class RWP_Creator_Suite_Registration_API {
     }
 
     /**
-     * Basic rate limiting check.
+     * Enhanced rate limiting check with IP-based protection.
      *
      * @param string $email Email address.
      * @return bool Whether request is within rate limits.
@@ -289,17 +322,69 @@ class RWP_Creator_Suite_Registration_API {
             return false;
         }
 
-        $transient_key = 'rwp_creator_suite_reg_' . md5( $email );
-        $attempts = get_transient( $transient_key );
-
-        if ( $attempts >= 5 ) {
+        $rate_limiter = new RWP_Creator_Suite_Rate_Limiter();
+        
+        // Check email-based rate limiting
+        $email_check = $rate_limiter->check_registration_rate_limit( $email );
+        if ( is_wp_error( $email_check ) ) {
             return false;
         }
-
-        // Increment counter
-        set_transient( $transient_key, $attempts + 1, HOUR_IN_SECONDS );
+        
+        // Check IP-based rate limiting
+        $ip_check = $rate_limiter->check_ip_rate_limit( 'registration', 10, HOUR_IN_SECONDS );
+        if ( is_wp_error( $ip_check ) ) {
+            return false;
+        }
+        
+        // Detect suspicious patterns
+        $current_ip = $this->get_client_ip();
+        if ( $rate_limiter->detect_suspicious_patterns( $current_ip, 'registration' ) ) {
+            // Log but don't block immediately
+            RWP_Creator_Suite_Error_Logger::log_security_event(
+                'Suspicious registration pattern detected',
+                array( 
+                    'email' => $email,
+                    'ip_address' => $current_ip 
+                )
+            );
+        }
+        
+        // Check for distributed attacks
+        $rate_limiter->detect_distributed_attack( 'registration' );
 
         return true;
+    }
+    
+    /**
+     * Get client IP address safely.
+     *
+     * @return string Client IP address.
+     */
+    private function get_client_ip() {
+        $ip_keys = array(
+            'HTTP_CLIENT_IP',
+            'HTTP_X_FORWARDED_FOR',
+            'HTTP_X_FORWARDED',
+            'HTTP_X_CLUSTER_CLIENT_IP',
+            'HTTP_FORWARDED_FOR',
+            'HTTP_FORWARDED',
+            'REMOTE_ADDR',
+        );
+
+        foreach ( $ip_keys as $key ) {
+            if ( array_key_exists( $key, $_SERVER ) === true ) {
+                $ip_list = explode( ',', sanitize_text_field( $_SERVER[ $key ] ) );
+                $ip = trim( $ip_list[0] );
+                
+                if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+                    return $ip;
+                }
+            }
+        }
+
+        return isset( $_SERVER['REMOTE_ADDR'] ) 
+            ? sanitize_text_field( $_SERVER['REMOTE_ADDR'] ) 
+            : '';
     }
 
     /**
@@ -314,9 +399,30 @@ class RWP_Creator_Suite_Registration_API {
     /**
      * Get nonce for API requests.
      *
+     * @param string $action The specific action to create nonce for.
      * @return string Nonce value.
      */
-    public static function get_nonce() {
-        return wp_create_nonce( 'rwp_creator_suite_api' );
+    public static function get_nonce( $action = 'api' ) {
+        $valid_actions = array( 'registration', 'login', 'api' );
+        $action = in_array( $action, $valid_actions, true ) ? $action : 'api';
+        return wp_create_nonce( 'rwp_creator_suite_' . $action );
+    }
+    
+    /**
+     * Get registration nonce specifically.
+     *
+     * @return string Registration nonce value.
+     */
+    public static function get_registration_nonce() {
+        return self::get_nonce( 'registration' );
+    }
+    
+    /**
+     * Get login nonce specifically.
+     *
+     * @return string Login nonce value.
+     */
+    public static function get_login_nonce() {
+        return self::get_nonce( 'login' );
     }
 }

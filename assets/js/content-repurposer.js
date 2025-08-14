@@ -43,18 +43,43 @@
                 error: null
             };
             
-            // For guest users, try to load from localStorage with fallback
-            if (!this.isLoggedIn) {
-                try {
-                    const stored = localStorage.getItem('rwp_content_repurposer_guest_state');
-                    if (stored) {
-                        const parsedState = JSON.parse(stored);
-                        // Merge with base state, preserving config overrides
+            // Check for stored guest state (for both guest and newly logged-in users)
+            try {
+                const stored = localStorage.getItem('rwp_content_repurposer_guest_state');
+                if (stored) {
+                    const parsedState = JSON.parse(stored);
+                    
+                    // For logged-in users who just authenticated, transfer guest data
+                    if (this.isLoggedIn && parsedState.lastGenerated) {
+                        // Check if the guest data is recent (within last 30 minutes)
+                        const thirtyMinutesAgo = Date.now() - (30 * 60 * 1000);
+                        if (parsedState.lastGenerated > thirtyMinutesAgo && parsedState.repurposedContent) {
+                            // Convert guest preview data to full content for logged-in user
+                            const convertedContent = this.convertGuestDataForLoggedInUser(parsedState.repurposedContent);
+                            
+                            // Only clear guest state after successful transfer if we have content
+                            if (Object.keys(convertedContent).length > 0) {
+                                localStorage.removeItem('rwp_content_repurposer_guest_state');
+                                
+                                return { 
+                                    ...baseState, 
+                                    content: parsedState.content || '',
+                                    platforms: parsedState.platforms || baseState.platforms,
+                                    tone: parsedState.tone || baseState.tone,
+                                    repurposedContent: convertedContent,
+                                    ...config 
+                                };
+                            }
+                        }
+                    }
+                    
+                    // For guest users, load stored state normally
+                    if (!this.isLoggedIn) {
                         return { ...baseState, ...parsedState, ...config };
                     }
-                } catch (error) {
-                    console.warn('Failed to load guest state:', error);
                 }
+            } catch (error) {
+                console.warn('Failed to load guest state:', error);
             }
             
             return baseState;
@@ -282,9 +307,15 @@
         updateUI() {
             const state = this.state.getState();
             
-            // Update form fields
+            // Update form fields for logged-in users
             if (this.elements.contentInput && this.elements.contentInput.value !== state.content) {
                 this.elements.contentInput.value = state.content;
+                this.updateCharacterCount(state.content);
+            }
+            
+            // Update form fields for guest users
+            if (this.elements.guestContentInput && this.elements.guestContentInput.value !== state.content) {
+                this.elements.guestContentInput.value = state.content;
                 this.updateCharacterCount(state.content);
             }
             
@@ -293,9 +324,14 @@
                 checkbox.checked = state.platforms.includes(checkbox.value);
             });
             
-            // Update tone select
+            // Update tone select for logged-in users
             if (this.elements.toneSelect) {
                 this.elements.toneSelect.value = state.tone;
+            }
+            
+            // Update tone select for guest users
+            if (this.elements.guestToneSelect) {
+                this.elements.guestToneSelect.value = state.tone;
             }
             
             // Update button state
@@ -508,7 +544,22 @@
             
             let resultsHTML = '';
             
+            // Check for upgrade message
+            if (repurposedContent._upgradeInfo && repurposedContent._upgradeInfo.hasPreviewContent) {
+                resultsHTML += `
+                    <div class="rwp-upgrade-success-message">
+                        <div class="rwp-upgrade-success-content">
+                            <span class="rwp-success-icon">✅</span>
+                            <strong>Registration successful!</strong> ${repurposedContent._upgradeInfo.message}
+                        </div>
+                    </div>
+                `;
+            }
+            
             Object.entries(repurposedContent).forEach(([platform, data]) => {
+                // Skip special internal properties
+                if (platform.startsWith('_')) return;
+                
                 const platformName = platform.charAt(0).toUpperCase() + platform.slice(1);
                 const characterLimit = this.getCharacterLimit(platform);
                 
@@ -760,7 +811,9 @@
                 const stateToStore = {
                     content: state.content,
                     platforms: state.platforms,
-                    tone: state.tone
+                    tone: state.tone,
+                    repurposedContent: state.repurposedContent || {},
+                    lastGenerated: state.repurposedContent && Object.keys(state.repurposedContent).length > 0 ? Date.now() : null
                 };
                 localStorage.setItem('rwp_content_repurposer_guest_state', JSON.stringify(stateToStore));
             } catch (error) {
@@ -803,6 +856,10 @@
         }
         
         escapeHtml(text) {
+            if (text == null || text === undefined) {
+                return '';
+            }
+            
             const map = {
                 '&': '&amp;',
                 '<': '&lt;',
@@ -810,7 +867,56 @@
                 '"': '&quot;',
                 "'": '&#039;'
             };
-            return text.replace(/[&<>"']/g, m => map[m]);
+            return String(text).replace(/[&<>"']/g, m => map[m]);
+        }
+        
+        convertGuestDataForLoggedInUser(guestRepurposedContent) {
+            if (!guestRepurposedContent || Object.keys(guestRepurposedContent).length === 0) {
+                return {};
+            }
+            
+            const convertedContent = {};
+            let hasPreviewContent = false;
+            
+            Object.entries(guestRepurposedContent).forEach(([platform, data]) => {
+                if (data.success && data.versions) {
+                    convertedContent[platform] = {
+                        success: true,
+                        versions: data.versions.map(version => {
+                            // For Twitter, guest users already got full content
+                            if (platform === 'twitter' && version.text) {
+                                return version;
+                            }
+                            
+                            // For other platforms with preview content, show upgrade prompt
+                            if (version.is_preview && version.preview_text) {
+                                hasPreviewContent = true;
+                                return {
+                                    text: `${version.preview_text}\n\n[Click "Repurpose Content" again to generate the full version now that you're logged in!]`,
+                                    character_count: version.estimated_length || version.preview_text.length,
+                                    is_converted_from_preview: true,
+                                    show_regenerate_prompt: true
+                                };
+                            }
+                            
+                            return version;
+                        })
+                    };
+                } else {
+                    // Preserve error states
+                    convertedContent[platform] = data;
+                }
+            });
+            
+            // Add a flag to show upgrade success message
+            if (hasPreviewContent) {
+                convertedContent._upgradeInfo = {
+                    hasPreviewContent: true,
+                    message: "Welcome! You can now regenerate this content to see the full versions."
+                };
+            }
+            
+            return convertedContent;
         }
     }
 

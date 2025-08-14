@@ -401,6 +401,14 @@ class RWP_Creator_Suite_Caption_API {
         $nonce = $request->get_header( 'X-WP-Nonce' );
         
         if ( empty( $nonce ) ) {
+            RWP_Creator_Suite_Error_Logger::log_security_event(
+                'Missing nonce in Caption API request',
+                array( 
+                    'endpoint' => $request->get_route(),
+                    'user_agent' => $request->get_header( 'User-Agent' ),
+                    'referer' => $request->get_header( 'Referer' )
+                )
+            );
             return new WP_Error(
                 'missing_nonce',
                 __( 'Security token is missing', 'rwp-creator-suite' ),
@@ -409,6 +417,15 @@ class RWP_Creator_Suite_Caption_API {
         }
         
         if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+            RWP_Creator_Suite_Error_Logger::log_security_event(
+                'Invalid nonce in Caption API request',
+                array( 
+                    'endpoint' => $request->get_route(),
+                    'user_agent' => $request->get_header( 'User-Agent' ),
+                    'referer' => $request->get_header( 'Referer' ),
+                    'user_id' => get_current_user_id()
+                )
+            );
             return new WP_Error(
                 'invalid_nonce',
                 __( 'Security token is invalid', 'rwp-creator-suite' ),

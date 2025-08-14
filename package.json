@@ -8,10 +8,20 @@
 		"lint:css": "wp-scripts lint-style",
 		"lint:js": "wp-scripts lint-js",
 		"format": "wp-scripts format",
-		"packages-update": "wp-scripts packages-update"
+		"packages-update": "wp-scripts packages-update",
+		"test:js": "wp-scripts test-unit-js",
+		"test:js:watch": "wp-scripts test-unit-js --watch",
+		"test:js:coverage": "wp-scripts test-unit-js --coverage",
+		"test:php": "phpunit",
+		"test": "npm run test:php && npm run test:js",
+		"test:coverage": "npm run test:php && npm run test:js:coverage"
 	},
 	"devDependencies": {
-		"@wordpress/scripts": "^27.0.0"
+		"@wordpress/scripts": "^27.0.0",
+		"@testing-library/jest-dom": "^6.1.4",
+		"@testing-library/dom": "^9.3.3",
+		"@testing-library/user-event": "^14.5.1",
+		"jsdom": "^23.0.1"
 	},
 	"keywords": [
 		"wordpress",
@@ -21,5 +31,28 @@
 		"block"
 	],
 	"author": "Jeremy Hixon",
-	"license": "GPL-2.0-or-later"
+	"license": "GPL-2.0-or-later",
+	"jest": {
+		"preset": "@wordpress/jest-preset-default",
+		"setupFilesAfterEnv": [
+			"<rootDir>/tests/js/setup.js"
+		],
+		"testEnvironment": "jsdom",
+		"moduleNameMapping": {
+			"^@/(.*)$": "<rootDir>/assets/js/$1"
+		},
+		"collectCoverageFrom": [
+			"assets/js/**/*.js",
+			"src/blocks/**/*.js",
+			"!assets/js/**/*.min.js",
+			"!**/node_modules/**",
+			"!**/build/**"
+		],
+		"coverageDirectory": "coverage/js",
+		"coverageReporters": [
+			"text",
+			"html",
+			"lcov"
+		]
+	}
 }

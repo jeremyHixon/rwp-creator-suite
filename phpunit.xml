@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+	backupGlobals="false"
+	backupStaticAttributes="false"
+	bootstrap="tests/bootstrap.php"
+	colors="true"
+	convertErrorsToExceptions="true"
+	convertNoticesToExceptions="true"
+	convertWarningsToExceptions="true"
+	processIsolation="false"
+	stopOnFailure="false"
+	testSuiteLoader="PHPUnit\Runner\StandardTestSuiteLoader"
+	verbose="true">
+	
+	<testsuites>
+		<testsuite name="RWP Creator Suite Test Suite">
+			<directory suffix="-test.php">tests/</directory>
+		</testsuite>
+	</testsuites>
+	
+	<filter>
+		<whitelist processUncoveredFilesFromWhitelist="true">
+			<directory suffix=".php">src/</directory>
+			<file>rwp-creator-suite.php</file>
+			<exclude>
+				<directory suffix=".php">tests/</directory>
+				<directory suffix=".php">node_modules/</directory>
+				<directory suffix=".php">build/</directory>
+			</exclude>
+		</whitelist>
+	</filter>
+	
+	<php>
+		<const name="WP_TESTS_PHPUNIT_POLYFILLS_PATH" value="vendor/yoast/phpunit-polyfills" />
+	</php>
+</phpunit>

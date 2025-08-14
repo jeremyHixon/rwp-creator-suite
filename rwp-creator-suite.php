@@ -207,10 +207,38 @@ class RWP_Creator_Suite {
      * Plugin deactivation.
      */
     public function deactivate() {
-        // Clean up transients
+        // Verify user has capability to deactivate plugins
+        if ( ! current_user_can( 'deactivate_plugins' ) ) {
+            RWP_Creator_Suite_Error_Logger::log_security_event(
+                'Unauthorized plugin deactivation attempt',
+                array( 'current_user' => get_current_user_id() )
+            );
+            return;
+        }
+        
+        // Clean up transients with improved security
         global $wpdb;
-        $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_rwp_creator_suite_%'" );
-        $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_timeout_rwp_creator_suite_%'" );
+        $result1 = $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+            '_transient_rwp_creator_suite_%'
+        ) );
+        $result2 = $wpdb->query( $wpdb->prepare(
+            "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+            '_transient_timeout_rwp_creator_suite_%'
+        ) );
+        
+        // Log cleanup results for audit trail
+        if ( false === $result1 || false === $result2 ) {
+            RWP_Creator_Suite_Error_Logger::log(
+                'Failed to clean up transients during deactivation',
+                RWP_Creator_Suite_Error_Logger::LOG_LEVEL_WARNING,
+                array( 
+                    'transients_deleted' => $result1,
+                    'timeouts_deleted' => $result2,
+                    'db_error' => $wpdb->last_error
+                )
+            );
+        }
 
         // Flush rewrite rules
         flush_rewrite_rules();
@@ -222,6 +250,18 @@ class RWP_Creator_Suite {
      * @param int $user_id The ID of the user being deleted.
      */
     public function cleanup_user_data( $user_id ) {
+        // Verify user has capability to delete users (typically admins)
+        if ( ! current_user_can( 'delete_users' ) ) {
+            RWP_Creator_Suite_Error_Logger::log_security_event(
+                'Unauthorized attempt to clean up user data',
+                array( 
+                    'attempted_user_id' => $user_id,
+                    'current_user' => get_current_user_id()
+                )
+            );
+            return;
+        }
+        
         if ( ! $user_id || ! is_numeric( $user_id ) ) {
             return;
         }
@@ -270,14 +310,34 @@ class RWP_Creator_Suite {
             delete_user_meta( $user_id, $meta_key );
         }
 
-        // Clean up usage tracking meta (pattern-based)
+        // Clean up usage tracking meta (pattern-based) with improved security
         global $wpdb;
-        $wpdb->query( $wpdb->prepare(
+        
+        // Validate user ID is numeric and positive
+        if ( ! is_numeric( $user_id ) || $user_id <= 0 ) {
+            RWP_Creator_Suite_Error_Logger::log_security_event(
+                'Invalid user ID in cleanup_user_meta_data',
+                array( 'user_id' => $user_id )
+            );
+            return;
+        }
+        
+        $result = $wpdb->query( $wpdb->prepare(
             "DELETE FROM {$wpdb->usermeta} 
             WHERE user_id = %d 
-            AND meta_key LIKE 'rwp_caption_usage_%%'",
-            $user_id
+            AND meta_key LIKE %s",
+            $user_id,
+            'rwp_caption_usage_%'
         ) );
+        
+        // Log cleanup results for audit trail
+        if ( false === $result ) {
+            RWP_Creator_Suite_Error_Logger::log(
+                'Failed to clean up user usage tracking meta',
+                RWP_Creator_Suite_Error_Logger::LOG_LEVEL_ERROR,
+                array( 'user_id' => $user_id, 'db_error' => $wpdb->last_error )
+            );
+        }
     }
 
     /**
@@ -309,12 +369,28 @@ class RWP_Creator_Suite {
             delete_transient( $cache_key );
         }
 
-        // Clean up any remaining user-specific transients
-        $wpdb->query( $wpdb->prepare(
+        // Clean up any remaining user-specific transients with improved security
+        // Validate user ID is numeric and positive (already validated in calling function)
+        if ( ! is_numeric( $user_id ) || $user_id <= 0 ) {
+            return;
+        }
+        
+        $result = $wpdb->query( $wpdb->prepare(
             "DELETE FROM {$wpdb->options} 
-            WHERE option_name LIKE '_transient_%%_user_{$user_id}_%%' 
-            OR option_name LIKE '_transient_timeout_%%_user_{$user_id}_%%'"
+            WHERE option_name LIKE %s 
+            OR option_name LIKE %s",
+            '_transient_%_user_' . $user_id . '_%',
+            '_transient_timeout_%_user_' . $user_id . '_%'
         ) );
+        
+        // Log cleanup results for audit trail
+        if ( false === $result ) {
+            RWP_Creator_Suite_Error_Logger::log(
+                'Failed to clean up user-specific transients',
+                RWP_Creator_Suite_Error_Logger::LOG_LEVEL_ERROR,
+                array( 'user_id' => $user_id, 'db_error' => $wpdb->last_error )
+            );
+        }
     }
 
     /**

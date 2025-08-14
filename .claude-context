@@ -1,71 +1,114 @@
-# Content Repurposing Engine - Claude Code Context
+# Guest Teaser Implementation - Content Repurposing Engine
 
-## FIRST STEP: Analyze Existing Codebase
-Before implementing anything, examine the current codebase to understand:
+## Strategy Overview
+Implement a freemium experience for guest users using **Platform Limitation + Attempt Counter** approach to encourage registration.
 
-1. **Current AI Implementation**: `src/modules/caption-writer/class-ai-caption-service.php`
-2. **Existing module patterns**: How modules are structured and loaded
-3. **Block development workflow**: Current block registration and build process
-4. **Settings management**: How options are stored and accessed
-5. **Client-side patterns**: localStorage usage, state management, API calls
-6. **Asset management**: How JavaScript/CSS is enqueued and organized
+## Guest User Experience
 
-Provide a concise summary of current architecture before proposing changes.
+### Free Access (3 Attempts)
+- **Full Twitter generation**: Complete 280-character optimized content
+- **Platform previews**: Show first 50-100 characters of LinkedIn, Facebook, Instagram versions
+- **Attempt tracking**: localStorage counter, clear remaining attempts display
+- **Value demonstration**: Show what they're missing without full access
 
-## Project Overview
-Adding a content repurposing tool to an existing WordPress plugin. The tool transforms long-form content into platform-specific social media posts using OpenAI's API.
+### Preview Format
+For restricted platforms, show:
+```
+LinkedIn version: "In today's digital landscape, businesses are increasingly..."
+[Sign up to see full version]
 
-## Known Infrastructure
-1. **AI Service**: `src/modules/caption-writer/class-ai-caption-service.php` (needs to become plugin-wide)
-2. **Settings**: Global options page approach (one page, multiple features)
-3. **Build System**: Uses `@wordpress/scripts` with custom endpoints
-4. **Privacy-first**: All content processing client-side, no server storage
+Facebook version: "Hey everyone! 👋 Just discovered something amazing about..."
+[Sign up to see full version]
 
-## Required Refactoring
-Based on existing AI service at `src/modules/caption-writer/class-ai-caption-service.php`:
-1. **Generalize AI Service**: Make it plugin-wide rather than caption-writer specific
-2. **Settings**: Integrate with existing options structure 
-3. **Usage Tracking**: Extend current patterns to support multiple AI features
+Instagram version: "✨ Transform your content strategy with this one simple..."
+[Sign up to see full version]
+```
 
-## New Implementation Required
+## Technical Implementation
 
-### 1. Content Repurposer Module
-Structure to be determined after analyzing existing module patterns.
+### Guest State Tracking (localStorage)
+- `content_repurposer_attempts`: Number of uses (max 3)
+- `content_repurposer_first_use`: Timestamp for potential reset logic
+- `content_repurposer_shown_platforms`: Track which previews they've seen
 
-### 2. WordPress Block
-Follow discovered block-as-container pattern.
+### Content Generation Logic
+1. **All Users**: Generate complete content for all platforms via AI
+2. **Guests**: Return full Twitter + truncated others with upgrade prompts
+3. **Logged-in**: Return all complete content
 
-### 3. Platform Support (Start Basic)
-- **Twitter**: 280 character limit
-- **LinkedIn**: 3000 character limit, professional tone
-- **Facebook**: 63,206 character limit, engaging tone  
-- **Instagram**: 2200 character limit, visual-focused
+### UI/UX Elements
+- **Attempt counter**: "2 free attempts remaining" 
+- **Platform tabs**: Show all platforms, disable restricted ones with lock icons
+- **Upgrade prompts**: Clear, non-aggressive messaging about benefits
+- **Preview quality**: Make truncated content compelling, not frustrating
 
-Character limit monitoring as primary constraint (like existing implementation).
+## Privacy Compliance
+- No guest data sent to server
+- All tracking client-side only
+- No email capture at this stage
+- Respect existing privacy-first architecture
+
+## Conversion Messaging
+
+### Progressive Disclosure
+1. **First use**: Focus on tool functionality
+2. **Second use**: Mention additional platforms available  
+3. **Third use**: Clear upgrade benefits and registration CTA
+
+### Value Proposition
+- "Unlock professional LinkedIn posts"
+- "Get engaging Facebook content"
+- "Access Instagram-optimized versions with hashtags"
+- "Save unlimited content variations"
 
 ## Technical Requirements
 
-### Content Processing (Client-Side Only)
-- Input: Long-form content 
-- Analysis: Extract key points, maintain tone
-- Generation: Platform-specific versions with character limits
-- Output: Formatted text ready for copy/paste
+### Guest Limitations
+- 3 total attempts (not per platform)
+- Full Twitter generation only
+- 50-100 character previews for other platforms
+- No content saving/history
+- No advanced features (if implemented later)
 
-### Privacy Requirements  
-- No content sent to plugin servers (follow existing patterns)
-- All processing client-side
-- OpenAI API calls direct from browser
-- Only anonymized metrics (follow existing usage tracking)
+### Logged-in Benefits
+- Unlimited attempts
+- All platforms fully generated
+- Content history/saving (if implemented)
+- Advanced features access
 
-## Development Guidelines
-- Follow patterns discovered in codebase analysis
-- Use existing WordPress coding standards
-- Maintain current security and state management patterns
-- Integrate with discovered settings structure
+### Upgrade Flow
+- Smooth transition from guest to logged-in state
+- Preserve current content in progress
+- Clear explanation of new capabilities
+- Optional: import guest-generated content to user account
 
-## Implementation Steps
-1. **Analyze & Document**: Current architecture and patterns
-2. **Refactor**: AI service to be plugin-wide  
-3. **Implement**: Content repurposer following discovered patterns
-4. **Integrate**: With existing settings and tracking
-5. **Test**: Within current infrastructure
+## Implementation Considerations
+
+### User Experience
+- Don't frustrate guests with too many restrictions
+- Make free Twitter content genuinely useful
+- Previews should create desire, not confusion
+- Clear, honest messaging about limitations
+
+### Conversion Optimization
+- Track conversion funnel: attempts → previews viewed → signups
+- A/B testing potential for messaging and restriction levels
+- Analytics on which platform previews drive most interest
+
+### Future Enhancements
+- Seasonal increases (5 attempts during holidays)
+- Referral bonuses for additional attempts
+- Email capture for extended trial (if privacy policy allows)
+
+## Success Metrics
+- Guest engagement rate (% who use multiple attempts)
+- Preview click-through rate (interest in other platforms)
+- Conversion rate (guest → registered user)
+- Content quality satisfaction (Twitter-only users)
+
+## Development Notes
+- Integrate with existing authentication state management
+- Follow current localStorage patterns
+- Maintain privacy-first architecture
+- Use existing UI components and styling
+- Respect current module structure

@@ -79,6 +79,7 @@
         
         init() {
             this.cacheElements();
+            this.setupUserStateDisplay();
             this.bindEvents();
             this.updateUI();
             this.loadUsageStats();
@@ -94,6 +95,8 @@
             const container = this.container;
             
             this.elements = {
+                loggedInForm: container.querySelector('.rwp-repurposer-logged-in'),
+                guestTeaser: container.querySelector('.rwp-repurposer-guest-teaser'),
                 contentInput: container.querySelector('.rwp-content-input'),
                 characterCount: container.querySelector('.rwp-count-current'),
                 platformCheckboxes: container.querySelectorAll('.rwp-platform-checkbox'),
@@ -107,6 +110,26 @@
                 errorMessage: container.querySelector('.rwp-error-message'),
                 errorContent: container.querySelector('.rwp-error-content')
             };
+        }
+        
+        setupUserStateDisplay() {
+            if (this.isLoggedIn) {
+                // Show logged-in form, hide guest teaser
+                if (this.elements.loggedInForm) {
+                    this.elements.loggedInForm.style.display = 'block';
+                }
+                if (this.elements.guestTeaser) {
+                    this.elements.guestTeaser.style.display = 'none';
+                }
+            } else {
+                // Show guest teaser, hide logged-in form
+                if (this.elements.loggedInForm) {
+                    this.elements.loggedInForm.style.display = 'none';
+                }
+                if (this.elements.guestTeaser) {
+                    this.elements.guestTeaser.style.display = 'block';
+                }
+            }
         }
         
         bindEvents() {
@@ -223,6 +246,12 @@
         }
         
         async repurposeContent() {
+            // If user is not logged in, this shouldn't be called, but add a safety check
+            if (!this.isLoggedIn) {
+                console.warn('Repurpose button clicked for guest user - this should not happen');
+                return;
+            }
+            
             const state = this.state.getState();
             
             // Validate input

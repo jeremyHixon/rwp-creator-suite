@@ -543,6 +543,134 @@
     border-color: #fecaca;
 }
 
+/* Guest Teaser Styles */
+.wp-block-rwp-creator-suite-content-repurposer .rwp-repurposer-guest-teaser {
+    background: #f9fafb;
+    border-radius: 0.75rem;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid #e5e7eb;
+    text-align: center;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-teaser-content {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-teaser-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-teaser-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1rem;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-teaser-content p {
+    font-size: 1rem;
+    color: #6b7280;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-teaser-benefits {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin: 2rem 0;
+    text-align: left;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-benefit-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+    font-size: 0.875rem;
+    color: #374151;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-benefit-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-teaser-cta {
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-cta-button {
+    display: inline-block;
+    background: #3b82f6;
+    color: white;
+    text-decoration: none;
+    padding: 0.875rem 2rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    margin-bottom: 1rem;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-cta-button:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-login-note {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-login-note a {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.wp-block-rwp-creator-suite-content-repurposer .rwp-guest-login-note a:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
+/* Responsive adjustments for guest teaser */
+@media (max-width: 640px) {
+    .wp-block-rwp-creator-suite-content-repurposer .rwp-repurposer-guest-teaser {
+        padding: 1.5rem;
+    }
+    
+    .wp-block-rwp-creator-suite-content-repurposer .rwp-guest-teaser-title {
+        font-size: 1.25rem;
+    }
+    
+    .wp-block-rwp-creator-suite-content-repurposer .rwp-guest-teaser-benefits {
+        gap: 0.75rem;
+    }
+    
+    .wp-block-rwp-creator-suite-content-repurposer .rwp-guest-benefit-item {
+        padding: 0.5rem;
+        font-size: 0.8125rem;
+    }
+    
+    .wp-block-rwp-creator-suite-content-repurposer .rwp-guest-cta-button {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.875rem;
+    }
+}
+
 /* Reduce Motion */
 @media (prefers-reduced-motion: reduce) {
     *,

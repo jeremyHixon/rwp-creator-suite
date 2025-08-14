@@ -33,7 +33,8 @@ $block_id = uniqid( 'rwp-content-repurposer-' );
     data-show-usage="<?php echo esc_attr( $show_usage_stats ? '1' : '0' ); ?>"
 >
     <div class="rwp-content-repurposer-container">
-        <div class="rwp-repurposer-form">
+        <!-- Logged-in user form -->
+        <div class="rwp-repurposer-form rwp-repurposer-logged-in" style="display: none;">
             <div class="rwp-form-group">
                 <label for="<?php echo esc_attr( $block_id ); ?>-content" class="rwp-form-label">
                     <?php esc_html_e( 'Your Content', 'rwp-creator-suite' ); ?>
@@ -109,6 +110,46 @@ $block_id = uniqid( 'rwp-content-repurposer-' );
                         <?php esc_html_e( 'Repurposing...', 'rwp-creator-suite' ); ?>
                     </span>
                 </button>
+            </div>
+        </div>
+
+        <!-- Guest teaser -->
+        <div class="rwp-repurposer-guest-teaser">
+            <div class="rwp-guest-teaser-content">
+                <div class="rwp-guest-teaser-icon">✨</div>
+                <div class="rwp-guest-teaser-title"><?php esc_html_e( 'AI Content Repurposer', 'rwp-creator-suite' ); ?></div>
+                <p><?php esc_html_e( 'Transform your long-form content into engaging posts for multiple social media platforms. Let AI optimize your content for maximum reach and engagement.', 'rwp-creator-suite' ); ?></p>
+                
+                <div class="rwp-guest-teaser-benefits">
+                    <div class="rwp-guest-benefit-item">
+                        <div class="rwp-guest-benefit-icon">🔄</div>
+                        <?php esc_html_e( 'Repurpose content for Twitter, LinkedIn, Facebook, and Instagram', 'rwp-creator-suite' ); ?>
+                    </div>
+                    <div class="rwp-guest-benefit-item">
+                        <div class="rwp-guest-benefit-icon">🎯</div>
+                        <?php esc_html_e( 'Choose from professional, casual, engaging, or informative tones', 'rwp-creator-suite' ); ?>
+                    </div>
+                    <div class="rwp-guest-benefit-item">
+                        <div class="rwp-guest-benefit-icon">⚡</div>
+                        <?php esc_html_e( 'Get multiple variations optimized for each platform\'s audience', 'rwp-creator-suite' ); ?>
+                    </div>
+                    <div class="rwp-guest-benefit-item">
+                        <div class="rwp-guest-benefit-icon">📊</div>
+                        <?php esc_html_e( 'Character count optimization for maximum platform compatibility', 'rwp-creator-suite' ); ?>
+                    </div>
+                </div>
+                
+                <div class="rwp-guest-teaser-cta">
+                    <a href="<?php echo esc_url( wp_registration_url() ); ?>" class="rwp-guest-cta-button">
+                        <?php esc_html_e( 'Get Free Access', 'rwp-creator-suite' ); ?>
+                    </a>
+                    <p class="rwp-guest-login-note">
+                        <?php esc_html_e( 'Already have an account?', 'rwp-creator-suite' ); ?> 
+                        <a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>">
+                            <?php esc_html_e( 'Login here', 'rwp-creator-suite' ); ?>
+                        </a>
+                    </p>
+                </div>
             </div>
         </div>
 

@@ -420,16 +420,8 @@
             platformLimitsDiv.className = 'platform-limits';
             
             // Create new counters for selected platforms
-            const characterLimits = {
-                'instagram': 2200,
-                'tiktok': 2200,
-                'twitter': 280,
-                'linkedin': 3000,
-                'facebook': 63206
-            };
-            
             platforms.forEach(platform => {
-                const limit = characterLimits[platform] || 2200;
+                const limit = this.getCharacterLimit(platform);
                 const platformCounter = document.createElement('div');
                 platformCounter.className = 'platform-limit-item';
                 platformCounter.setAttribute('data-platform', platform);

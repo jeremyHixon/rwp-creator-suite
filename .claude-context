@@ -1,114 +1,988 @@
-# Guest Teaser Implementation - Content Repurposing Engine
+# Task
+[Placeholder for current task description - keep this at the very top]
 
-## Strategy Overview
-Implement a freemium experience for guest users using **Platform Limitation + Attempt Counter** approach to encourage registration.
+# Project Context
 
-## Guest User Experience
+## Development Safety Guidelines
 
-### Free Access (3 Attempts)
-- **Full Twitter generation**: Complete 280-character optimized content
-- **Platform previews**: Show first 50-100 characters of LinkedIn, Facebook, Instagram versions
-- **Attempt tracking**: localStorage counter, clear remaining attempts display
-- **Value demonstration**: Show what they're missing without full access
+### Destructive Action Policy
+- **Additive Development Only**: All development should add or enhance functionality
+- **No Inferred Removals**: Never remove existing functionality unless explicitly requested
+- **Explicit Confirmation Required**: Any destructive changes must be specifically requested by the developer
+- **Preserve Existing Patterns**: When updating code, maintain existing functionality and patterns
+- **Database Safety**: Never drop tables, columns, or user data without explicit instruction
+- **API Backwards Compatibility**: Maintain existing endpoints and response formats
+- **Block Preservation**: Don't modify existing block functionality without explicit request
 
-### Preview Format
-For restricted platforms, show:
+### What Constitutes Destructive Actions
+- Removing existing functions, classes, or methods
+- Dropping database tables or columns  
+- Removing API endpoints or changing response structures
+- Deleting user data or preferences
+- Removing existing WordPress hooks or filters
+- Changing existing block attributes or functionality
+- Removing CSS classes or changing existing styling behavior
+
+### Safe Development Practices
+- **Extend, don't replace**: Add new methods alongside existing ones
+- **Deprecate gracefully**: Mark old functions as deprecated before removal
+- **Version API changes**: Create new API versions rather than breaking existing ones
+- **Feature flags**: Use feature toggles for experimental functionality
+- **Database migrations**: Only add columns/tables, never remove without explicit instruction
+
+## WordPress Coding Standards
+
+### PHP Standards
+
+#### Naming Conventions
+```php
+// Files
+class-plugin-name-loader.php
+interface-plugin-name-api.php
+trait-plugin-name-helper.php
+
+// Classes
+class Plugin_Name_Admin {}
+
+// Functions/Methods
+function plugin_name_activate() {}
+public function get_user_data() {}
+
+// Variables
+$user_email = '';
+$is_admin_page = false;
 ```
-LinkedIn version: "In today's digital landscape, businesses are increasingly..."
-[Sign up to see full version]
 
-Facebook version: "Hey everyone! 👋 Just discovered something amazing about..."
-[Sign up to see full version]
+#### Code Structure
+```php
+// Spacing: tabs, spaces around operators
+if ( $condition ) {
+    $result = $value_one + $value_two;
+    $array = array( 'key' => 'value' );
+}
 
-Instagram version: "✨ Transform your content strategy with this one simple..."
-[Sign up to see full version]
+// Always use braces
+if ( $x ) {
+    action();
+}
 ```
 
-## Technical Implementation
+#### Security Requirements
+```php
+// Input Sanitization
+$title = sanitize_text_field( $_POST['title'] );
+$content = wp_kses_post( $_POST['content'] );
+$email = sanitize_email( $_POST['email'] );
+$url = esc_url_raw( $_POST['url'] );
 
-### Guest State Tracking (localStorage)
-- `content_repurposer_attempts`: Number of uses (max 3)
-- `content_repurposer_first_use`: Timestamp for potential reset logic
-- `content_repurposer_shown_platforms`: Track which previews they've seen
+// Output Escaping
+echo esc_html( $title );
+echo esc_url( $link );
+echo esc_attr( $attribute );
+echo wp_kses_post( $content );
 
-### Content Generation Logic
-1. **All Users**: Generate complete content for all platforms via AI
-2. **Guests**: Return full Twitter + truncated others with upgrade prompts
-3. **Logged-in**: Return all complete content
+// Nonces
+wp_nonce_field( 'plugin_name_action', 'plugin_name_nonce' );
+if ( ! wp_verify_nonce( $_POST['plugin_name_nonce'], 'plugin_name_action' ) ) {
+    wp_die( 'Security check failed' );
+}
 
-### UI/UX Elements
-- **Attempt counter**: "2 free attempts remaining" 
-- **Platform tabs**: Show all platforms, disable restricted ones with lock icons
-- **Upgrade prompts**: Clear, non-aggressive messaging about benefits
-- **Preview quality**: Make truncated content compelling, not frustrating
+// Capabilities
+if ( ! current_user_can( 'manage_options' ) ) {
+    return;
+}
+```
 
-## Privacy Compliance
-- No guest data sent to server
-- All tracking client-side only
-- No email capture at this stage
-- Respect existing privacy-first architecture
+#### Database Operations
+```php
+global $wpdb;
+$results = $wpdb->get_results(
+    $wpdb->prepare(
+        "SELECT * FROM {$wpdb->prefix}table_name WHERE column = %s",
+        $value
+    )
+);
+```
 
-## Conversion Messaging
+### JavaScript Standards
 
-### Progressive Disclosure
-1. **First use**: Focus on tool functionality
-2. **Second use**: Mention additional platforms available  
-3. **Third use**: Clear upgrade benefits and registration CTA
+#### Structure
+```javascript
+// Variables: camelCase
+const userName = '';
+let isActive = false;
 
-### Value Proposition
-- "Unlock professional LinkedIn posts"
-- "Get engaging Facebook content"
-- "Access Instagram-optimized versions with hashtags"
-- "Save unlimited content variations"
+// Functions: camelCase
+function calculateTotal() {}
 
-## Technical Requirements
+// Classes: PascalCase
+class PluginHandler {}
 
-### Guest Limitations
-- 3 total attempts (not per platform)
-- Full Twitter generation only
-- 50-100 character previews for other platforms
-- No content saving/history
-- No advanced features (if implemented later)
+// jQuery
+jQuery( document ).ready( function( $ ) {
+    $( '.selector' ).on( 'click', function() {} );
+});
+```
 
-### Logged-in Benefits
-- Unlimited attempts
-- All platforms fully generated
-- Content history/saving (if implemented)
-- Advanced features access
+#### AJAX Patterns
+```javascript
+// Localize
+wp_localize_script( 'plugin-name-script', 'pluginName', array(
+    'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+    'nonce' => wp_create_nonce( 'plugin_name_nonce' ),
+) );
 
-### Upgrade Flow
-- Smooth transition from guest to logged-in state
-- Preserve current content in progress
-- Clear explanation of new capabilities
-- Optional: import guest-generated content to user account
+// Request
+jQuery.ajax({
+    url: pluginName.ajaxUrl,
+    type: 'POST',
+    data: {
+        action: 'plugin_name_action',
+        nonce: pluginName.nonce,
+        data: someData
+    },
+    success: function( response ) {}
+});
+```
 
-## Implementation Considerations
+### CSS Standards
 
-### User Experience
-- Don't frustrate guests with too many restrictions
-- Make free Twitter content genuinely useful
-- Previews should create desire, not confusion
-- Clear, honest messaging about limitations
+#### Naming
+```css
+.plugin-name-container {}
+.plugin-name-button-primary {}
 
-### Conversion Optimization
-- Track conversion funnel: attempts → previews viewed → signups
-- A/B testing potential for messaging and restriction levels
-- Analytics on which platform previews drive most interest
+/* Breakpoints */
+@media screen and (max-width: 782px) {}
+```
 
-### Future Enhancements
-- Seasonal increases (5 attempts during holidays)
-- Referral bonuses for additional attempts
-- Email capture for extended trial (if privacy policy allows)
+#### File Headers
+```php
+<?php
+/**
+ * @package    Plugin_Name
+ * @subpackage Plugin_Name/includes
+ * @since      1.0.0
+ */
 
-## Success Metrics
-- Guest engagement rate (% who use multiple attempts)
-- Preview click-through rate (interest in other platforms)
-- Conversion rate (guest → registered user)
-- Content quality satisfaction (Twitter-only users)
+/**
+ * @since 1.0.0
+ * @param int $id
+ * @return array|false
+ */
+function name( $id ) {}
+```
 
-## Development Notes
-- Integrate with existing authentication state management
-- Follow current localStorage patterns
-- Maintain privacy-first architecture
-- Use existing UI components and styling
-- Respect current module structure
+## WordPress Block Development
+
+### Block as App Container Pattern
+
+#### Project Structure
+```
+src/
+├── blocks/
+│   └── app-container/
+│       ├── block.json
+│       ├── index.js
+│       ├── edit.js
+│       ├── save.js
+│       ├── style.scss
+│       └── editor.scss
+└── index.js
+```
+
+#### Container Block Registration
+```json
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "plugin-name/app-container",
+    "title": "Plugin Name App",
+    "category": "widgets",
+    "icon": "admin-tools",
+    "textdomain": "plugin-name",
+    "editorScript": "file:./index.js",
+    "style": "file:./style-index.css",
+    "attributes": {
+        "appType": {
+            "type": "string",
+            "default": "dashboard"
+        },
+        "appConfig": {
+            "type": "object",
+            "default": {}
+        }
+    }
+}
+```
+
+#### Container Edit Component (Placeholder Only)
+```javascript
+import { __ } from '@wordpress/i18n';
+import { useBlockProps } from '@wordpress/block-editor';
+import { Placeholder, SelectControl } from '@wordpress/components';
+
+export default function Edit({ attributes, setAttributes }) {
+    const blockProps = useBlockProps();
+    
+    return (
+        <div {...blockProps}>
+            <Placeholder
+                icon="admin-tools"
+                label="Plugin Name App"
+                instructions="This will load your app on the frontend."
+            >
+                <SelectControl
+                    label="App Type"
+                    value={attributes.appType}
+                    options={[
+                        { label: 'Dashboard', value: 'dashboard' },
+                        { label: 'User Profile', value: 'user-profile' },
+                        { label: 'Data Viewer', value: 'data-viewer' }
+                    ]}
+                    onChange={(appType) => setAttributes({ appType })}
+                />
+            </Placeholder>
+        </div>
+    );
+}
+```
+
+#### Container Save Component
+```javascript
+import { useBlockProps } from '@wordpress/block-editor';
+
+export default function save({ attributes }) {
+    const blockProps = useBlockProps.save({
+        'data-app-type': attributes.appType,
+        'data-config': JSON.stringify(attributes.appConfig)
+    });
+    
+    return <div {...blockProps}></div>;
+}
+```
+
+#### PHP Block Registration
+```php
+function plugin_name_register_blocks() {
+    register_block_type( __DIR__ . '/build/blocks/app-container', array(
+        'render_callback' => 'plugin_name_render_app_container',
+    ) );
+}
+add_action( 'init', 'plugin_name_register_blocks' );
+
+function plugin_name_render_app_container( $attributes, $content ) {
+    $wrapper_attributes = get_block_wrapper_attributes( array(
+        'id' => 'plugin-name-app-' . wp_unique_id(),
+        'data-app-type' => $attributes['appType'] ?? 'dashboard',
+        'data-config' => wp_json_encode( $attributes ),
+    ) );
+    
+    return sprintf( '<div %s></div>', $wrapper_attributes );
+}
+```
+
+### Required WordPress Imports
+```javascript
+// Core
+import { registerBlockType } from '@wordpress/blocks';
+import { __ } from '@wordpress/i18n';
+import { useBlockProps, RichText, InnerBlocks, BlockControls, InspectorControls } from '@wordpress/block-editor';
+import { PanelBody, TextControl, ToggleControl, Button } from '@wordpress/components';
+import { useState, useEffect, useMemo } from '@wordpress/element';
+```
+
+## Architecture Preferences
+
+### Modular Service-Based Organization
+```php
+// Preferred: Feature-based modules
+src/
+├── modules/
+│   ├── user-management/
+│   │   ├── class-user-service.php
+│   │   ├── class-user-api.php
+│   │   └── class-user-frontend.php
+│   ├── content-management/
+│   └── analytics/
+├── core/
+│   ├── class-service-container.php
+│   ├── class-module-loader.php
+│   └── interfaces/
+├── blocks/
+│   └── app-container/
+│       ├── block.json
+│       ├── index.js
+│       ├── edit.js
+│       └── save.js
+└── assets/
+    └── modules/
+        ├── user-management/
+        └── content-management/
+```
+
+### Block-App Integration Bridge
+```php
+class Plugin_Name_Block_App_Bridge {
+    
+    public function register_blocks() {
+        register_block_type( __DIR__ . '/build/blocks/app-container', array(
+            'render_callback' => array( $this, 'render_app_container' ),
+        ) );
+    }
+    
+    public function render_app_container( $attributes, $content ) {
+        $wrapper_attributes = get_block_wrapper_attributes( array(
+            'id' => 'plugin-name-app-' . wp_unique_id(),
+            'data-app-type' => $attributes['appType'] ?? 'dashboard',
+            'data-config' => wp_json_encode( $attributes ),
+        ) );
+        
+        return sprintf( '<div %s></div>', $wrapper_attributes );
+    }
+    
+    public function enqueue_app_assets() {
+        if ( $this->has_app_blocks() ) {
+            wp_enqueue_script(
+                'plugin-name-apps',
+                plugin_dir_url( __FILE__ ) . 'build/apps.js',
+                array( 'wp-api-fetch' ),
+                PLUGIN_NAME_VERSION,
+                true
+            );
+            
+            wp_localize_script( 'plugin-name-apps', 'pluginNameData', array(
+                'apiUrl' => rest_url( 'plugin-name/v1/' ),
+                'nonce'  => wp_create_nonce( 'wp_rest' ),
+                'userId' => get_current_user_id(),
+                'isLoggedIn' => is_user_logged_in(),
+            ) );
+        }
+    }
+}
+```
+
+### Frontend App Mounting Strategy
+```javascript
+class PluginNameAppLoader {
+    constructor() {
+        this.apps = new Map();
+        this.init();
+    }
+    
+    init() {
+        const containers = document.querySelectorAll('[id^="plugin-name-app-"]');
+        containers.forEach(container => this.mountApp(container));
+    }
+    
+    async mountApp(container) {
+        const appType = container.dataset.appType;
+        const config = JSON.parse(container.dataset.config || '{}');
+        
+        try {
+            const AppClass = await this.loadAppModule(appType);
+            const app = new AppClass(container, config);
+            this.apps.set(container.id, app);
+        } catch (error) {
+            console.error(`Failed to load app ${appType}:`, error);
+            this.renderFallback(container, appType);
+        }
+    }
+    
+    async loadAppModule(appType) {
+        const appModules = {
+            'dashboard': () => import('@modules/dashboard-app'),
+            'user-profile': () => import('@modules/user-profile-app'),
+            'data-viewer': () => import('@modules/data-viewer-app'),
+        };
+        
+        if (!appModules[appType]) {
+            throw new Error(`Unknown app type: ${appType}`);
+        }
+        
+        const module = await appModules[appType]();
+        return module.default;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    new PluginNameAppLoader();
+});
+```
+
+## State Management
+
+### Core State Management Principles
+- **localStorage primary** for all temporary state
+- **Database only** for logged-in user preferences
+- **Seamless transitions** from guest to authenticated user
+- **State persistence** across page reloads and sessions
+- **Graceful degradation** when localStorage unavailable
+- **Warning notifications** if localStorage unavailable (no server fallback)
+
+### State Manager with Fallbacks
+```javascript
+class PluginNameStateManager {
+    constructor() {
+        this.prefix = 'pluginName_';
+        this.storageAvailable = this.checkStorageAvailability();
+        this.memoryStorage = new Map();
+        this.state = {
+            user: {
+                isLoggedIn: false,
+                preferences: {},
+                tempData: {}
+            },
+            app: {
+                currentView: 'default',
+                formData: {},
+                filters: {},
+                selections: []
+            }
+        };
+        
+        this.init();
+    }
+    
+    checkStorageAvailability() {
+        try {
+            const test = '__storage_test__';
+            localStorage.setItem(test, test);
+            localStorage.removeItem(test);
+            return true;
+        } catch (e) {
+            this.showStorageWarning();
+            return false;
+        }
+    }
+    
+    showStorageWarning() {
+        const warning = document.createElement('div');
+        warning.className = 'plugin-name-storage-warning';
+        warning.innerHTML = `
+            <div class="notice notice-warning">
+                <p><strong>Plugin Name:</strong> Browser storage is disabled. Your preferences won't be saved between sessions. 
+                <a href="#" onclick="this.parentElement.parentElement.remove()">Dismiss</a></p>
+            </div>
+        `;
+        
+        document.body.insertBefore(warning, document.body.firstChild);
+        
+        setTimeout(() => {
+            if (warning.parentNode) {
+                warning.parentNode.removeChild(warning);
+            }
+        }, 10000);
+    }
+}
+```
+
+### Guest to User Transition
+```javascript
+class PluginNameUserTransition {
+    constructor(stateManager, apiClient) {
+        this.stateManager = stateManager;
+        this.apiClient = apiClient;
+    }
+    
+    async handleUserLogin() {
+        const guestState = this.stateManager.getState();
+        
+        try {
+            // Fetch user preferences from server
+            const userPreferences = await this.apiClient.getUserPreferences();
+            
+            // Merge guest state with user preferences
+            const mergedState = this.mergeGuestWithUser(guestState, userPreferences);
+            
+            // Update state
+            this.stateManager.setState(mergedState);
+            
+            // Save merged preferences to server
+            await this.apiClient.updateUserPreferences(mergedState.user.preferences);
+            
+            // Clean up guest-only data if needed
+            this.cleanupGuestData();
+            
+        } catch (error) {
+            console.warn('Failed to sync user data:', error);
+            // Continue with guest state - no server fallback by design
+        }
+    }
+}
+```
+
+### PHP User Preference Handler
+```php
+class Plugin_Name_User_Preferences {
+    
+    public function get_user_preferences() {
+        $user_id = get_current_user_id();
+        if ( ! $user_id ) {
+            return array();
+        }
+        
+        $preferences = get_user_meta( $user_id, 'plugin_name_preferences', true );
+        return $preferences ?: array();
+    }
+    
+    public function update_user_preferences( $preferences ) {
+        $user_id = get_current_user_id();
+        if ( ! $user_id ) {
+            return false;
+        }
+        
+        // Sanitize preferences
+        $clean_preferences = $this->sanitize_preferences( $preferences );
+        
+        // Update user meta (NO guest data storage by design)
+        return update_user_meta( $user_id, 'plugin_name_preferences', $clean_preferences );
+    }
+}
+```
+
+## API Design Patterns
+
+### WordPress REST API Structure
+```php
+class Plugin_Name_API {
+    private $namespace = 'plugin-name/v1';
+    
+    public function register_routes() {
+        // Guest-accessible endpoints
+        register_rest_route( $this->namespace, '/public-data', array(
+            'methods'             => 'GET',
+            'callback'            => array( $this, 'get_public_data' ),
+            'permission_callback' => '__return_true', // Public access
+            'args'                => $this->get_public_data_args(),
+        ) );
+        
+        // User-only endpoints
+        register_rest_route( $this->namespace, '/user-preferences', array(
+            array(
+                'methods'             => 'GET',
+                'callback'            => array( $this, 'get_user_preferences' ),
+                'permission_callback' => array( $this, 'check_user_logged_in' ),
+            ),
+            array(
+                'methods'             => 'POST',
+                'callback'            => array( $this, 'update_user_preferences' ),
+                'permission_callback' => array( $this, 'check_user_logged_in' ),
+                'args'                => $this->get_preferences_args(),
+            ),
+        ) );
+    }
+}
+```
+
+### Consistent Response Format
+```php
+class Plugin_Name_API_Response {
+    
+    public function success_response( $data, $message = '', $meta = array() ) {
+        $response = array(
+            'success' => true,
+            'data'    => $data,
+        );
+        
+        if ( $message ) {
+            $response['message'] = $message;
+        }
+        
+        if ( ! empty( $meta ) ) {
+            $response['meta'] = $meta;
+        }
+        
+        return rest_ensure_response( $response );
+    }
+    
+    public function error_response( $code, $message, $data = null, $status = 400 ) {
+        $response = array(
+            'success' => false,
+            'error'   => array(
+                'code'    => $code,
+                'message' => $message,
+            ),
+        );
+        
+        if ( $data ) {
+            $response['error']['data'] = $data;
+        }
+        
+        return new WP_Error( $code, $message, array( 'status' => $status ) );
+    }
+}
+```
+
+### JavaScript API Client
+```javascript
+class PluginNameAPIClient {
+    constructor() {
+        this.baseUrl = pluginNameData.apiUrl;
+        this.nonce = pluginNameData.nonce;
+        this.namespace = 'plugin-name/v1';
+    }
+    
+    async request(endpoint, options = {}) {
+        const url = `${this.baseUrl}/${this.namespace}/${endpoint}`;
+        
+        const defaultOptions = {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-WP-Nonce': this.nonce,
+            },
+            credentials: 'same-origin',
+        };
+        
+        const requestOptions = { ...defaultOptions, ...options };
+        
+        if (options.data && !options.body) {
+            requestOptions.body = JSON.stringify(options.data);
+        }
+        
+        try {
+            const response = await fetch(url, requestOptions);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success === false) {
+                throw new Error(data.error?.message || 'API request failed');
+            }
+            
+            return data;
+            
+        } catch (error) {
+            console.error('API request failed:', error);
+            throw error;
+        }
+    }
+}
+```
+
+## Testing Patterns
+
+### PHP Testing with Brain Monkey
+```php
+<?php
+// tests/bootstrap.php
+require_once __DIR__ . '/../vendor/autoload.php';
+
+\Brain\Monkey\setUp();
+
+class Plugin_Name_Test_Case extends \PHPUnit\Framework\TestCase {
+    protected function setUp(): void {
+        parent::setUp();
+        \Brain\Monkey\setUp();
+    }
+    
+    protected function tearDown(): void {
+        \Brain\Monkey\tearDown();
+        parent::tearDown();
+    }
+    
+    protected function mock_current_user( $user_id = 1, $capabilities = array() ) {
+        \Brain\Monkey\Functions\when( 'get_current_user_id' )->justReturn( $user_id );
+        \Brain\Monkey\Functions\when( 'is_user_logged_in' )->justReturn( $user_id > 0 );
+        
+        foreach ( $capabilities as $cap ) {
+            \Brain\Monkey\Functions\when( 'current_user_can' )
+                ->with( $cap )
+                ->justReturn( true );
+        }
+    }
+}
+```
+
+### JavaScript Testing with Jest
+```javascript
+// tests/js/setup.js
+import '@testing-library/jest-dom';
+
+const localStorageMock = {
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+  clear: jest.fn(),
+};
+global.localStorage = localStorageMock;
+
+global.pluginNameData = {
+  apiUrl: 'https://example.com/wp-json',
+  nonce: 'test-nonce-123',
+  debug: true,
+  userId: 0,
+  isLoggedIn: false
+};
+
+global.fetch = jest.fn();
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  localStorage.clear();
+  fetch.mockClear();
+});
+```
+
+### Package.json Test Configuration
+```json
+{
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "jest": {
+    "testEnvironment": "jsdom",
+    "setupFilesAfterEnv": ["<rootDir>/tests/js/setup.js"],
+    "testMatch": ["<rootDir>/tests/js/**/*.test.js"],
+    "collectCoverageFrom": [
+      "assets/js/**/*.js",
+      "!assets/js/vendor/**"
+    ]
+  }
+}
+```
+
+## Build & Deployment
+
+### Package.json Build Configuration
+```json
+{
+  "scripts": {
+    "dev": "wp-scripts start --webpack-src-dir=assets/js --output-path=assets/dist",
+    "build": "wp-scripts build --webpack-src-dir=assets/js --output-path=assets/dist",
+    "build:production": "NODE_ENV=production npm run build",
+    "watch": "wp-scripts start",
+    "lint:js": "wp-scripts lint-js assets/js/",
+    "lint:css": "wp-scripts lint-style assets/css/",
+    "format": "wp-scripts format",
+    "test": "jest",
+    "package": "npm run build:production && npm run create-zip"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^27.0.0",
+    "archiver": "^5.3.0"
+  }
+}
+```
+
+### Environment Detection
+```php
+class Plugin_Name_Environment {
+    const DEVELOPMENT = 'development';
+    const STAGING = 'staging';
+    const PRODUCTION = 'production';
+    
+    public static function get_environment() {
+        // Check for explicit environment constant
+        if ( defined( 'PLUGIN_NAME_ENVIRONMENT' ) ) {
+            return PLUGIN_NAME_ENVIRONMENT;
+        }
+        
+        // Check WordPress environment constants
+        if ( defined( 'WP_ENVIRONMENT_TYPE' ) ) {
+            return WP_ENVIRONMENT_TYPE;
+        }
+        
+        // Check for development indicators
+        if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+            return self::DEVELOPMENT;
+        }
+        
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        
+        if ( strpos( $host, 'localhost' ) !== false || 
+             strpos( $host, '.local' ) !== false ||
+             strpos( $host, '.dev' ) !== false ) {
+            return self::DEVELOPMENT;
+        }
+        
+        return self::PRODUCTION;
+    }
+}
+```
+
+### Asset Management
+```php
+class Plugin_Name_Assets {
+    private function enqueue_script( $handle, $dependencies = array() ) {
+        $script_path = "assets/dist/{$handle}.js";
+        $script_url = plugin_dir_url( PLUGIN_NAME_FILE ) . $script_path;
+        $script_file = plugin_dir_path( PLUGIN_NAME_FILE ) . $script_path;
+        
+        // Use file modification time for cache busting in development
+        $version = $this->is_debug && file_exists( $script_file ) 
+            ? filemtime( $script_file ) 
+            : $this->version;
+        
+        wp_enqueue_script(
+            "plugin-name-{$handle}",
+            $script_url,
+            $dependencies,
+            $version,
+            true
+        );
+    }
+}
+```
+
+## Block Style Isolation
+
+### Core Isolation Principles
+- **Complete Style Isolation**: Block styles don't leak to theme, theme styles don't interfere with blocks
+- **Tailwind/DaisyUI Scoped**: Utility classes and components only apply within block boundaries
+- **Light Theme Only**: DaisyUI "light" theme exclusively for consistency
+- **Minimalistic Design**: Clean, simple aesthetics with purposeful styling
+- **Editor/Frontend Consistency**: Styles work identically in Gutenberg editor and frontend
+
+### Tailwind Configuration (Block-Scoped)
+```javascript
+// tailwind.config.js
+module.exports = {
+  content: [
+    "./src/blocks/**/*.{js,jsx,ts,tsx}",
+    "./src/blocks/**/*.php"
+  ],
+  // Prefix all utilities to prevent conflicts
+  prefix: 'blk-',
+  // Disable base styles to prevent theme interference
+  corePlugins: {
+    preflight: false,
+    container: false
+  },
+  plugins: [
+    require('daisyui'),
+    require('@tailwindcss/container-queries')
+  ],
+  daisyui: {
+    // Prefix DaisyUI classes
+    prefix: "dui-",
+    // Disable base styles
+    base: false,
+    // Only light theme for consistency and minimalism
+    themes: ["light"],
+    // Disable color utilities (use scoped versions)
+    utils: false,
+    logs: false
+  }
+}
+```
+
+### CSS Isolation Technique
+```css
+/* Scope all styles to block containers */
+.wp-block-plugin-name-block {
+  /* Reset any theme inheritance */
+  all: initial;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  
+  /* Re-enable inheritance for children */
+  * {
+    all: unset;
+    display: revert;
+    box-sizing: border-box;
+  }
+  
+  /* Ensure block boundary */
+  container-type: inline-size;
+  isolation: isolate;
+}
+
+/* Light theme custom properties */
+.wp-block-plugin-name-block {
+  --blk-primary: #3b82f6;      /* Clean blue */
+  --blk-secondary: #64748b;    /* Muted gray */
+  --blk-accent: #10b981;       /* Subtle green */
+  --blk-neutral: #f8fafc;      /* Light background */
+  --blk-base-100: #ffffff;     /* Pure white */
+  --blk-base-content: #1f2937; /* Dark text */
+}
+```
+
+### JavaScript Block with Isolation
+```javascript
+import { useBlockProps } from '@wordpress/block-editor';
+
+export default function Edit({ attributes, setAttributes }) {
+    const blockProps = useBlockProps({
+        className: 'plugin-name-block-isolation',
+        'data-block-theme': attributes.theme || 'light'
+    });
+    
+    return (
+        <div {...blockProps}>
+            <div className="blk-p-4 blk-bg-white blk-rounded-lg blk-shadow">
+                <button className="dui-btn dui-btn-primary blk-w-full">
+                    Isolated Button
+                </button>
+            </div>
+        </div>
+    );
+}
+```
+
+## Critical Rules Summary
+
+### Development Safety
+1. **Additive Development Only** - All development should add or enhance functionality
+2. **No Inferred Removals** - Never remove existing functionality unless explicitly requested
+3. **Explicit Confirmation Required** - Any destructive changes must be specifically requested
+
+### WordPress Compliance
+1. **Always Use WordPress Nonces** - Include `X-WP-Nonce` header for API calls
+2. **Escape All Output** - Use `esc_*` functions for all output
+3. **Sanitize All Input** - Use `sanitize_*` functions for all input
+4. **Check Capabilities** - Verify user permissions before operations
+5. **Use `$wpdb->prepare()`** - Always prepare database queries
+6. **Text Domain Consistency** - Use `'plugin-name'` consistently
+
+### Block Development
+1. **Use `@wordpress/scripts` Only** - No custom webpack configs unless absolutely necessary
+2. **NO External UI Libraries IN BLOCKS** - Use for JS apps instead
+3. **Use block.json for ALL Blocks** - Required for all block registrations
+4. **Blocks are Containers Only** - Complex apps mount into them
+5. **Use Placeholder Components** - For editor preview
+
+### Architecture
+1. **Modularity First** - Every feature is a self-contained module
+2. **Blocks as Containers** - Use WordPress blocks only as mounting points
+3. **Client-Side Heavy** - Push logic to JavaScript apps, not blocks
+4. **localStorage Primary** - Database only for logged-in user preferences
+5. **Warning Over Fallback** - Notify users of storage issues, don't store on server
+
+### State Management
+1. **localStorage First** - Always check localStorage before API calls
+2. **Graceful Degradation** - Apps work even if localStorage fails
+3. **No Server Fallback** - Guest data stays client-side only
+4. **Seamless Transitions** - Guest state smoothly becomes user state
+5. **Server Sync Only for Users** - Never store guest data in database
+
+### API Design
+1. **Consistent Response Format** - Success/error structure for all endpoints
+2. **Guest-Friendly Caching** - Cache public endpoints
+3. **Permission Callbacks** - Check permissions before processing
+4. **Data Validation** - Sanitize inputs, validate schemas
+
+### Testing
+1. **Mock WordPress Functions** - Use Brain Monkey for unit tests
+2. **Test Both PHP and JavaScript** - Don't forget client-side logic
+3. **localStorage Mocking** - Always mock browser storage in tests
+4. **User State Testing** - Test logged-in vs guest scenarios
+
+### Style Isolation
+1. **Light Theme Only** - Use DaisyUI "light" theme exclusively
+2. **Minimalistic Approach** - Prefer clean, simple designs
+3. **Always Use Prefixes** - `blk-` for Tailwind, `dui-` for DaisyUI
+4. **Disable Preflight** - Prevent base style conflicts
+5. **Isolation First** - Use `all: initial` and `isolation: isolate`
+6. **Editor Consistency** - Same styles in editor and frontend
+
+### Build & Deployment
+1. **Always Build for Production** - Use `NODE_ENV=production`
+2. **Version Everything** - Assets, database schemas, API versions
+3. **Environment-Specific Configs** - Different settings per environment
+4. **Automated Testing** - Never deploy without tests passing

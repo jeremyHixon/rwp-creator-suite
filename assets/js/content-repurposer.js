@@ -182,14 +182,6 @@
                 isLoggedIn = true;
             }
             
-                rwpContentRepurposerExists: typeof rwpContentRepurposer !== 'undefined',
-                rwpContentRepurposer: typeof rwpContentRepurposer !== 'undefined' ? rwpContentRepurposer : 'undefined',
-                adminBarExists: !!document.getElementById('wpadminbar'),
-                hasLoggedInClass: document.body.classList.contains('logged-in'),
-                hasWordPressCookie: document.cookie.includes('wordpress_logged_in_'),
-                finalIsLoggedIn: isLoggedIn
-            });
-            
             return isLoggedIn;
         }
         
@@ -692,12 +684,6 @@
         renderPlatformSuccess(platform, platformName, versions, characterLimit) {
             const isGuest = !this.isLoggedIn;
             const isTwitter = platform === 'twitter';
-            
-                isGuest, 
-                isTwitter, 
-                versionsCount: versions.length,
-                versions 
-            });
             
             const versionsHTML = versions.map((version, index) => {
                 

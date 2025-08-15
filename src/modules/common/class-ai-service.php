@@ -298,26 +298,57 @@ class RWP_Creator_Suite_AI_Service {
      * Build the AI prompt for caption generation.
      */
     private function build_caption_prompt( $description, $tone, $platform, $character_limit ) {
-        $tone_descriptions = array(
-            'casual'        => 'friendly, conversational, approachable',
-            'witty'         => 'clever, humorous, engaging with wordplay',
-            'inspirational' => 'motivational, uplifting, encouraging',
-            'question'      => 'engaging with questions that encourage comments',
-            'professional'  => 'polished, authoritative, business-appropriate',
-        );
+        // Get configurable prompts (only if class is available)
+        $prompts_config = array();
+        if ( class_exists( 'RWP_Creator_Suite_Caption_Admin_Settings' ) ) {
+            $prompts_config = RWP_Creator_Suite_Caption_Admin_Settings::get_prompts_config();
+        }
         
-        $tone_desc = $tone_descriptions[ $tone ] ?? 'casual and engaging';
+        // Get tone description from config or fallback
+        $tone_desc = 'casual and engaging';
+        if ( isset( $prompts_config['tone_descriptions'][ $tone ] ) ) {
+            $tone_desc = $prompts_config['tone_descriptions'][ $tone ];
+        } else {
+            // Fallback to hardcoded values
+            $tone_descriptions = array(
+                'casual'        => 'friendly, conversational, approachable',
+                'witty'         => 'clever, humorous, engaging with wordplay',
+                'inspirational' => 'motivational, uplifting, encouraging',
+                'question'      => 'engaging with questions that encourage comments',
+                'professional'  => 'polished, authoritative, business-appropriate',
+            );
+            $tone_desc = $tone_descriptions[ $tone ] ?? 'casual and engaging';
+        }
         
-        $platform_notes = array(
-            'instagram' => 'Include relevant emoji and hashtag placeholder. Use line breaks for readability.',
-            'tiktok'    => 'Keep it punchy and trend-aware. Include emoji and hashtag placeholder.',
-            'twitter'   => 'Be concise due to character limit. Use trending topics when relevant.',
-            'linkedin'  => 'More professional tone. Focus on industry insights or career growth.',
-            'facebook'  => 'Can be longer and more conversational. Include call-to-action questions.',
-        );
+        // Get platform guidance from config or fallback
+        $platform_guidance = '';
+        if ( isset( $prompts_config['platform_guidance'][ $platform ] ) ) {
+            $platform_guidance = $prompts_config['platform_guidance'][ $platform ];
+        } else {
+            // Fallback to hardcoded values
+            $platform_notes = array(
+                'instagram' => 'Include relevant emoji and hashtag placeholder. Use line breaks for readability.',
+                'tiktok'    => 'Keep it punchy and trend-aware. Include emoji and hashtag placeholder.',
+                'twitter'   => 'Be concise due to character limit. Use trending topics when relevant.',
+                'linkedin'  => 'More professional tone. Focus on industry insights or career growth.',
+                'facebook'  => 'Can be longer and more conversational. Include call-to-action questions.',
+            );
+            $platform_guidance = $platform_notes[ $platform ] ?? $platform_notes['instagram'];
+        }
         
-        $platform_note = $platform_notes[ $platform ] ?? $platform_notes['instagram'];
+        // Use configurable prompt template or fallback
+        if ( isset( $prompts_config['prompt_templates']['caption_generation'] ) ) {
+            $template = $prompts_config['prompt_templates']['caption_generation'];
+            
+            // Replace placeholders
+            return str_replace(
+                array( '{tone_desc}', '{platform}', '{description}', '{character_limit}', '{platform_guidance}', '{hashtags}' ),
+                array( $tone_desc, $platform, $description, $character_limit - 200, $platform_guidance, '{hashtags}' ),
+                $template
+            );
+        }
         
+        // Fallback to hardcoded prompt
         return sprintf(
             "Create 3 different %s captions for %s based on this content description: \"%s\"\n\n" .
             "CRITICAL FORMATTING REQUIREMENTS:\n" .
@@ -340,7 +371,7 @@ class RWP_Creator_Suite_AI_Service {
             $platform,
             $description,
             $character_limit - 200,
-            $platform_note,
+            $platform_guidance,
             $tone_desc
         );
     }
@@ -349,24 +380,55 @@ class RWP_Creator_Suite_AI_Service {
      * Build the AI prompt for content repurposing.
      */
     private function build_repurpose_prompt( $content, $platform, $tone, $character_limit ) {
-        $tone_descriptions = array(
-            'professional' => 'polished, authoritative, business-appropriate',
-            'casual'       => 'friendly, conversational, approachable', 
-            'engaging'     => 'compelling, interactive, encourages responses',
-            'informative'  => 'educational, fact-focused, clear and concise',
-        );
+        // Get configurable prompts (only if class is available)
+        $prompts_config = array();
+        if ( class_exists( 'RWP_Creator_Suite_Caption_Admin_Settings' ) ) {
+            $prompts_config = RWP_Creator_Suite_Caption_Admin_Settings::get_prompts_config();
+        }
         
-        $tone_desc = $tone_descriptions[ $tone ] ?? 'professional';
+        // Get tone description from config or fallback
+        $tone_desc = 'professional';
+        if ( isset( $prompts_config['tone_descriptions'][ $tone ] ) ) {
+            $tone_desc = $prompts_config['tone_descriptions'][ $tone ];
+        } else {
+            // Fallback to hardcoded values
+            $tone_descriptions = array(
+                'professional' => 'polished, authoritative, business-appropriate',
+                'casual'       => 'friendly, conversational, approachable', 
+                'engaging'     => 'compelling, interactive, encourages responses',
+                'informative'  => 'educational, fact-focused, clear and concise',
+            );
+            $tone_desc = $tone_descriptions[ $tone ] ?? 'professional';
+        }
         
-        $platform_guidance = array(
-            'twitter'   => 'Create concise, impactful posts that capture key points. Use threads if needed.',
-            'linkedin'  => 'Focus on professional insights and industry relevance. Include thought-provoking questions.',
-            'facebook'  => 'Create engaging posts that encourage discussion. Can be conversational and longer.',
-            'instagram' => 'Visual-focused content with engaging captions. Include relevant emojis and hashtags.',
-        );
+        // Get platform guidance from config or fallback
+        $platform_guidance = '';
+        if ( isset( $prompts_config['platform_guidance'][ $platform ] ) ) {
+            $platform_guidance = $prompts_config['platform_guidance'][ $platform ];
+        } else {
+            // Fallback to hardcoded values
+            $platform_guidance_map = array(
+                'twitter'   => 'Create concise, impactful posts that capture key points. Use threads if needed.',
+                'linkedin'  => 'Focus on professional insights and industry relevance. Include thought-provoking questions.',
+                'facebook'  => 'Create engaging posts that encourage discussion. Can be conversational and longer.',
+                'instagram' => 'Visual-focused content with engaging captions. Include relevant emojis and hashtags.',
+            );
+            $platform_guidance = $platform_guidance_map[ $platform ] ?? $platform_guidance_map['twitter'];
+        }
         
-        $guidance = $platform_guidance[ $platform ] ?? $platform_guidance['twitter'];
+        // Use configurable prompt template or fallback
+        if ( isset( $prompts_config['prompt_templates']['single_repurpose'] ) ) {
+            $template = $prompts_config['prompt_templates']['single_repurpose'];
+            
+            // Replace placeholders
+            return str_replace(
+                array( '{platform}', '{content}', '{character_limit}', '{platform_guidance}', '{tone_desc}' ),
+                array( $platform, $content, $character_limit - 100, $platform_guidance, $tone_desc ),
+                $template
+            );
+        }
         
+        // Fallback to hardcoded prompt
         return sprintf(
             "Repurpose the following content for %s:\n\n\"%s\"\n\n" .
             "CRITICAL FORMATTING REQUIREMENTS:\n" .
@@ -391,7 +453,7 @@ class RWP_Creator_Suite_AI_Service {
             $content,
             $character_limit - 100,
             $platform,
-            $guidance,
+            $platform_guidance,
             $tone_desc
         );
     }
@@ -400,33 +462,66 @@ class RWP_Creator_Suite_AI_Service {
      * Build the AI prompt for multi-platform content repurposing (single API call).
      */
     private function build_multi_platform_repurpose_prompt( $content, $platforms, $tone ) {
-        $tone_descriptions = array(
-            'professional' => 'polished, authoritative, business-appropriate',
-            'casual'       => 'friendly, conversational, approachable', 
-            'engaging'     => 'compelling, interactive, encourages responses',
-            'informative'  => 'educational, fact-focused, clear and concise',
-        );
+        // Get configurable prompts (only if class is available)
+        $prompts_config = array();
+        if ( class_exists( 'RWP_Creator_Suite_Caption_Admin_Settings' ) ) {
+            $prompts_config = RWP_Creator_Suite_Caption_Admin_Settings::get_prompts_config();
+        }
         
-        $tone_desc = $tone_descriptions[ $tone ] ?? 'professional';
-        
-        $platform_guidance = array(
-            'twitter'   => 'Twitter: Concise, impactful posts under 280 characters.',
-            'linkedin'  => 'LinkedIn: Professional insights and industry relevance under 3000 characters.',
-            'facebook'  => 'Facebook: Engaging, conversational posts under 63206 characters.',
-            'instagram' => 'Instagram: Visual-focused captions under 2200 characters.',
-        );
+        // Get tone description from config or fallback
+        $tone_desc = 'professional';
+        if ( isset( $prompts_config['tone_descriptions'][ $tone ] ) ) {
+            $tone_desc = $prompts_config['tone_descriptions'][ $tone ];
+        } else {
+            // Fallback to hardcoded values
+            $tone_descriptions = array(
+                'professional' => 'polished, authoritative, business-appropriate',
+                'casual'       => 'friendly, conversational, approachable', 
+                'engaging'     => 'compelling, interactive, encourages responses',
+                'informative'  => 'educational, fact-focused, clear and concise',
+            );
+            $tone_desc = $tone_descriptions[ $tone ] ?? 'professional';
+        }
         
         // Build platform-specific guidelines
         $platform_instructions = array();
         foreach ( $platforms as $platform ) {
             $character_limit = $this->get_character_limit( $platform );
-            $guidance = $platform_guidance[ $platform ] ?? $platform_guidance['twitter'];
+            
+            // Get platform guidance from config or fallback
+            if ( isset( $prompts_config['platform_guidance'][ $platform ] ) ) {
+                $guidance = $prompts_config['platform_guidance'][ $platform ];
+            } else {
+                // Fallback to hardcoded values
+                $platform_guidance_fallback = array(
+                    'twitter'   => 'Twitter: Concise, impactful posts under 280 characters.',
+                    'linkedin'  => 'LinkedIn: Professional insights and industry relevance under 3000 characters.',
+                    'facebook'  => 'Facebook: Engaging, conversational posts under 63206 characters.',
+                    'instagram' => 'Instagram: Visual-focused captions under 2200 characters.',
+                );
+                $guidance = $platform_guidance_fallback[ $platform ] ?? $platform_guidance_fallback['twitter'];
+            }
+            
             $platform_instructions[] = "- {$guidance}";
         }
         
         $platform_list = implode( ', ', $platforms );
         $platform_guidance_text = implode( "\n", $platform_instructions );
+        $platform_order = strtoupper( implode( ', ', $platforms ) );
         
+        // Use configurable prompt template or fallback
+        if ( isset( $prompts_config['prompt_templates']['multi_repurpose'] ) ) {
+            $template = $prompts_config['prompt_templates']['multi_repurpose'];
+            
+            // Replace placeholders
+            return str_replace(
+                array( '{platform_list}', '{content}', '{platform_order}', '{platform_guidance_text}', '{tone_desc}' ),
+                array( $platform_list, $content, $platform_order, $platform_guidance_text, $tone_desc ),
+                $template
+            );
+        }
+        
+        // Fallback to hardcoded prompt
         return sprintf(
             "Repurpose the following content for multiple social media platforms (%s):\n\n\"%s\"\n\n" .
             "CRITICAL FORMATTING REQUIREMENTS:\n" .
@@ -454,7 +549,7 @@ class RWP_Creator_Suite_AI_Service {
             "3. Third LinkedIn version here.",
             $platform_list,
             $content,
-            strtoupper( implode( ', ', $platforms ) ),
+            $platform_order,
             $platform_guidance_text,
             $tone_desc
         );
@@ -464,6 +559,18 @@ class RWP_Creator_Suite_AI_Service {
      * Get system message based on context.
      */
     private function get_system_message( $context ) {
+        // Get configurable prompts (only if class is available)
+        $prompts_config = array();
+        if ( class_exists( 'RWP_Creator_Suite_Caption_Admin_Settings' ) ) {
+            $prompts_config = RWP_Creator_Suite_Caption_Admin_Settings::get_prompts_config();
+        }
+        
+        // Use configured system messages with fallback to defaults
+        if ( isset( $prompts_config['system_messages'][ $context ] ) ) {
+            return $prompts_config['system_messages'][ $context ];
+        }
+        
+        // Fallback to hardcoded defaults
         switch ( $context ) {
             case 'captions':
                 return 'You are a social media caption expert who creates engaging, platform-optimized content. Always follow formatting instructions exactly as specified. Use only plain text without markdown formatting unless explicitly requested.';

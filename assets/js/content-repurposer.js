@@ -902,7 +902,22 @@
                 if (response.status === 429) {
                     throw new Error(this.getString('rateLimitExceeded'));
                 }
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                
+                // Try to get the actual error message from the response
+                let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData.message) {
+                        errorMessage = errorData.message;
+                    } else if (errorData.error && errorData.error.message) {
+                        errorMessage = errorData.error.message;
+                    }
+                    console.error('API Error Details:', errorData);
+                } catch (e) {
+                    console.error('Could not parse error response:', e);
+                }
+                
+                throw new Error(errorMessage);
             }
             
             return await response.json();

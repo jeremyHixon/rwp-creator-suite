@@ -500,12 +500,29 @@ class RWP_Creator_Suite_Content_Repurposer_API {
      * Validate tone parameter.
      */
     public function validate_tone( $tone, $request, $param ) {
-        $allowed_tones = array( 'professional', 'casual', 'engaging', 'informative' );
+        // Get allowed tones from roles configuration
+        $allowed_tones = array( 'professional', 'casual', 'engaging', 'informative' ); // fallback
+        
+        if ( class_exists( 'RWP_Creator_Suite_Caption_Admin_Settings' ) ) {
+            $roles_config = RWP_Creator_Suite_Caption_Admin_Settings::get_roles_config();
+            if ( is_array( $roles_config ) && ! empty( $roles_config ) ) {
+                $allowed_tones = array();
+                foreach ( $roles_config as $role ) {
+                    if ( isset( $role['value'] ) ) {
+                        $allowed_tones[] = $role['value'];
+                    }
+                }
+                // If no valid tones found, fall back to default
+                if ( empty( $allowed_tones ) ) {
+                    $allowed_tones = array( 'professional', 'casual', 'engaging', 'informative' );
+                }
+            }
+        }
         
         if ( ! in_array( $tone, $allowed_tones, true ) ) {
             return new WP_Error(
                 'invalid_tone',
-                sprintf( __( 'Invalid tone: %s', 'rwp-creator-suite' ), $tone )
+                sprintf( __( 'Invalid tone: %s. Allowed tones: %s', 'rwp-creator-suite' ), $tone, implode( ', ', $allowed_tones ) )
             );
         }
         

@@ -118,6 +118,12 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
             'default' => '',
         ) );
         
+        register_setting( $this->settings_group, 'rwp_creator_suite_ai_prompts', array(
+            'type' => 'string',
+            'sanitize_callback' => array( $this, 'sanitize_prompts_config' ),
+            'default' => '',
+        ) );
+        
         // Add settings sections
         add_settings_section(
             'rwp_caption_ai_section',
@@ -144,6 +150,13 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
             'rwp_roles_configuration_section',
             __( 'Role Configuration', 'rwp-creator-suite' ),
             array( $this, 'render_roles_section_description' ),
+            $this->settings_page
+        );
+        
+        add_settings_section(
+            'rwp_ai_prompts_section',
+            __( 'AI Prompt Configuration', 'rwp-creator-suite' ),
+            array( $this, 'render_ai_prompts_section_description' ),
             $this->settings_page
         );
         
@@ -218,6 +231,14 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
             array( $this, 'render_custom_roles_field' ),
             $this->settings_page,
             'rwp_roles_configuration_section'
+        );
+        
+        add_settings_field(
+            'ai_prompts',
+            __( 'AI Prompt Templates', 'rwp-creator-suite' ),
+            array( $this, 'render_ai_prompts_field' ),
+            $this->settings_page,
+            'rwp_ai_prompts_section'
         );
     }
     
@@ -322,6 +343,13 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
      */
     public function render_roles_section_description() {
         echo '<p>' . esc_html__( 'Configure custom roles/tones for both Caption Writer and Content Repurposer blocks.', 'rwp-creator-suite' ) . '</p>';
+    }
+    
+    /**
+     * Render AI prompts section description.
+     */
+    public function render_ai_prompts_section_description() {
+        echo '<p>' . esc_html__( 'Customize AI prompt templates for system messages, tone descriptions, platform guidance, and prompt templates.', 'rwp-creator-suite' ) . '</p>';
     }
     
     /**
@@ -538,6 +566,81 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
     }
     
     /**
+     * Render AI prompts field.
+     */
+    public function render_ai_prompts_field() {
+        $value = get_option( 'rwp_creator_suite_ai_prompts', '' );
+        $default_prompts = $this->get_default_prompts();
+        ?>
+        <div class="rwp-prompts-configuration">
+            <textarea 
+                name="rwp_creator_suite_ai_prompts" 
+                id="rwp_creator_suite_ai_prompts"
+                rows="20" 
+                cols="80" 
+                class="large-text code"
+                placeholder="<?php echo esc_attr( $default_prompts ); ?>"
+            ><?php echo esc_textarea( $value ? $value : $default_prompts ); ?></textarea>
+            <p class="description">
+                <?php esc_html_e( 'Configure AI prompt templates in JSON format. Structure includes system messages, tone descriptions, platform guidance, and prompt templates.', 'rwp-creator-suite' ); ?>
+            </p>
+            <div class="rwp-prompts-help">
+                <details>
+                    <summary><?php esc_html_e( 'Click here for format examples and documentation', 'rwp-creator-suite' ); ?></summary>
+                    <div class="rwp-help-content">
+                        <p><strong><?php esc_html_e( 'Configuration sections:', 'rwp-creator-suite' ); ?></strong></p>
+                        <ul>
+                            <li><code>system_messages</code>: <?php esc_html_e( 'Base system messages for different contexts (captions, repurpose, general)', 'rwp-creator-suite' ); ?></li>
+                            <li><code>tone_descriptions</code>: <?php esc_html_e( 'Descriptions for each tone/role (casual, professional, etc.)', 'rwp-creator-suite' ); ?></li>
+                            <li><code>platform_guidance</code>: <?php esc_html_e( 'Platform-specific guidance for content generation', 'rwp-creator-suite' ); ?></li>
+                            <li><code>prompt_templates</code>: <?php esc_html_e( 'Main prompt templates for caption and repurpose functions', 'rwp-creator-suite' ); ?></li>
+                        </ul>
+                        <p><strong><?php esc_html_e( 'Default configuration:', 'rwp-creator-suite' ); ?></strong></p>
+                        <pre style="max-height: 300px; overflow-y: auto; white-space: pre-wrap; background: #f0f0f1; padding: 10px; border: 1px solid #ddd;"><?php echo esc_html( $default_prompts ); ?></pre>
+                    </div>
+                </details>
+            </div>
+        </div>
+        <?php
+    }
+    
+    /**
+     * Get default prompts configuration.
+     */
+    private function get_default_prompts() {
+        $default_prompts = array(
+            'system_messages' => array(
+                'captions' => 'You are a social media caption expert who creates engaging, platform-optimized content. Always follow formatting instructions exactly as specified. Use only plain text without markdown formatting unless explicitly requested.',
+                'repurpose' => 'You are a content strategist who specializes in adapting content for different social media platforms. You MUST follow formatting instructions precisely. Always respond with exactly the number of items requested, using simple numbered format (1., 2., 3.) with no markdown formatting, sub-bullets, or complex structure. Each numbered item should be complete and standalone.',
+                'general' => 'You are a helpful AI assistant focused on creating high-quality content. Follow all formatting instructions exactly as provided.'
+            ),
+            'tone_descriptions' => array(
+                'casual' => 'friendly, conversational, approachable',
+                'professional' => 'polished, authoritative, business-appropriate',
+                'witty' => 'clever, humorous, engaging with wordplay',
+                'inspirational' => 'motivational, uplifting, encouraging',
+                'engaging' => 'compelling, interactive, encourages responses',
+                'informative' => 'educational, fact-focused, clear and concise',
+                'question' => 'engaging with questions that encourage comments'
+            ),
+            'platform_guidance' => array(
+                'instagram' => 'Include relevant emoji and hashtag placeholder. Use line breaks for readability.',
+                'tiktok' => 'Keep it punchy and trend-aware. Include emoji and hashtag placeholder.',
+                'twitter' => 'Be concise due to character limit. Use trending topics when relevant.',
+                'linkedin' => 'More professional tone. Focus on industry insights or career growth.',
+                'facebook' => 'Can be longer and more conversational. Include call-to-action questions.'
+            ),
+            'prompt_templates' => array(
+                'caption_generation' => "Create 3 different {tone_desc} captions for {platform} based on this content description: \"{description}\"\n\nCRITICAL FORMATTING REQUIREMENTS:\n- You MUST respond with exactly 3 numbered items\n- Use ONLY this format: \"1. [caption]\n\n2. [caption]\n\n3. [caption]\"\n- Do NOT use markdown formatting (no **, __, or other markup)\n- Each numbered item must be complete on its own\n- Each caption should be under {character_limit} characters (leaving room for hashtags)\n\nCONTENT REQUIREMENTS:\n- {platform_guidance}\n- End each caption with {hashtags} as a placeholder for hashtag insertion\n- Make each caption distinctly different in approach and style\n- Focus on engagement and authenticity\n- The tone should be: {tone_desc}\n\nEXAMPLE FORMAT:\n1. First caption text here {hashtags}\n\n2. Second caption text here {hashtags}\n\n3. Third caption text here {hashtags}",
+                'single_repurpose' => "Repurpose the following content for {platform}:\n\n\"{content}\"\n\nCRITICAL FORMATTING REQUIREMENTS:\n- You MUST respond with exactly 3 numbered items\n- Use ONLY this format: \"1. [content]\n\n2. [content]\n\n3. [content]\"\n- Do NOT use markdown formatting (no **, __, or other markup)\n- Do NOT include sub-bullets or nested content\n- Each numbered item must be complete on its own\n- Keep each version under {character_limit} characters\n\nCONTENT REQUIREMENTS:\n- Create 3 different versions optimized for {platform}\n- {platform_guidance}\n- Maintain the core message while adapting the style and format\n- Use a {tone_desc} tone\n- Extract and highlight the most important points\n- Make each version distinctly different in approach\n\nEXAMPLE FORMAT:\n1. First version of the repurposed content here.\n\n2. Second version of the repurposed content here.\n\n3. Third version of the repurposed content here.",
+                'multi_repurpose' => "Repurpose the following content for multiple social media platforms ({platform_list}):\n\n\"{content}\"\n\nCRITICAL FORMATTING REQUIREMENTS:\n- You MUST create content for each platform in this EXACT order: {platform_order}\n- For each platform, provide exactly 3 numbered versions\n- Use this format: \"PLATFORM_NAME:\n1. [content]\n\n2. [content]\n\n3. [content]\n\n\"\n- Do NOT use markdown formatting (no **, __, or other markup)\n- Each numbered item must be complete and standalone\n- Separate each platform section with a blank line\n\nPLATFORM REQUIREMENTS:\n{platform_guidance_text}\n\nCONTENT REQUIREMENTS:\n- Maintain the core message while adapting style for each platform\n- Use a {tone_desc} tone throughout\n- Extract and highlight the most important points\n- Make each version within a platform distinctly different\n\nEXAMPLE FORMAT:\nTWITTER:\n1. First Twitter version here.\n\n2. Second Twitter version here.\n\n3. Third Twitter version here.\n\nLINKEDIN:\n1. First LinkedIn version here.\n\n2. Second LinkedIn version here.\n\n3. Third LinkedIn version here."
+            )
+        );
+        
+        return wp_json_encode( $default_prompts, JSON_PRETTY_PRINT );
+    }
+    
+    /**
      * Get default roles configuration.
      */
     private function get_default_roles() {
@@ -745,6 +848,87 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
     }
     
     /**
+     * Sanitize prompts configuration.
+     */
+    public function sanitize_prompts_config( $value ) {
+        $value = sanitize_textarea_field( trim( $value ) );
+        
+        // If empty, return empty string to use defaults
+        if ( empty( $value ) ) {
+            return '';
+        }
+        
+        // Try to decode JSON
+        $decoded = json_decode( $value, true );
+        
+        // If invalid JSON, add error and return empty
+        if ( json_last_error() !== JSON_ERROR_NONE ) {
+            add_settings_error(
+                'rwp_caption_writer_settings',
+                'prompts_config_error',
+                __( 'Invalid JSON format in AI prompts configuration. Please check the syntax.', 'rwp-creator-suite' ),
+                'error'
+            );
+            return '';
+        }
+        
+        // Validate structure
+        if ( ! is_array( $decoded ) ) {
+            add_settings_error(
+                'rwp_caption_writer_settings',
+                'prompts_config_error',
+                __( 'AI prompts configuration must be an object with system_messages, tone_descriptions, platform_guidance, and prompt_templates.', 'rwp-creator-suite' ),
+                'error'
+            );
+            return '';
+        }
+        
+        // Required sections
+        $required_sections = array( 'system_messages', 'tone_descriptions', 'platform_guidance', 'prompt_templates' );
+        foreach ( $required_sections as $section ) {
+            if ( ! isset( $decoded[ $section ] ) || ! is_array( $decoded[ $section ] ) ) {
+                add_settings_error(
+                    'rwp_caption_writer_settings',
+                    'prompts_config_error',
+                    sprintf( __( 'Missing or invalid "%s" section in AI prompts configuration.', 'rwp-creator-suite' ), $section ),
+                    'error'
+                );
+                return '';
+            }
+        }
+        
+        // Sanitize the configuration
+        $sanitized_config = array(
+            'system_messages' => array(),
+            'tone_descriptions' => array(),
+            'platform_guidance' => array(),
+            'prompt_templates' => array()
+        );
+        
+        // Sanitize system messages
+        foreach ( $decoded['system_messages'] as $context => $message ) {
+            $sanitized_config['system_messages'][ sanitize_key( $context ) ] = sanitize_textarea_field( $message );
+        }
+        
+        // Sanitize tone descriptions
+        foreach ( $decoded['tone_descriptions'] as $tone => $description ) {
+            $sanitized_config['tone_descriptions'][ sanitize_key( $tone ) ] = sanitize_text_field( $description );
+        }
+        
+        // Sanitize platform guidance
+        foreach ( $decoded['platform_guidance'] as $platform => $guidance ) {
+            $sanitized_config['platform_guidance'][ sanitize_key( $platform ) ] = sanitize_text_field( $guidance );
+        }
+        
+        // Sanitize prompt templates
+        foreach ( $decoded['prompt_templates'] as $template => $content ) {
+            $sanitized_config['prompt_templates'][ sanitize_key( $template ) ] = sanitize_textarea_field( $content );
+        }
+        
+        return wp_json_encode( $sanitized_config, JSON_PRETTY_PRINT );
+    }
+    
+    /**
      * Get roles configuration (with fallback to defaults).
      */
     public static function get_roles_config() {
@@ -762,6 +946,30 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
             // Fallback to defaults if invalid
             $instance = new self();
             $default_json = $instance->get_default_roles();
+            return json_decode( $default_json, true );
+        }
+        
+        return $decoded;
+    }
+    
+    /**
+     * Get prompts configuration (with fallback to defaults).
+     */
+    public static function get_prompts_config() {
+        $custom_prompts = get_option( 'rwp_creator_suite_ai_prompts', '' );
+        
+        if ( empty( $custom_prompts ) ) {
+            // Return default prompts
+            $instance = new self();
+            $default_json = $instance->get_default_prompts();
+            return json_decode( $default_json, true );
+        }
+        
+        $decoded = json_decode( $custom_prompts, true );
+        if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+            // Fallback to defaults if invalid
+            $instance = new self();
+            $default_json = $instance->get_default_prompts();
             return json_decode( $default_json, true );
         }
         

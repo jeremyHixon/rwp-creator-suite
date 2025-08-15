@@ -53,7 +53,7 @@ $block_id = uniqid( 'rwp-content-repurposer-' );
 
             <div class="rwp-form-group rwp-platform-selection">
                 <label class="rwp-form-label">
-                    <?php esc_html_e( 'Target Platforms', 'rwp-creator-suite' ); ?>
+                    <strong><?php esc_html_e( 'Target Platforms:', 'rwp-creator-suite' ); ?></strong> (<?php esc_html_e( 'Helps keep track of the character count limits', 'rwp-creator-suite' ); ?>)
                 </label>
                 <div class="rwp-platform-checkboxes">
                     <?php

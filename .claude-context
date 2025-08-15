@@ -1,12 +1,5 @@
 # Task
-Make AI prompts configurable
-* See src/modules/common/class-ai-service.php > build_caption_prompt() and build_repurpose_prompt()
-* Similar to the roles configuration
-    * see `RWP_Creator_Suite_Caption_Admin_Settings::get_roles_config()`
-    * use JSON-based admin fields
-* Separate sections for: System Messages, Tone Descriptions, Platform Guidance, Prompt Templates
-* Fallback to current hardcoded values if configuration is empty
-* Include examples and documentation in the admin interface
+
 
 # Project Context
 

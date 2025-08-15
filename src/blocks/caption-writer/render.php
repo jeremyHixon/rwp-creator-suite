@@ -39,7 +39,7 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
     <div class="caption-writer-app">
         <div class="caption-writer-header">
             <div class="platform-selection">
-                <span class="platform-label"><strong><?php esc_html_e( 'Target Platforms:', 'rwp-creator-suite' ); ?></strong> <?php esc_html_e( 'Helps keep track of the character count limits:', 'rwp-creator-suite' ); ?></span>
+                <span class="platform-label"><strong><?php esc_html_e( 'Target Platforms:', 'rwp-creator-suite' ); ?></strong> (<?php esc_html_e( 'Helps keep track of the character count limits', 'rwp-creator-suite' ); ?>)</span>
                 <div class="platform-checkboxes">
                     <?php
                     $available_platforms = array(

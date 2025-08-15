@@ -1,6 +1,7 @@
 # Task
 Analyze this plugin and suggest improvements, optimizations, and highlight any opportunities
-to remove duplication.
+to remove duplication. Ensure that any consolidation of styles, scripts, classes, and/or functions
+is done in a way that maintains the integrity and functionality of the plugin.
 
 # Project Context
 

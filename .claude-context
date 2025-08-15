@@ -1,7 +1,6 @@
 # Task
-Make the "platforms" in the "caption-writer" and "content-repurposer" blocks (src/blocks) configurable. Use
-the same method as currently used with "prompts" and "roles" (JSON object stored in the database and edited on
-plugin options page). Both blocks should pull from a shared configuration source.
+Analyze this plugin and suggest improvements, optimizations, and highlight any opportunities
+to remove duplication.
 
 # Project Context
 

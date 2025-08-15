@@ -32,8 +32,7 @@
     },
     "tone": {
       "type": "string", 
-      "default": "casual",
-      "enum": ["casual", "witty", "inspirational", "question", "professional"]
+      "default": "casual"
     },
     "selectedTemplate": {
       "type": "string",

@@ -101,21 +101,16 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                                 <?php esc_html_e( 'Tone:', 'rwp-creator-suite' ); ?>
                             </label>
                             <select id="<?php echo esc_attr( $unique_id . '-tone' ); ?>" data-tone>
-                                <option value="casual" <?php selected( $tone, 'casual' ); ?>>
-                                    <?php esc_html_e( 'Casual', 'rwp-creator-suite' ); ?>
-                                </option>
-                                <option value="witty" <?php selected( $tone, 'witty' ); ?>>
-                                    <?php esc_html_e( 'Witty', 'rwp-creator-suite' ); ?>
-                                </option>
-                                <option value="inspirational" <?php selected( $tone, 'inspirational' ); ?>>
-                                    <?php esc_html_e( 'Inspirational', 'rwp-creator-suite' ); ?>
-                                </option>
-                                <option value="question" <?php selected( $tone, 'question' ); ?>>
-                                    <?php esc_html_e( 'Question-based', 'rwp-creator-suite' ); ?>
-                                </option>
-                                <option value="professional" <?php selected( $tone, 'professional' ); ?>>
-                                    <?php esc_html_e( 'Professional', 'rwp-creator-suite' ); ?>
-                                </option>
+                                <?php
+                                $roles_config = RWP_Creator_Suite_Caption_Admin_Settings::get_roles_config();
+                                foreach ( $roles_config as $role ) :
+                                    $selected = selected( $tone, $role['value'], false );
+                                    $title = isset( $role['description'] ) ? ' title="' . esc_attr( $role['description'] ) . '"' : '';
+                                ?>
+                                    <option value="<?php echo esc_attr( $role['value'] ); ?>"<?php echo $selected; ?><?php echo $title; ?>>
+                                        <?php echo esc_html( $role['label'] ); ?>
+                                    </option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         

@@ -86,18 +86,16 @@ $block_id = uniqid( 'rwp-content-repurposer-' );
                     <?php esc_html_e( 'Tone', 'rwp-creator-suite' ); ?>
                 </label>
                 <select id="<?php echo esc_attr( $block_id ); ?>-tone" class="rwp-tone-select">
-                    <option value="professional" <?php selected( $tone, 'professional' ); ?>>
-                        <?php esc_html_e( 'Professional', 'rwp-creator-suite' ); ?>
-                    </option>
-                    <option value="casual" <?php selected( $tone, 'casual' ); ?>>
-                        <?php esc_html_e( 'Casual', 'rwp-creator-suite' ); ?>
-                    </option>
-                    <option value="engaging" <?php selected( $tone, 'engaging' ); ?>>
-                        <?php esc_html_e( 'Engaging', 'rwp-creator-suite' ); ?>
-                    </option>
-                    <option value="informative" <?php selected( $tone, 'informative' ); ?>>
-                        <?php esc_html_e( 'Informative', 'rwp-creator-suite' ); ?>
-                    </option>
+                    <?php
+                    $roles_config = RWP_Creator_Suite_Caption_Admin_Settings::get_roles_config();
+                    foreach ( $roles_config as $role ) :
+                        $selected = selected( $tone, $role['value'], false );
+                        $title = isset( $role['description'] ) ? ' title="' . esc_attr( $role['description'] ) . '"' : '';
+                    ?>
+                        <option value="<?php echo esc_attr( $role['value'] ); ?>"<?php echo $selected; ?><?php echo $title; ?>>
+                            <?php echo esc_html( $role['label'] ); ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
 
@@ -148,18 +146,16 @@ $block_id = uniqid( 'rwp-content-repurposer-' );
                     <?php esc_html_e( 'Tone', 'rwp-creator-suite' ); ?>
                 </label>
                 <select id="<?php echo esc_attr( $block_id ); ?>-guest-tone" class="rwp-tone-select rwp-guest-tone-select">
-                    <option value="professional" <?php selected( $tone, 'professional' ); ?>>
-                        <?php esc_html_e( 'Professional', 'rwp-creator-suite' ); ?>
-                    </option>
-                    <option value="casual" <?php selected( $tone, 'casual' ); ?>>
-                        <?php esc_html_e( 'Casual', 'rwp-creator-suite' ); ?>
-                    </option>
-                    <option value="engaging" <?php selected( $tone, 'engaging' ); ?>>
-                        <?php esc_html_e( 'Engaging', 'rwp-creator-suite' ); ?>
-                    </option>
-                    <option value="informative" <?php selected( $tone, 'informative' ); ?>>
-                        <?php esc_html_e( 'Informative', 'rwp-creator-suite' ); ?>
-                    </option>
+                    <?php
+                    $roles_config = RWP_Creator_Suite_Caption_Admin_Settings::get_roles_config();
+                    foreach ( $roles_config as $role ) :
+                        $selected = selected( $tone, $role['value'], false );
+                        $title = isset( $role['description'] ) ? ' title="' . esc_attr( $role['description'] ) . '"' : '';
+                    ?>
+                        <option value="<?php echo esc_attr( $role['value'] ); ?>"<?php echo $selected; ?><?php echo $title; ?>>
+                            <?php echo esc_html( $role['label'] ); ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
 

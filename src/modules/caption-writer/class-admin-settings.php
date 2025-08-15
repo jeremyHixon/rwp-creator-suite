@@ -112,6 +112,12 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
             'default' => false,
         ) );
         
+        register_setting( $this->settings_group, 'rwp_creator_suite_custom_roles', array(
+            'type' => 'string',
+            'sanitize_callback' => array( $this, 'sanitize_roles_config' ),
+            'default' => '',
+        ) );
+        
         // Add settings sections
         add_settings_section(
             'rwp_caption_ai_section',
@@ -131,6 +137,13 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
             'rwp_content_repurposer_section',
             __( 'Content Repurposer Settings', 'rwp-creator-suite' ),
             array( $this, 'render_content_repurposer_section_description' ),
+            $this->settings_page
+        );
+        
+        add_settings_section(
+            'rwp_roles_configuration_section',
+            __( 'Role Configuration', 'rwp-creator-suite' ),
+            array( $this, 'render_roles_section_description' ),
             $this->settings_page
         );
         
@@ -197,6 +210,14 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
             array( $this, 'render_allow_guest_repurpose_field' ),
             $this->settings_page,
             'rwp_content_repurposer_section'
+        );
+        
+        add_settings_field(
+            'custom_roles',
+            __( 'Custom Roles/Tones', 'rwp-creator-suite' ),
+            array( $this, 'render_custom_roles_field' ),
+            $this->settings_page,
+            'rwp_roles_configuration_section'
         );
     }
     
@@ -294,6 +315,13 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
      */
     public function render_content_repurposer_section_description() {
         echo '<p>' . esc_html__( 'Configure settings for the Content Repurposer feature.', 'rwp-creator-suite' ) . '</p>';
+    }
+    
+    /**
+     * Render roles section description.
+     */
+    public function render_roles_section_description() {
+        echo '<p>' . esc_html__( 'Configure custom roles/tones for both Caption Writer and Content Repurposer blocks.', 'rwp-creator-suite' ) . '</p>';
     }
     
     /**
@@ -472,6 +500,89 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
     }
     
     /**
+     * Render custom roles field.
+     */
+    public function render_custom_roles_field() {
+        $value = get_option( 'rwp_creator_suite_custom_roles', '' );
+        $default_roles = $this->get_default_roles();
+        ?>
+        <div class="rwp-roles-configuration">
+            <textarea 
+                name="rwp_creator_suite_custom_roles" 
+                id="rwp_creator_suite_custom_roles"
+                rows="10" 
+                cols="80" 
+                class="large-text code"
+                placeholder="<?php echo esc_attr( $default_roles ); ?>"
+            ><?php echo esc_textarea( $value ? $value : $default_roles ); ?></textarea>
+            <p class="description">
+                <?php esc_html_e( 'Configure custom roles/tones in JSON format. Each role should have a "value" (used internally) and "label" (displayed to users).', 'rwp-creator-suite' ); ?>
+            </p>
+            <div class="rwp-roles-help">
+                <details>
+                    <summary><?php esc_html_e( 'Click here for format examples', 'rwp-creator-suite' ); ?></summary>
+                    <div class="rwp-help-content">
+                        <p><strong><?php esc_html_e( 'Default format:', 'rwp-creator-suite' ); ?></strong></p>
+                        <pre><?php echo esc_html( $default_roles ); ?></pre>
+                        <p><strong><?php esc_html_e( 'Field descriptions:', 'rwp-creator-suite' ); ?></strong></p>
+                        <ul>
+                            <li><code>value</code>: <?php esc_html_e( 'Internal identifier (lowercase, no spaces)', 'rwp-creator-suite' ); ?></li>
+                            <li><code>label</code>: <?php esc_html_e( 'Display name shown to users', 'rwp-creator-suite' ); ?></li>
+                            <li><code>description</code>: <?php esc_html_e( 'Optional tooltip or help text', 'rwp-creator-suite' ); ?></li>
+                        </ul>
+                    </div>
+                </details>
+            </div>
+        </div>
+        <?php
+    }
+    
+    /**
+     * Get default roles configuration.
+     */
+    private function get_default_roles() {
+        $default_roles = array(
+            array(
+                'value' => 'casual',
+                'label' => __( 'Casual', 'rwp-creator-suite' ),
+                'description' => __( 'Relaxed and conversational tone', 'rwp-creator-suite' )
+            ),
+            array(
+                'value' => 'professional',
+                'label' => __( 'Professional', 'rwp-creator-suite' ),
+                'description' => __( 'Business-appropriate and formal tone', 'rwp-creator-suite' )
+            ),
+            array(
+                'value' => 'witty',
+                'label' => __( 'Witty', 'rwp-creator-suite' ),
+                'description' => __( 'Clever and humorous tone', 'rwp-creator-suite' )
+            ),
+            array(
+                'value' => 'inspirational',
+                'label' => __( 'Inspirational', 'rwp-creator-suite' ),
+                'description' => __( 'Motivating and uplifting tone', 'rwp-creator-suite' )
+            ),
+            array(
+                'value' => 'engaging',
+                'label' => __( 'Engaging', 'rwp-creator-suite' ),
+                'description' => __( 'Interactive and conversation-starting tone', 'rwp-creator-suite' )
+            ),
+            array(
+                'value' => 'informative',
+                'label' => __( 'Informative', 'rwp-creator-suite' ),
+                'description' => __( 'Educational and fact-focused tone', 'rwp-creator-suite' )
+            ),
+            array(
+                'value' => 'question',
+                'label' => __( 'Question-based', 'rwp-creator-suite' ),
+                'description' => __( 'Encourages interaction through questions', 'rwp-creator-suite' )
+            )
+        );
+        
+        return wp_json_encode( $default_roles, JSON_PRETTY_PRINT );
+    }
+    
+    /**
      * Enqueue admin scripts.
      */
     public function enqueue_admin_scripts( $hook ) {
@@ -554,5 +665,106 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
         
         // Return empty string as we store encrypted separately
         return '';
+    }
+    
+    /**
+     * Sanitize roles configuration.
+     */
+    public function sanitize_roles_config( $value ) {
+        $value = sanitize_textarea_field( trim( $value ) );
+        
+        // If empty, return empty string to use defaults
+        if ( empty( $value ) ) {
+            return '';
+        }
+        
+        // Try to decode JSON
+        $decoded = json_decode( $value, true );
+        
+        // If invalid JSON, add error and return empty
+        if ( json_last_error() !== JSON_ERROR_NONE ) {
+            add_settings_error(
+                'rwp_caption_writer_settings',
+                'roles_config_error',
+                __( 'Invalid JSON format in roles configuration. Please check the syntax.', 'rwp-creator-suite' ),
+                'error'
+            );
+            return '';
+        }
+        
+        // Validate structure
+        if ( ! is_array( $decoded ) ) {
+            add_settings_error(
+                'rwp_caption_writer_settings',
+                'roles_config_error',
+                __( 'Roles configuration must be an array of role objects.', 'rwp-creator-suite' ),
+                'error'
+            );
+            return '';
+        }
+        
+        // Validate each role
+        $sanitized_roles = array();
+        foreach ( $decoded as $role ) {
+            if ( ! is_array( $role ) || ! isset( $role['value'] ) || ! isset( $role['label'] ) ) {
+                add_settings_error(
+                    'rwp_caption_writer_settings',
+                    'roles_config_error',
+                    __( 'Each role must have at least "value" and "label" fields.', 'rwp-creator-suite' ),
+                    'error'
+                );
+                return '';
+            }
+            
+            $sanitized_role = array(
+                'value' => sanitize_key( $role['value'] ),
+                'label' => sanitize_text_field( $role['label'] )
+            );
+            
+            // Add optional description
+            if ( isset( $role['description'] ) ) {
+                $sanitized_role['description'] = sanitize_text_field( $role['description'] );
+            }
+            
+            $sanitized_roles[] = $sanitized_role;
+        }
+        
+        // Check for duplicate values
+        $values = array_column( $sanitized_roles, 'value' );
+        if ( count( $values ) !== count( array_unique( $values ) ) ) {
+            add_settings_error(
+                'rwp_caption_writer_settings',
+                'roles_config_error',
+                __( 'Duplicate role values found. Each role must have a unique value.', 'rwp-creator-suite' ),
+                'error'
+            );
+            return '';
+        }
+        
+        return wp_json_encode( $sanitized_roles, JSON_PRETTY_PRINT );
+    }
+    
+    /**
+     * Get roles configuration (with fallback to defaults).
+     */
+    public static function get_roles_config() {
+        $custom_roles = get_option( 'rwp_creator_suite_custom_roles', '' );
+        
+        if ( empty( $custom_roles ) ) {
+            // Return default roles
+            $instance = new self();
+            $default_json = $instance->get_default_roles();
+            return json_decode( $default_json, true );
+        }
+        
+        $decoded = json_decode( $custom_roles, true );
+        if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+            // Fallback to defaults if invalid
+            $instance = new self();
+            $default_json = $instance->get_default_roles();
+            return json_decode( $default_json, true );
+        }
+        
+        return $decoded;
     }
 }

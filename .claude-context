@@ -1,5 +1,7 @@
 # Task
-[Placeholder for current task description - keep this at the very top]
+Add a new option for this WordPress plugin to make the "roles" in the "caption writer"
+block (src/blocks/caption-writer) and "content repurposer" block (src/blocks/content-repurposer)
+configurable.
 
 # Project Context
 

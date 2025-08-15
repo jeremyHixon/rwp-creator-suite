@@ -978,7 +978,6 @@
                     }
                 }
             } catch (error) {
-                console.log('Could not load user preferences:', error);
             }
         }
         
@@ -1003,7 +1002,6 @@
                     body: JSON.stringify(preferences)
                 });
             } catch (error) {
-                console.log('Could not save user preferences:', error);
             }
         }
         
@@ -1035,7 +1033,6 @@
                 
             } catch (error) {
                 // Silently fail - quota info is nice to have but not critical
-                console.log('Could not load initial quota info:', error);
             }
         }
         

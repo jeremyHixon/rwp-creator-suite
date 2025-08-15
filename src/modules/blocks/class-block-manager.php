@@ -177,7 +177,7 @@ class RWP_Creator_Suite_Block_Manager {
                             var fallbackScript = document.createElement('script');
                             fallbackScript.src = 'https://unpkg.com/jszip@3.10.1/dist/jszip.min.js';
                             fallbackScript.onload = function() {
-                                console.log('JSZip loaded from fallback CDN');
+                                // JSZip loaded from fallback CDN
                             };
                             fallbackScript.onerror = function() {
                                 console.error('All JSZip sources failed to load');

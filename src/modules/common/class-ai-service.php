@@ -69,6 +69,13 @@ class RWP_Creator_Suite_AI_Service {
             return $result;
         }
         
+        // Validate AI response format
+        $validation_result = $this->validate_ai_response( $result, 'captions' );
+        if ( is_wp_error( $validation_result ) ) {
+            // Try to fix common formatting issues
+            $result = $this->clean_ai_response( $result );
+        }
+        
         return $this->parse_captions( $result );
     }
     
@@ -76,30 +83,33 @@ class RWP_Creator_Suite_AI_Service {
      * Repurpose content for multiple platforms.
      */
     public function repurpose_content( $content, $platforms, $tone = 'professional' ) {
-        $repurposed = array();
+        // Build a single prompt for all platforms
+        $prompt = $this->build_multi_platform_repurpose_prompt( $content, $platforms, $tone );
         
-        foreach ( $platforms as $platform ) {
-            $character_limit = $this->get_character_limit( $platform );
-            $prompt = $this->build_repurpose_prompt( $content, $platform, $tone, $character_limit );
-            
-            $result = $this->generate_content( $prompt, 'repurpose' );
-            
-            if ( is_wp_error( $result ) ) {
-                $repurposed[ $platform ] = array(
+        // Make single AI API call
+        $result = $this->generate_content( $prompt, 'repurpose' );
+        
+        if ( is_wp_error( $result ) ) {
+            // If AI call fails, return error for all platforms
+            $error_result = array();
+            foreach ( $platforms as $platform ) {
+                $error_result[ $platform ] = array(
                     'success' => false,
                     'error' => $result->get_error_message(),
                 );
-            } else {
-                $versions = $this->parse_repurposed_content( $result );
-                $repurposed[ $platform ] = array(
-                    'success' => true,
-                    'versions' => $versions,
-                    'character_limit' => $character_limit,
-                );
             }
+            return $error_result;
         }
         
-        return $repurposed;
+        // Validate AI response format before parsing
+        $validation_result = $this->validate_ai_response( $result, 'repurpose_multi' );
+        if ( is_wp_error( $validation_result ) ) {
+            // Try to fix common formatting issues
+            $result = $this->clean_ai_response( $result );
+        }
+        
+        // Parse the multi-platform response
+        return $this->parse_multi_platform_content( $result, $platforms );
     }
     
     /**
@@ -310,18 +320,26 @@ class RWP_Creator_Suite_AI_Service {
         
         return sprintf(
             "Create 3 different %s captions for %s based on this content description: \"%s\"\n\n" .
-            "Requirements:\n" .
-            "- Each caption should be under %d characters (leaving room for hashtags)\n" .
+            "CRITICAL FORMATTING REQUIREMENTS:\n" .
+            "- You MUST respond with exactly 3 numbered items\n" .
+            "- Use ONLY this format: \"1. [caption]\n\n2. [caption]\n\n3. [caption]\"\n" .
+            "- Do NOT use markdown formatting (no **, __, or other markup)\n" .
+            "- Each numbered item must be complete on its own\n" .
+            "- Each caption should be under %d characters (leaving room for hashtags)\n\n" .
+            "CONTENT REQUIREMENTS:\n" .
             "- %s\n" .
             "- End each caption with {hashtags} as a placeholder for hashtag insertion\n" .
             "- Make each caption distinctly different in approach and style\n" .
-            "- Format as a numbered list (1., 2., 3.)\n" .
-            "- Focus on engagement and authenticity\n\n" .
-            "The tone should be: %s",
+            "- Focus on engagement and authenticity\n" .
+            "- The tone should be: %s\n\n" .
+            "EXAMPLE FORMAT:\n" .
+            "1. First caption text here {hashtags}\n\n" .
+            "2. Second caption text here {hashtags}\n\n" .
+            "3. Third caption text here {hashtags}",
             $tone_desc,
             $platform,
             $description,
-            $character_limit - 200, // Leave room for hashtags
+            $character_limit - 200,
             $platform_note,
             $tone_desc
         );
@@ -351,20 +369,93 @@ class RWP_Creator_Suite_AI_Service {
         
         return sprintf(
             "Repurpose the following content for %s:\n\n\"%s\"\n\n" .
-            "Requirements:\n" .
+            "CRITICAL FORMATTING REQUIREMENTS:\n" .
+            "- You MUST respond with exactly 3 numbered items\n" .
+            "- Use ONLY this format: \"1. [content]\n\n2. [content]\n\n3. [content]\"\n" .
+            "- Do NOT use markdown formatting (no **, __, or other markup)\n" .
+            "- Do NOT include sub-bullets or nested content\n" .
+            "- Each numbered item must be complete on its own\n" .
+            "- Keep each version under %d characters\n\n" .
+            "CONTENT REQUIREMENTS:\n" .
             "- Create 3 different versions optimized for %s\n" .
-            "- Each version should be under %d characters\n" .
             "- %s\n" .
             "- Maintain the core message while adapting the style and format\n" .
             "- Use a %s tone\n" .
-            "- Format as numbered list (1., 2., 3.)\n" .
             "- Extract and highlight the most important points\n" .
-            "- Make each version distinctly different in approach",
+            "- Make each version distinctly different in approach\n\n" .
+            "EXAMPLE FORMAT:\n" .
+            "1. First version of the repurposed content here.\n\n" .
+            "2. Second version of the repurposed content here.\n\n" .
+            "3. Third version of the repurposed content here.",
             $platform,
             $content,
+            $character_limit - 100,
             $platform,
-            $character_limit - 100, // Leave room for hashtags/mentions
             $guidance,
+            $tone_desc
+        );
+    }
+    
+    /**
+     * Build the AI prompt for multi-platform content repurposing (single API call).
+     */
+    private function build_multi_platform_repurpose_prompt( $content, $platforms, $tone ) {
+        $tone_descriptions = array(
+            'professional' => 'polished, authoritative, business-appropriate',
+            'casual'       => 'friendly, conversational, approachable', 
+            'engaging'     => 'compelling, interactive, encourages responses',
+            'informative'  => 'educational, fact-focused, clear and concise',
+        );
+        
+        $tone_desc = $tone_descriptions[ $tone ] ?? 'professional';
+        
+        $platform_guidance = array(
+            'twitter'   => 'Twitter: Concise, impactful posts under 280 characters.',
+            'linkedin'  => 'LinkedIn: Professional insights and industry relevance under 3000 characters.',
+            'facebook'  => 'Facebook: Engaging, conversational posts under 63206 characters.',
+            'instagram' => 'Instagram: Visual-focused captions under 2200 characters.',
+        );
+        
+        // Build platform-specific guidelines
+        $platform_instructions = array();
+        foreach ( $platforms as $platform ) {
+            $character_limit = $this->get_character_limit( $platform );
+            $guidance = $platform_guidance[ $platform ] ?? $platform_guidance['twitter'];
+            $platform_instructions[] = "- {$guidance}";
+        }
+        
+        $platform_list = implode( ', ', $platforms );
+        $platform_guidance_text = implode( "\n", $platform_instructions );
+        
+        return sprintf(
+            "Repurpose the following content for multiple social media platforms (%s):\n\n\"%s\"\n\n" .
+            "CRITICAL FORMATTING REQUIREMENTS:\n" .
+            "- You MUST create content for each platform in this EXACT order: %s\n" .
+            "- For each platform, provide exactly 3 numbered versions\n" .
+            "- Use this format: \"PLATFORM_NAME:\n1. [content]\n\n2. [content]\n\n3. [content]\n\n\"\n" .
+            "- Do NOT use markdown formatting (no **, __, or other markup)\n" .
+            "- Each numbered item must be complete and standalone\n" .
+            "- Separate each platform section with a blank line\n\n" .
+            "PLATFORM REQUIREMENTS:\n" .
+            "%s\n\n" .
+            "CONTENT REQUIREMENTS:\n" .
+            "- Maintain the core message while adapting style for each platform\n" .
+            "- Use a %s tone throughout\n" .
+            "- Extract and highlight the most important points\n" .
+            "- Make each version within a platform distinctly different\n\n" .
+            "EXAMPLE FORMAT:\n" .
+            "TWITTER:\n" .
+            "1. First Twitter version here.\n\n" .
+            "2. Second Twitter version here.\n\n" .
+            "3. Third Twitter version here.\n\n" .
+            "LINKEDIN:\n" .
+            "1. First LinkedIn version here.\n\n" .
+            "2. Second LinkedIn version here.\n\n" .
+            "3. Third LinkedIn version here.",
+            $platform_list,
+            $content,
+            strtoupper( implode( ', ', $platforms ) ),
+            $platform_guidance_text,
             $tone_desc
         );
     }
@@ -375,11 +466,11 @@ class RWP_Creator_Suite_AI_Service {
     private function get_system_message( $context ) {
         switch ( $context ) {
             case 'captions':
-                return 'You are a social media caption expert who creates engaging, platform-optimized content.';
+                return 'You are a social media caption expert who creates engaging, platform-optimized content. Always follow formatting instructions exactly as specified. Use only plain text without markdown formatting unless explicitly requested.';
             case 'repurpose':
-                return 'You are a content strategist who specializes in adapting content for different social media platforms while maintaining the core message and maximizing engagement.';
+                return 'You are a content strategist who specializes in adapting content for different social media platforms. You MUST follow formatting instructions precisely. Always respond with exactly the number of items requested, using simple numbered format (1., 2., 3.) with no markdown formatting, sub-bullets, or complex structure. Each numbered item should be complete and standalone.';
             default:
-                return 'You are a helpful AI assistant focused on creating high-quality content.';
+                return 'You are a helpful AI assistant focused on creating high-quality content. Follow all formatting instructions exactly as provided.';
         }
     }
     
@@ -422,9 +513,90 @@ class RWP_Creator_Suite_AI_Service {
      * Parse AI-generated repurposed content into structured data.
      */
     private function parse_repurposed_content( $content ) {
+        // With improved prompts and validation, we can use the simpler parsing method
         return $this->parse_numbered_content( $content );
     }
     
+    /**
+     * Validate AI response format for consistency.
+     */
+    private function validate_ai_response( $content, $context ) {
+        if ( empty( $content ) ) {
+            return new WP_Error( 'empty_response', 'AI response is empty' );
+        }
+        
+        switch ( $context ) {
+            case 'repurpose':
+                // Check for numbered list pattern
+                if ( ! preg_match( '/^\s*1\.\s+/', $content ) ) {
+                    return new WP_Error( 'invalid_format', 'Response does not start with numbered list' );
+                }
+                
+                // Count numbered items
+                preg_match_all( '/^\s*\d+\.\s+/m', $content, $matches );
+                $count = count( $matches[0] );
+                
+                if ( $count < 2 || $count > 5 ) {
+                    return new WP_Error( 'invalid_count', "Expected 3 items, found {$count}" );
+                }
+                break;
+                
+            case 'repurpose_multi':
+                // Check for platform headers (e.g., "TWITTER:", "LINKEDIN:")
+                if ( ! preg_match( '/^[A-Z]+:\s*$/m', $content ) ) {
+                    return new WP_Error( 'invalid_format', 'Multi-platform response missing platform headers' );
+                }
+                
+                // Count numbered items - should have 3 per platform
+                preg_match_all( '/^\s*\d+\.\s+/m', $content, $matches );
+                $total_items = count( $matches[0] );
+                
+                // Count platforms
+                preg_match_all( '/^[A-Z]+:\s*$/m', $content, $platform_matches );
+                $platform_count = count( $platform_matches[0] );
+                
+                $expected_items = $platform_count * 3;
+                if ( $total_items !== $expected_items ) {
+                    return new WP_Error( 'invalid_count', "Expected {$expected_items} items ({$platform_count} platforms × 3), found {$total_items}" );
+                }
+                break;
+                
+            case 'captions':
+                // Similar validation for captions
+                preg_match_all( '/^\s*\d+\.\s+/m', $content, $matches );
+                $count = count( $matches[0] );
+                
+                if ( $count < 2 || $count > 5 ) {
+                    return new WP_Error( 'invalid_count', "Expected 3 captions, found {$count}" );
+                }
+                break;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Clean AI response to fix common formatting issues.
+     */
+    private function clean_ai_response( $content ) {
+        // Remove markdown bold/italic formatting
+        $content = preg_replace( '/\*\*(.*?)\*\*/', '$1', $content );
+        $content = preg_replace( '/\*(.*?)\*/', '$1', $content );
+        $content = preg_replace( '/__(.*?)__/', '$1', $content );
+        $content = preg_replace( '/_(.*?)_/', '$1', $content );
+        
+        // Remove markdown headers
+        $content = preg_replace( '/^#+\s+/m', '', $content );
+        
+        // Clean up excessive whitespace but preserve structure
+        $content = preg_replace( '/\n{3,}/', "\n\n", $content );
+        
+        // Ensure proper numbered format
+        $content = preg_replace( '/^(\d+)\)\s+/m', '$1. ', $content );
+        
+        return trim( $content );
+    }
+
     /**
      * Parse numbered content list into structured array.
      */
@@ -476,6 +648,62 @@ class RWP_Creator_Suite_AI_Service {
         
         // Limit to maximum of 5 items
         return array_slice( $items, 0, 5 );
+    }
+    
+    /**
+     * Parse multi-platform AI response into structured data.
+     */
+    private function parse_multi_platform_content( $content, $platforms ) {
+        $result = array();
+        
+        // Split content by platform headers
+        $sections = preg_split( '/^([A-Z]+):\s*$/m', $content, -1, PREG_SPLIT_DELIM_CAPTURE );
+        
+        // Remove empty first section if it exists
+        if ( isset( $sections[0] ) && trim( $sections[0] ) === '' ) {
+            array_shift( $sections );
+        }
+        
+        // Process sections in pairs (platform name, content)
+        for ( $i = 0; $i < count( $sections ); $i += 2 ) {
+            if ( ! isset( $sections[$i] ) || ! isset( $sections[$i + 1] ) ) {
+                continue;
+            }
+            
+            $platform_name = strtolower( trim( $sections[$i] ) );
+            $platform_content = trim( $sections[$i + 1] );
+            
+            // Skip if this platform wasn't requested
+            if ( ! in_array( $platform_name, $platforms, true ) ) {
+                continue;
+            }
+            
+            // Parse the numbered content for this platform
+            $versions = $this->parse_numbered_content( $platform_content );
+            
+            // Validate we got 3 versions
+            if ( count( $versions ) !== 3 ) {
+                // Expected 3 versions but got different count - continue processing
+            }
+            
+            $result[ $platform_name ] = array(
+                'success' => true,
+                'versions' => $versions,
+                'character_limit' => $this->get_character_limit( $platform_name ),
+            );
+        }
+        
+        // Add error results for any requested platforms that weren't found
+        foreach ( $platforms as $platform ) {
+            if ( ! isset( $result[ $platform ] ) ) {
+                $result[ $platform ] = array(
+                    'success' => false,
+                    'error' => "Content for {$platform} was not found in AI response",
+                );
+            }
+        }
+        
+        return $result;
     }
     
     /**

@@ -485,7 +485,6 @@ class InstagramBannerCreator {
 	}
 
 	async initializeCropInterface( imageData ) {
-		console.log( 'Initializing crop interface with image:', imageData );
 		
 		// Wait for the crop interface to be rendered
 		await new Promise( ( resolve ) => setTimeout( resolve, 200 ) );
@@ -496,7 +495,6 @@ class InstagramBannerCreator {
 			throw new Error( 'Crop canvas not found' );
 		}
 		
-		console.log( 'Found canvas:', canvas );
 		const ctx = canvas.getContext( '2d' );
 
 		// Set canvas size based on aspect ratio (3248x1440)
@@ -505,14 +503,11 @@ class InstagramBannerCreator {
 		const canvasWidth = containerWidth;
 		const canvasHeight = canvasWidth / aspectRatio;
 		
-		console.log( 'Container dimensions:', containerWidth, 'x', canvasHeight );
-		console.log( 'Image dimensions:', imageData.width, 'x', imageData.height );
 
 		// Set canvas to exact aspect ratio
 		canvas.width = canvasWidth;
 		canvas.height = canvasHeight;
 		
-		console.log( 'Canvas size set to:', canvas.width, 'x', canvas.height );
 		
 		// For restored images (from page refresh), use the same scaling logic as original uploads
 		// so users can still drag the image around to adjust the crop
@@ -590,8 +585,6 @@ class InstagramBannerCreator {
 			};
 		}
 		
-		console.log( 'Image info:', this.cropImageInfo );
-		console.log( 'Initial position:', this.imagePosition );
 		
 		// Draw the image at initial position
 		this.redrawCropCanvas();
@@ -759,9 +752,6 @@ class InstagramBannerCreator {
 			const clampedWidth = Math.min( visibleWidth, this.cropImageInfo.originalWidth - clampedX );
 			const clampedHeight = Math.min( visibleHeight, this.cropImageInfo.originalHeight - clampedY );
 
-			console.log( 'Cropping from original image:' );
-			console.log( 'Source:', clampedX, clampedY, clampedWidth, clampedHeight );
-			console.log( 'Target:', this.specs.targetWidth, this.specs.targetHeight );
 
 			// Draw the visible portion scaled to target size
 			ctx.drawImage(

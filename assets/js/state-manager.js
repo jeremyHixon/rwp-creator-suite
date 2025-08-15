@@ -75,7 +75,6 @@ class StateManager {
 			);
 		} else if ( this.storage.type === 'localStorage' ) {
 			// Success - localStorage is available and preferred
-			console.log( 'State Manager: Using localStorage for data persistence' );
 		}
 	}
 

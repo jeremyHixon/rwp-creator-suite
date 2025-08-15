@@ -127,8 +127,8 @@ class RWP_Creator_Suite_Content_Repurposer_API {
             $result = $this->apply_guest_limitations( $result );
         }
         
-        // Track usage in shared system
-        $this->ai_service->track_usage( count( $platforms ), 'content_repurposing' );
+        // Track usage in shared system (single API call regardless of platform count)
+        $this->ai_service->track_usage( 1, 'content_repurposing' );
         
         $response_data = array(
             'success' => true,

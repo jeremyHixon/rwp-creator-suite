@@ -48,28 +48,21 @@
             // Check for stored guest state (for both guest and newly logged-in users)
             try {
                 const stored = localStorage.getItem('rwp_content_repurposer_guest_state');
-                console.log('Checking stored guest state:', stored);
                 
                 if (stored) {
                     const parsedState = JSON.parse(stored);
-                    console.log('Parsed guest state:', parsedState);
-                    console.log('Is logged in:', this.isLoggedIn);
-                    console.log('Has lastGenerated:', parsedState.lastGenerated);
                     
                     // For logged-in users who just authenticated, check for server-stored full content first
                     if (this.isLoggedIn && parsedState.lastGenerated) {
                         // Check if the guest data is recent (within last 30 minutes)
                         const thirtyMinutesAgo = Date.now() - (30 * 60 * 1000);
-                        console.log('Time check - lastGenerated:', parsedState.lastGenerated, 'thirtyMinutesAgo:', thirtyMinutesAgo);
                         
                         if (parsedState.lastGenerated > thirtyMinutesAgo) {
-                            console.log('Recent guest data found, attempting to recover full content from server...');
                             
                             // Try to recover full content from server storage
                             this.recoverGuestContentFromServer()
                                 .then(recoveredContent => {
                                     if (recoveredContent) {
-                                        console.log('Full content recovered from server:', recoveredContent);
                                         // Clear local guest state since we got the full content
                                         localStorage.removeItem('rwp_content_repurposer_guest_state');
                                         localStorage.removeItem('rwp_content_repurposer_state');
@@ -95,18 +88,15 @@
                                     }
                                     
                                     // If server recovery failed, fall back to local conversion
-                                    console.log('Server recovery failed, falling back to local guest data conversion...');
                                     this.fallbackToLocalGuestData(parsedState, baseState, config);
                                 })
                                 .catch(error => {
-                                    console.log('Error recovering from server, falling back to local conversion:', error);
                                     this.fallbackToLocalGuestData(parsedState, baseState, config);
                                 });
                             
                             // Return base state for now, recovery will update via setState
                             return baseState;
                         } else {
-                            console.log('Guest data is too old');
                         }
                     }
                     
@@ -124,7 +114,6 @@
         
         async recoverGuestContentFromServer() {
             if (!this.isLoggedIn) {
-                console.log('Not logged in, skipping server recovery');
                 return null;
             }
             
@@ -137,31 +126,25 @@
                 });
                 
                 if (response.success && response.data) {
-                    console.log('Successfully recovered guest content from server');
                     return response.data;
                 }
                 
-                console.log('Server recovery failed:', response.message || 'No data available');
                 return null;
             } catch (error) {
-                console.log('Error during server recovery:', error);
                 return null;
             }
         }
         
         fallbackToLocalGuestData(parsedState, baseState, config) {
             if (parsedState.repurposedContent) {
-                console.log('Guest data is recent, converting locally...');
                 // Convert guest preview data to full content for logged-in user
                 const convertedContent = this.convertGuestDataForLoggedInUser(parsedState.repurposedContent);
                 
                 // Only clear guest state after successful transfer if we have content
                 if (Object.keys(convertedContent).length > 0) {
-                    console.log('Clearing guest state and transferring data');
                     localStorage.removeItem('rwp_content_repurposer_guest_state');
                     // Also clear any existing logged-in user state to prevent overwriting converted data
                     localStorage.removeItem('rwp_content_repurposer_state');
-                    console.log('Guest state cleared. Remaining localStorage:', localStorage.getItem('rwp_content_repurposer_guest_state'));
                     
                     // Update state with local converted content
                     this.state.setState({
@@ -171,7 +154,6 @@
                         repurposedContent: convertedContent
                     });
                 } else {
-                    console.log('No converted content, not transferring');
                 }
             }
         }
@@ -200,7 +182,6 @@
                 isLoggedIn = true;
             }
             
-            console.log('Detecting login state:', {
                 rwpContentRepurposerExists: typeof rwpContentRepurposer !== 'undefined',
                 rwpContentRepurposer: typeof rwpContentRepurposer !== 'undefined' ? rwpContentRepurposer : 'undefined',
                 adminBarExists: !!document.getElementById('wpadminbar'),
@@ -280,8 +261,6 @@
             
             // Set up state change listener
             this.state.subscribe((newState) => {
-                console.log('State subscription triggered with state:', newState);
-                console.log('Is logged in during subscription:', this.isLoggedIn);
                 this.updateUI(newState);
                 this.persistGuestState(newState);
             });
@@ -428,7 +407,6 @@
         
         updateUI(providedState = null) {
             const state = providedState || this.state.getState();
-            console.log('updateUI called with state:', state);
             
             // Update form fields for logged-in users
             if (this.elements.contentInput && this.elements.contentInput.value !== state.content) {
@@ -461,7 +439,6 @@
             this.updateButtonState(state.isProcessing);
             
             // Update results
-            console.log('About to update results with:', state.repurposedContent);
             this.updateResults(state.repurposedContent);
             
             // Update error display
@@ -659,23 +636,18 @@
         }
         
         updateResults(repurposedContent) {
-            console.log('updateResults called with:', repurposedContent);
-            console.log('Results content element exists:', !!this.elements.resultsContent);
             
             if (!this.elements.resultsContent || !repurposedContent || Object.keys(repurposedContent).length === 0) {
-                console.log('Hiding results - missing data or elements');
                 if (this.elements.resultsContainer) {
                     this.elements.resultsContainer.style.display = 'none';
                 }
                 return;
             }
             
-            console.log('Processing results for display');
             let resultsHTML = '';
             
             // Check for upgrade message or content recovery message
             if (repurposedContent._upgradeInfo && repurposedContent._upgradeInfo.hasPreviewContent) {
-                console.log('Adding upgrade success message');
                 resultsHTML += `
                     <div class="rwp-upgrade-success-message">
                         <div class="rwp-upgrade-success-content">
@@ -685,7 +657,6 @@
                     </div>
                 `;
             } else if (repurposedContent._recoveryInfo && repurposedContent._recoveryInfo.wasRecovered) {
-                console.log('Adding content recovery message');
                 resultsHTML += `
                     <div class="rwp-recovery-success-message">
                         <div class="rwp-recovery-success-content">
@@ -722,7 +693,6 @@
             const isGuest = !this.isLoggedIn;
             const isTwitter = platform === 'twitter';
             
-            console.log(`Rendering platform success for ${platform}:`, { 
                 isGuest, 
                 isTwitter, 
                 versionsCount: versions.length,
@@ -730,11 +700,9 @@
             });
             
             const versionsHTML = versions.map((version, index) => {
-                console.log(`Processing version ${index} for ${platform}:`, JSON.stringify(version, null, 2));
                 
                 // For guest users, show preview for non-Twitter platforms
                 if (isGuest && !isTwitter && version.is_preview) {
-                    console.log(`Rendering guest preview for ${platform}`);
                     return `
                         <div class="rwp-content-version rwp-guest-preview">
                             <div class="rwp-version-text">${this.escapeHtml(version.preview_text)}</div>
@@ -745,7 +713,6 @@
                     `;
                 } else {
                     // Full version for logged-in users or Twitter for guests
-                    console.log(`Rendering full version for ${platform}:`, version.text?.substring(0, 50) + '...');
                     return `
                         <div class="rwp-content-version">
                             <div class="rwp-version-text">${this.escapeHtml(version.text)}</div>
@@ -957,7 +924,6 @@
         
         persistGuestState(state) {
             if (this.isLoggedIn) {
-                console.log('Skipping guest state persistence - user is logged in');
                 return;
             }
             
@@ -1026,11 +992,9 @@
         
         convertGuestDataForLoggedInUser(guestRepurposedContent) {
             if (!guestRepurposedContent || Object.keys(guestRepurposedContent).length === 0) {
-                console.log('No guest repurposed content to convert');
                 return {};
             }
             
-            console.log('Converting guest data:', guestRepurposedContent);
             
             const convertedContent = {};
             let hasPreviewContent = false;
@@ -1045,7 +1009,6 @@
                         versions: data.versions.map(version => {
                             // For Twitter, guest users already got full content
                             if (platform === 'twitter' && version.text) {
-                                console.log(`Twitter content preserved for ${platform}:`, version.text.substring(0, 50) + '...');
                                 return version;
                             }
                             
@@ -1053,7 +1016,6 @@
                             if (version.is_preview && version.preview_text) {
                                 hasPreviewContent = true;
                                 const convertedText = `${version.preview_text}\n\n[Click "Repurpose Content" again to generate the full version now that you're logged in!]`;
-                                console.log(`Converting preview content for ${platform}:`, convertedText.substring(0, 50) + '...');
                                 return {
                                     text: convertedText,
                                     character_count: version.estimated_length || convertedText.length,
@@ -1063,13 +1025,11 @@
                             }
                             
                             // Fallback for any other content
-                            console.log(`Preserving other content for ${platform}:`, version);
                             return version;
                         })
                     };
                 } else {
                     // Preserve error states
-                    console.log(`Preserving error state for ${platform}:`, data);
                     convertedContent[platform] = data;
                 }
             });
@@ -1082,12 +1042,10 @@
                 };
             }
             
-            console.log('Converted content:', convertedContent);
             
             // Debug the actual structure of converted content
             Object.entries(convertedContent).forEach(([platform, data]) => {
                 if (platform.startsWith('_')) return;
-                console.log(`Final converted structure for ${platform}:`, JSON.stringify(data, null, 2));
             });
             
             return convertedContent;

@@ -57,25 +57,21 @@ $block_id = uniqid( 'rwp-content-repurposer-' );
                 </label>
                 <div class="rwp-platform-checkboxes">
                     <?php
-                    $platform_labels = array(
-                        'twitter' => __( 'Twitter', 'rwp-creator-suite' ),
-                        'linkedin' => __( 'LinkedIn', 'rwp-creator-suite' ),
-                        'facebook' => __( 'Facebook', 'rwp-creator-suite' ),
-                        'instagram' => __( 'Instagram', 'rwp-creator-suite' ),
-                    );
-                    
-                    foreach ( $platform_labels as $platform => $label ) :
-                        $checked = in_array( $platform, $platforms, true );
+                    $available_platforms = RWP_Creator_Suite_Caption_Admin_Settings::get_platforms_config();
+                    foreach ( $available_platforms as $platform_config ) :
+                        $platform_key = $platform_config['key'];
+                        $platform_label = $platform_config['label'];
+                        $checked = in_array( $platform_key, $platforms, true );
                     ?>
                         <label class="rwp-platform-option">
                             <input 
                                 type="checkbox" 
                                 name="platforms[]" 
-                                value="<?php echo esc_attr( $platform ); ?>"
+                                value="<?php echo esc_attr( $platform_key ); ?>"
                                 <?php checked( $checked ); ?>
                                 class="rwp-platform-checkbox"
                             >
-                            <span class="rwp-platform-label"><?php echo esc_html( $label ); ?></span>
+                            <span class="rwp-platform-label"><?php echo esc_html( $platform_label ); ?></span>
                         </label>
                     <?php endforeach; ?>
                 </div>

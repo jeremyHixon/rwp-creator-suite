@@ -42,14 +42,11 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                 <span class="platform-label"><strong><?php esc_html_e( 'Target Platforms:', 'rwp-creator-suite' ); ?></strong> (<?php esc_html_e( 'Helps keep track of the character count limits', 'rwp-creator-suite' ); ?>)</span>
                 <div class="platform-checkboxes">
                     <?php
-                    $available_platforms = array(
-                        'instagram' => 'Instagram',
-                        'tiktok' => 'TikTok/Reels',
-                        'twitter' => 'Twitter/X',
-                        'linkedin' => 'LinkedIn',
-                        'facebook' => 'Facebook'
-                    );
-                    foreach ( $available_platforms as $platform_key => $platform_label ) :
+                    $available_platforms = RWP_Creator_Suite_Caption_Admin_Settings::get_platforms_config();
+                    foreach ( $available_platforms as $platform_config ) :
+                        $platform_key = $platform_config['key'];
+                        $platform_label = $platform_config['label'];
+                        $icon_class = isset( $platform_config['icon_class'] ) ? $platform_config['icon_class'] : $platform_key;
                         $checked = in_array( $platform_key, $platforms );
                     ?>
                         <label class="platform-checkbox">
@@ -60,7 +57,7 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                                 data-platform-checkbox="<?php echo esc_attr( $platform_key ); ?>"
                             >
                             <div class="platform-icon-label">
-                                <span class="platform-icon <?php echo esc_attr( $platform_key ); ?>" aria-hidden="true"></span>
+                                <span class="platform-icon <?php echo esc_attr( $icon_class ); ?>" aria-hidden="true"></span>
                                 <span class="platform-name-sr"><?php echo esc_html( $platform_label ); ?></span>
                             </div>
                         </label>
@@ -213,19 +210,24 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                 <div class="current-count" data-current-count>0</div>
                 <div class="platform-limits">
                     <?php 
-                    $character_limits = array(
-                        'instagram' => 2200,
-                        'tiktok' => 2200,
-                        'twitter' => 280,
-                        'linkedin' => 3000,
-                        'facebook' => 63206
-                    );
+                    $available_platforms_config = RWP_Creator_Suite_Caption_Admin_Settings::get_platforms_config();
+                    // Create a lookup array for quick access
+                    $platforms_lookup = array();
+                    foreach ( $available_platforms_config as $platform_config ) {
+                        $platforms_lookup[ $platform_config['key'] ] = $platform_config;
+                    }
+                    
                     foreach ( $platforms as $platform ) : 
-                        $limit = $character_limits[ $platform ] ?? 2200;
+                        $platform_config = $platforms_lookup[ $platform ] ?? null;
+                        if ( ! $platform_config ) continue;
+                        
+                        $limit = $platform_config['character_limit'];
+                        $icon_class = isset( $platform_config['icon_class'] ) ? $platform_config['icon_class'] : $platform;
+                        $platform_label = $platform_config['label'];
                     ?>
                         <div class="platform-limit-item" data-platform="<?php echo esc_attr( $platform ); ?>" data-limit="<?php echo esc_attr( $limit ); ?>">
-                            <span class="platform-icon <?php echo esc_attr( $platform ); ?>" aria-hidden="true"></span>
-                            <span class="platform-name-sr"><?php echo esc_html( ucfirst( $platform ) ); ?></span>
+                            <span class="platform-icon <?php echo esc_attr( $icon_class ); ?>" aria-hidden="true"></span>
+                            <span class="platform-name-sr"><?php echo esc_html( $platform_label ); ?></span>
                             <span class="character-limit"><?php echo esc_html( $limit ); ?></span>
                             <span class="over-limit-badge" style="display: none;">Over limit!</span>
                         </div>

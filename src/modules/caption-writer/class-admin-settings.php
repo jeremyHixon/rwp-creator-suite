@@ -124,6 +124,12 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
             'default' => '',
         ) );
         
+        register_setting( $this->settings_group, 'rwp_creator_suite_custom_platforms', array(
+            'type' => 'string',
+            'sanitize_callback' => array( $this, 'sanitize_platforms_config' ),
+            'default' => '',
+        ) );
+        
         // Add settings sections
         add_settings_section(
             'rwp_caption_ai_section',
@@ -157,6 +163,13 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
             'rwp_ai_prompts_section',
             __( 'AI Prompt Configuration', 'rwp-creator-suite' ),
             array( $this, 'render_ai_prompts_section_description' ),
+            $this->settings_page
+        );
+        
+        add_settings_section(
+            'rwp_platforms_configuration_section',
+            __( 'Platform Configuration', 'rwp-creator-suite' ),
+            array( $this, 'render_platforms_section_description' ),
             $this->settings_page
         );
         
@@ -239,6 +252,14 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
             array( $this, 'render_ai_prompts_field' ),
             $this->settings_page,
             'rwp_ai_prompts_section'
+        );
+        
+        add_settings_field(
+            'custom_platforms',
+            __( 'Social Media Platforms', 'rwp-creator-suite' ),
+            array( $this, 'render_custom_platforms_field' ),
+            $this->settings_page,
+            'rwp_platforms_configuration_section'
         );
     }
     
@@ -350,6 +371,13 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
      */
     public function render_ai_prompts_section_description() {
         echo '<p>' . esc_html__( 'Customize AI prompt templates for system messages, tone descriptions, platform guidance, and prompt templates.', 'rwp-creator-suite' ) . '</p>';
+    }
+    
+    /**
+     * Render platforms section description.
+     */
+    public function render_platforms_section_description() {
+        echo '<p>' . esc_html__( 'Configure available social media platforms for both Caption Writer and Content Repurposer blocks.', 'rwp-creator-suite' ) . '</p>';
     }
     
     /**
@@ -605,6 +633,46 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
     }
     
     /**
+     * Render custom platforms field.
+     */
+    public function render_custom_platforms_field() {
+        $value = get_option( 'rwp_creator_suite_custom_platforms', '' );
+        $default_platforms = $this->get_default_platforms();
+        ?>
+        <div class="rwp-platforms-configuration">
+            <textarea 
+                name="rwp_creator_suite_custom_platforms" 
+                id="rwp_creator_suite_custom_platforms"
+                rows="15" 
+                cols="80" 
+                class="large-text code"
+                placeholder="<?php echo esc_attr( $default_platforms ); ?>"
+            ><?php echo esc_textarea( $value ? $value : $default_platforms ); ?></textarea>
+            <p class="description">
+                <?php esc_html_e( 'Configure available social media platforms in JSON format. Each platform should have a "key" (used internally), "label" (displayed to users), and "character_limit" for optimization.', 'rwp-creator-suite' ); ?>
+            </p>
+            <div class="rwp-platforms-help">
+                <details>
+                    <summary><?php esc_html_e( 'Click here for format examples', 'rwp-creator-suite' ); ?></summary>
+                    <div class="rwp-help-content">
+                        <p><strong><?php esc_html_e( 'Default format:', 'rwp-creator-suite' ); ?></strong></p>
+                        <pre><?php echo esc_html( $default_platforms ); ?></pre>
+                        <p><strong><?php esc_html_e( 'Field descriptions:', 'rwp-creator-suite' ); ?></strong></p>
+                        <ul>
+                            <li><code>key</code>: <?php esc_html_e( 'Internal identifier (lowercase, no spaces)', 'rwp-creator-suite' ); ?></li>
+                            <li><code>label</code>: <?php esc_html_e( 'Display name shown to users', 'rwp-creator-suite' ); ?></li>
+                            <li><code>character_limit</code>: <?php esc_html_e( 'Maximum character count for this platform', 'rwp-creator-suite' ); ?></li>
+                            <li><code>icon_class</code>: <?php esc_html_e( 'Optional CSS class for platform icon', 'rwp-creator-suite' ); ?></li>
+                            <li><code>description</code>: <?php esc_html_e( 'Optional tooltip or help text', 'rwp-creator-suite' ); ?></li>
+                        </ul>
+                    </div>
+                </details>
+            </div>
+        </div>
+        <?php
+    }
+    
+    /**
      * Get default prompts configuration.
      */
     private function get_default_prompts() {
@@ -683,6 +751,51 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
         );
         
         return wp_json_encode( $default_roles, JSON_PRETTY_PRINT );
+    }
+    
+    /**
+     * Get default platforms configuration.
+     */
+    private function get_default_platforms() {
+        $default_platforms = array(
+            array(
+                'key' => 'instagram',
+                'label' => __( 'Instagram', 'rwp-creator-suite' ),
+                'character_limit' => 2200,
+                'icon_class' => 'instagram',
+                'description' => __( 'Visual content platform with engaging captions', 'rwp-creator-suite' )
+            ),
+            array(
+                'key' => 'tiktok',
+                'label' => __( 'TikTok/Reels', 'rwp-creator-suite' ),
+                'character_limit' => 2200,
+                'icon_class' => 'tiktok',
+                'description' => __( 'Short-form video content platform', 'rwp-creator-suite' )
+            ),
+            array(
+                'key' => 'twitter',
+                'label' => __( 'Twitter/X', 'rwp-creator-suite' ),
+                'character_limit' => 280,
+                'icon_class' => 'twitter',
+                'description' => __( 'Microblogging platform with character limits', 'rwp-creator-suite' )
+            ),
+            array(
+                'key' => 'linkedin',
+                'label' => __( 'LinkedIn', 'rwp-creator-suite' ),
+                'character_limit' => 3000,
+                'icon_class' => 'linkedin',
+                'description' => __( 'Professional networking platform', 'rwp-creator-suite' )
+            ),
+            array(
+                'key' => 'facebook',
+                'label' => __( 'Facebook', 'rwp-creator-suite' ),
+                'character_limit' => 63206,
+                'icon_class' => 'facebook',
+                'description' => __( 'Social networking platform with longer content support', 'rwp-creator-suite' )
+            )
+        );
+        
+        return wp_json_encode( $default_platforms, JSON_PRETTY_PRINT );
     }
     
     /**
@@ -929,6 +1042,88 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
     }
     
     /**
+     * Sanitize platforms configuration.
+     */
+    public function sanitize_platforms_config( $value ) {
+        $value = sanitize_textarea_field( trim( $value ) );
+        
+        // If empty, return empty string to use defaults
+        if ( empty( $value ) ) {
+            return '';
+        }
+        
+        // Try to decode JSON
+        $decoded = json_decode( $value, true );
+        
+        // If invalid JSON, add error and return empty
+        if ( json_last_error() !== JSON_ERROR_NONE ) {
+            add_settings_error(
+                'rwp_caption_writer_settings',
+                'platforms_config_error',
+                __( 'Invalid JSON format in platforms configuration. Please check the syntax.', 'rwp-creator-suite' ),
+                'error'
+            );
+            return '';
+        }
+        
+        // Validate structure
+        if ( ! is_array( $decoded ) ) {
+            add_settings_error(
+                'rwp_caption_writer_settings',
+                'platforms_config_error',
+                __( 'Platforms configuration must be an array of platform objects.', 'rwp-creator-suite' ),
+                'error'
+            );
+            return '';
+        }
+        
+        // Validate each platform
+        $sanitized_platforms = array();
+        foreach ( $decoded as $platform ) {
+            if ( ! is_array( $platform ) || ! isset( $platform['key'] ) || ! isset( $platform['label'] ) || ! isset( $platform['character_limit'] ) ) {
+                add_settings_error(
+                    'rwp_caption_writer_settings',
+                    'platforms_config_error',
+                    __( 'Each platform must have at least "key", "label", and "character_limit" fields.', 'rwp-creator-suite' ),
+                    'error'
+                );
+                return '';
+            }
+            
+            $sanitized_platform = array(
+                'key' => sanitize_key( $platform['key'] ),
+                'label' => sanitize_text_field( $platform['label'] ),
+                'character_limit' => absint( $platform['character_limit'] )
+            );
+            
+            // Add optional fields
+            if ( isset( $platform['icon_class'] ) ) {
+                $sanitized_platform['icon_class'] = sanitize_html_class( $platform['icon_class'] );
+            }
+            
+            if ( isset( $platform['description'] ) ) {
+                $sanitized_platform['description'] = sanitize_text_field( $platform['description'] );
+            }
+            
+            $sanitized_platforms[] = $sanitized_platform;
+        }
+        
+        // Check for duplicate keys
+        $keys = array_column( $sanitized_platforms, 'key' );
+        if ( count( $keys ) !== count( array_unique( $keys ) ) ) {
+            add_settings_error(
+                'rwp_caption_writer_settings',
+                'platforms_config_error',
+                __( 'Duplicate platform keys found. Each platform must have a unique key.', 'rwp-creator-suite' ),
+                'error'
+            );
+            return '';
+        }
+        
+        return wp_json_encode( $sanitized_platforms, JSON_PRETTY_PRINT );
+    }
+    
+    /**
      * Get roles configuration (with fallback to defaults).
      */
     public static function get_roles_config() {
@@ -970,6 +1165,30 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
             // Fallback to defaults if invalid
             $instance = new self();
             $default_json = $instance->get_default_prompts();
+            return json_decode( $default_json, true );
+        }
+        
+        return $decoded;
+    }
+    
+    /**
+     * Get platforms configuration (with fallback to defaults).
+     */
+    public static function get_platforms_config() {
+        $custom_platforms = get_option( 'rwp_creator_suite_custom_platforms', '' );
+        
+        if ( empty( $custom_platforms ) ) {
+            // Return default platforms
+            $instance = new self();
+            $default_json = $instance->get_default_platforms();
+            return json_decode( $default_json, true );
+        }
+        
+        $decoded = json_decode( $custom_platforms, true );
+        if ( json_last_error() !== JSON_ERROR_NONE || ! is_array( $decoded ) ) {
+            // Fallback to defaults if invalid
+            $instance = new self();
+            $default_json = $instance->get_default_platforms();
             return json_decode( $default_json, true );
         }
         

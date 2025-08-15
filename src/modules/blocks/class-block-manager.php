@@ -360,13 +360,8 @@ class RWP_Creator_Suite_Block_Manager {
                     'errorGeneral' => __( 'Something went wrong. Please try again.', 'rwp-creator-suite' ),
                     'errorDescription' => __( 'Please enter a description for your content', 'rwp-creator-suite' ),
                 ),
-                'characterLimits' => array(
-                    'instagram' => 2200,
-                    'tiktok' => 2200,
-                    'twitter' => 280,
-                    'linkedin' => 3000,
-                    'facebook' => 63206,
-                ),
+                'characterLimits' => $this->get_platform_character_limits(),
+                'platformsConfig' => RWP_Creator_Suite_Caption_Admin_Settings::get_platforms_config(),
             )
         );
     }
@@ -420,12 +415,8 @@ class RWP_Creator_Suite_Block_Manager {
                     'errorPlatforms' => __( 'Please select at least one platform', 'rwp-creator-suite' ),
                     'rateLimitExceeded' => __( 'Rate limit exceeded. Please try again later.', 'rwp-creator-suite' ),
                 ),
-                'characterLimits' => array(
-                    'twitter' => 280,
-                    'linkedin' => 3000,
-                    'facebook' => 63206,
-                    'instagram' => 2200,
-                ),
+                'characterLimits' => $this->get_platform_character_limits(),
+                'platformsConfig' => RWP_Creator_Suite_Caption_Admin_Settings::get_platforms_config(),
             )
         );
     }
@@ -495,5 +486,19 @@ class RWP_Creator_Suite_Block_Manager {
         
         // Fallback check
         return defined( 'REST_REQUEST' ) && REST_REQUEST;
+    }
+    
+    /**
+     * Get platform character limits from configuration.
+     */
+    private function get_platform_character_limits() {
+        $platforms_config = RWP_Creator_Suite_Caption_Admin_Settings::get_platforms_config();
+        $character_limits = array();
+        
+        foreach ( $platforms_config as $platform ) {
+            $character_limits[ $platform['key'] ] = $platform['character_limit'];
+        }
+        
+        return $character_limits;
     }
 }

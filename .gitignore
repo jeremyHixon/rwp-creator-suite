@@ -9,18 +9,66 @@
 # Development artifacts
 .DS_Store
 .vscode/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
 .idea/
+.idea/workspace.xml
+.idea/tasks.xml
 *.log
 *.bak
 *.tmp
+*.swp
+*.swo
+*~
 /node_modules/
 /vendor/
 /composer.lock
+
+# NPM/JavaScript artifacts
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+*.tgz
+.yarn-integrity
 
 # Build/distribution files
 /dist/
 /build/
 /release/
+/assets/dist/
+/public/build/
+*.min.js
+*.min.css
+*.map
+*.asset.php
+
+# Test coverage and reports
+/coverage/
+/.nyc_output
+phpunit.xml.dist
+.phpunit.result.cache
+tests/_output/
+
+# Environment and security files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.pem
+*.key
+*.crt
+secrets.json
+
+# WordPress specific logs and configs
+wp-config-local.php
+wp-config-dev.php
+debug.log
+error_log
+.htaccess.local
 
 # Specific plugin files to ignore (adjust as needed)
 # For example, if your plugin generates cache files or temporary data

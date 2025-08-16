@@ -14,7 +14,12 @@
 	
 	<testsuites>
 		<testsuite name="RWP Creator Suite Test Suite">
-			<directory suffix="-test.php">tests/</directory>
+			<file>tests/test-main-plugin.php</file>
+			<file>tests/test-error-logger.php</file>
+			<file>tests/test-registration-api.php</file>
+			<file>tests/test-service-container.php</file>
+			<file>tests/test-transient-manager.php</file>
+			<file>tests/test-api-validation-trait.php</file>
 		</testsuite>
 	</testsuites>
 	

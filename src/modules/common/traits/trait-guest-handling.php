@@ -101,7 +101,7 @@ trait RWP_Creator_Suite_Guest_Handling_Trait {
      *
      * @return string
      */
-    public function get_guest_identifier() {
+    public function get_guest_user_identifier() {
         // Use Network Utils if available
         if ( class_exists( 'RWP_Creator_Suite_Network_Utils' ) ) {
             return RWP_Creator_Suite_Network_Utils::get_client_ip_hash();
@@ -174,7 +174,7 @@ trait RWP_Creator_Suite_Guest_Handling_Trait {
      * @return bool|WP_Error
      */
     public function check_guest_usage_limit( $feature, $period = 'hourly' ) {
-        $identifier = $this->get_guest_identifier();
+        $identifier = $this->get_guest_user_identifier();
         $limits = $this->get_guest_limits( $feature );
 
         if ( ! isset( $limits[ $period ] ) ) {
@@ -218,7 +218,7 @@ trait RWP_Creator_Suite_Guest_Handling_Trait {
      * @param int    $count Usage count to add.
      */
     public function track_guest_usage( $feature, $count = 1 ) {
-        $identifier = $this->get_guest_identifier();
+        $identifier = $this->get_guest_user_identifier();
 
         // Track hourly usage
         $hourly_key = "rwp_guest_usage_{$feature}_hourly_{$identifier}";
@@ -247,7 +247,7 @@ trait RWP_Creator_Suite_Guest_Handling_Trait {
      * @return array
      */
     public function get_guest_usage_stats( $feature ) {
-        $identifier = $this->get_guest_identifier();
+        $identifier = $this->get_guest_user_identifier();
         $limits = $this->get_guest_limits( $feature );
 
         $hourly_key = "rwp_guest_usage_{$feature}_hourly_{$identifier}";

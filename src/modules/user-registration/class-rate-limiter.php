@@ -109,7 +109,7 @@ class RWP_Creator_Suite_Rate_Limiter {
             return true;
         }
 
-        $ip_address = $this->get_client_ip();
+        $ip_address = RWP_Creator_Suite_Network_Utils::get_client_ip();
         
         if ( empty( $ip_address ) ) {
             return true; // Allow if we can't determine IP
@@ -227,35 +227,6 @@ class RWP_Creator_Suite_Rate_Limiter {
         delete_transient( $transient_key );
     }
 
-    /**
-     * Get client IP address.
-     *
-     * @return string Client IP address.
-     */
-    private function get_client_ip() {
-        $ip_keys = array(
-            'HTTP_CLIENT_IP',
-            'HTTP_X_FORWARDED_FOR',
-            'HTTP_X_FORWARDED',
-            'HTTP_X_CLUSTER_CLIENT_IP',
-            'HTTP_FORWARDED_FOR',
-            'HTTP_FORWARDED',
-            'REMOTE_ADDR',
-        );
-
-        foreach ( $ip_keys as $key ) {
-            if ( array_key_exists( $key, $_SERVER ) === true ) {
-                $ip_list = explode( ',', sanitize_text_field( $_SERVER[ $key ] ) );
-                $ip = trim( $ip_list[0] );
-                
-                if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
-                    return $ip;
-                }
-            }
-        }
-
-        return isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( $_SERVER['REMOTE_ADDR'] ) : '';
-    }
 
     /**
      * Check if IP address is whitelisted.
@@ -349,7 +320,7 @@ class RWP_Creator_Suite_Rate_Limiter {
             'window_start' => time(),
         );
 
-        $current_ip = $this->get_client_ip();
+        $current_ip = RWP_Creator_Suite_Network_Utils::get_client_ip();
         if ( ! empty( $current_ip ) && ! in_array( $current_ip, $attack_data['unique_ips'], true ) ) {
             $attack_data['unique_ips'][] = $current_ip;
         }

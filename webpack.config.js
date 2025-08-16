@@ -45,4 +45,10 @@ module.exports = {
 			'src/blocks/content-repurposer/editor.js'
 		),
 	},
+	// Performance monitoring for development
+	performance: {
+		hints: process.env.NODE_ENV === 'production' ? 'warning' : false,
+		maxEntrypointSize: 512000, // 500KB - reasonable for WordPress blocks
+		maxAssetSize: 512000,
+	},
 };

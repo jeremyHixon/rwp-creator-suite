@@ -83,7 +83,7 @@ class RWP_Creator_Suite_Error_Logger {
     public static function log_security_event( $event, $context = array() ) {
         $security_context = array_merge( $context, array(
             'category' => 'security',
-            'ip_address' => self::get_client_ip(),
+            'ip_address' => RWP_Creator_Suite_Network_Utils::get_client_ip(),
             'referer' => isset( $_SERVER['HTTP_REFERER'] ) 
                 ? sanitize_text_field( $_SERVER['HTTP_REFERER'] ) 
                 : 'direct',
@@ -114,38 +114,6 @@ class RWP_Creator_Suite_Error_Logger {
             $level,
             $performance_context
         );
-    }
-
-    /**
-     * Get client IP address safely.
-     *
-     * @return string Client IP address.
-     */
-    private static function get_client_ip() {
-        $ip_keys = array(
-            'HTTP_CLIENT_IP',
-            'HTTP_X_FORWARDED_FOR',
-            'HTTP_X_FORWARDED',
-            'HTTP_X_CLUSTER_CLIENT_IP',
-            'HTTP_FORWARDED_FOR',
-            'HTTP_FORWARDED',
-            'REMOTE_ADDR',
-        );
-
-        foreach ( $ip_keys as $key ) {
-            if ( array_key_exists( $key, $_SERVER ) === true ) {
-                $ip_list = explode( ',', sanitize_text_field( $_SERVER[ $key ] ) );
-                $ip = trim( $ip_list[0] );
-                
-                if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
-                    return $ip;
-                }
-            }
-        }
-
-        return isset( $_SERVER['REMOTE_ADDR'] ) 
-            ? sanitize_text_field( $_SERVER['REMOTE_ADDR'] ) 
-            : 'unknown';
     }
 
     /**

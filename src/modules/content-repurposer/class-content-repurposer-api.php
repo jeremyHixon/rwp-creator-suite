@@ -99,6 +99,14 @@ class RWP_Creator_Suite_Content_Repurposer_API {
         $tone = $request->get_param( 'tone' );
         $is_guest = $request->get_param( 'is_guest' ) === true;
         
+        // Handle case where platforms might be a JSON string
+        if ( is_string( $platforms ) ) {
+            $decoded = json_decode( $platforms, true );
+            if ( json_last_error() === JSON_ERROR_NONE && is_array( $decoded ) ) {
+                $platforms = $decoded;
+            }
+        }
+        
         // Check rate limiting based on request type
         if ( $is_guest ) {
             // For guest requests, use dedicated guest rate limiting
@@ -165,7 +173,7 @@ class RWP_Creator_Suite_Content_Repurposer_API {
             return;
         }
         
-        $ip = $this->get_client_ip();
+        $ip = RWP_Creator_Suite_Network_Utils::get_client_ip();
         $content_hash = hash( 'sha256', $request->get_param( 'content' ) );
         $storage_key = 'rwp_guest_full_content_' . hash( 'sha256', $ip . $content_hash . wp_salt( 'secure_auth' ) );
         
@@ -468,7 +476,35 @@ class RWP_Creator_Suite_Content_Repurposer_API {
      * Validate platforms parameter.
      */
     public function validate_platforms( $platforms, $request, $param ) {
-        $allowed_platforms = array( 'twitter', 'linkedin', 'facebook', 'instagram' );
+        // Get allowed platforms from configuration (same as Caption Writer)
+        $platforms_config = RWP_Creator_Suite_Caption_Admin_Settings::get_platforms_config();
+        $allowed_platforms = array();
+        foreach ( $platforms_config as $platform ) {
+            if ( isset( $platform['key'] ) ) {
+                $allowed_platforms[] = $platform['key'];
+            }
+        }
+        
+        // Fallback to default platforms if config is empty
+        if ( empty( $allowed_platforms ) ) {
+            $allowed_platforms = array( 'instagram', 'tiktok', 'twitter', 'linkedin', 'facebook' );
+        }
+        
+        // Handle case where platforms might be a JSON string
+        if ( is_string( $platforms ) ) {
+            $decoded = json_decode( $platforms, true );
+            if ( json_last_error() === JSON_ERROR_NONE && is_array( $decoded ) ) {
+                $platforms = $decoded;
+            }
+        }
+        
+        // Ensure platforms is an array
+        if ( ! is_array( $platforms ) ) {
+            return new WP_Error(
+                'invalid_platforms',
+                __( 'Platforms must be an array.', 'rwp-creator-suite' )
+            );
+        }
         
         if ( empty( $platforms ) ) {
             return new WP_Error(
@@ -556,7 +592,7 @@ class RWP_Creator_Suite_Content_Repurposer_API {
     private function check_guest_attempts( $request ) {
         // For guests, we mainly rely on client-side enforcement
         // This is just a basic server-side safety net with a higher limit
-        $ip = $this->get_client_ip();
+        $ip = RWP_Creator_Suite_Network_Utils::get_client_ip();
         $transient_key = 'rwp_guest_repurposer_' . hash( 'sha256', $ip . wp_salt( 'secure_auth' ) );
         $attempts = get_transient( $transient_key );
         
@@ -580,34 +616,4 @@ class RWP_Creator_Suite_Content_Repurposer_API {
         return true;
     }
     
-    /**
-     * Get client IP address for guest rate limiting.
-     */
-    private function get_client_ip() {
-        $ip_headers = array(
-            'HTTP_CF_CONNECTING_IP',     // Cloudflare
-            'HTTP_CLIENT_IP',            // Proxy
-            'HTTP_X_FORWARDED_FOR',      // Load balancer/proxy
-            'HTTP_X_FORWARDED',          // Proxy
-            'HTTP_X_CLUSTER_CLIENT_IP',  // Cluster
-            'HTTP_FORWARDED_FOR',        // Proxy
-            'HTTP_FORWARDED',            // Proxy
-            'REMOTE_ADDR'                // Standard
-        );
-        
-        foreach ( $ip_headers as $header ) {
-            if ( ! empty( $_SERVER[ $header ] ) ) {
-                $ips = explode( ',', $_SERVER[ $header ] );
-                $ip = trim( $ips[0] );
-                
-                // Validate IP
-                if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
-                    return $ip;
-                }
-            }
-        }
-        
-        // Fallback to REMOTE_ADDR
-        return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-    }
 }

@@ -247,7 +247,7 @@ class RWP_Creator_Suite_Key_Manager {
             'timestamp' => current_time( 'mysql' ),
             'user_id'   => get_current_user_id(),
             'action'    => sanitize_text_field( $action ),
-            'ip'        => $this->get_client_ip(),
+            'ip'        => RWP_Creator_Suite_Network_Utils::get_client_ip(),
         );
         
         $audit_log = get_option( 'rwp_api_key_audit', array() );
@@ -261,35 +261,6 @@ class RWP_Creator_Suite_Key_Manager {
         update_option( 'rwp_api_key_audit', $audit_log );
     }
     
-    /**
-     * Get client IP address for audit logging.
-     */
-    private function get_client_ip() {
-        $headers = array(
-            'HTTP_CF_CONNECTING_IP',
-            'HTTP_CLIENT_IP',
-            'HTTP_X_FORWARDED_FOR',
-            'HTTP_X_FORWARDED',
-            'HTTP_X_CLUSTER_CLIENT_IP',
-            'HTTP_FORWARDED_FOR',
-            'HTTP_FORWARDED',
-            'REMOTE_ADDR'
-        );
-        
-        foreach ( $headers as $header ) {
-            if ( ! empty( $_SERVER[ $header ] ) ) {
-                $ips = explode( ',', $_SERVER[ $header ] );
-                $ip = trim( $ips[0] );
-                
-                if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
-                    return $ip;
-                }
-            }
-        }
-        
-        $fallback_ip = $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-        return filter_var( $fallback_ip, FILTER_VALIDATE_IP ) ? $fallback_ip : '127.0.0.1';
-    }
     
     /**
      * Get audit log for admin review.

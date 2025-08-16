@@ -55,7 +55,7 @@ class RWP_Creator_Suite_Redirect_Handler {
         }
 
         // Store in transient using IP address as key (for non-logged-in users)
-        $ip_address = $this->get_client_ip();
+        $ip_address = RWP_Creator_Suite_Network_Utils::get_client_ip();
         $transient_key = 'rwp_creator_suite_redirect_' . md5( $ip_address );
         set_transient( $transient_key, $current_url, 30 * MINUTE_IN_SECONDS );
     }
@@ -68,7 +68,7 @@ class RWP_Creator_Suite_Redirect_Handler {
      */
     public function get_stored_redirect_url( $default = '' ) {
         // Check transient (by IP address)
-        $ip_address = $this->get_client_ip();
+        $ip_address = RWP_Creator_Suite_Network_Utils::get_client_ip();
         $transient_key = 'rwp_creator_suite_redirect_' . md5( $ip_address );
         $stored_url = get_transient( $transient_key );
         
@@ -185,35 +185,6 @@ class RWP_Creator_Suite_Redirect_Handler {
         return add_query_arg( 'redirect_to', urlencode( $return_url ), $auth_url );
     }
 
-    /**
-     * Get client IP address.
-     *
-     * @return string Client IP address.
-     */
-    private function get_client_ip() {
-        $ip_keys = array(
-            'HTTP_CLIENT_IP',
-            'HTTP_X_FORWARDED_FOR',
-            'HTTP_X_FORWARDED',
-            'HTTP_X_CLUSTER_CLIENT_IP',
-            'HTTP_FORWARDED_FOR',
-            'HTTP_FORWARDED',
-            'REMOTE_ADDR',
-        );
-
-        foreach ( $ip_keys as $key ) {
-            if ( array_key_exists( $key, $_SERVER ) === true ) {
-                $ip_list = explode( ',', sanitize_text_field( $_SERVER[ $key ] ) );
-                $ip = trim( $ip_list[0] );
-                
-                if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
-                    return $ip;
-                }
-            }
-        }
-
-        return isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( $_SERVER['REMOTE_ADDR'] ) : '';
-    }
 
     /**
      * Check if URL is an asset (image, CSS, JS, etc.).

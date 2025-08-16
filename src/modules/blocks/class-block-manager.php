@@ -124,6 +124,7 @@ class RWP_Creator_Suite_Block_Manager {
                               isset( $blocks_present['content-repurposer'] );
         
         if ( $needs_state_manager && ! isset( $this->enqueued_assets['state-manager'] ) ) {
+            // Enqueue base state manager first
             wp_enqueue_script(
                 'rwp-state-manager',
                 RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/state-manager.js',
@@ -131,6 +132,16 @@ class RWP_Creator_Suite_Block_Manager {
                 RWP_CREATOR_SUITE_VERSION,
                 true
             );
+            
+            // Enqueue enhanced state utilities (depends on base state manager)
+            wp_enqueue_script(
+                'rwp-shared-state-utilities',
+                RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/shared-state-utilities.js',
+                array( 'rwp-state-manager' ),
+                RWP_CREATOR_SUITE_VERSION,
+                true
+            );
+            
             $this->enqueued_assets['state-manager'] = true;
         }
     }
@@ -328,11 +339,11 @@ class RWP_Creator_Suite_Block_Manager {
         // Add preload hint for better performance
         add_filter( 'wp_resource_hints', array( $this, 'add_preload_hints' ), 10, 2 );
 
-        // Enqueue Caption Writer app (state manager already loaded by shared dependencies)
+        // Enqueue Caption Writer app (state manager and utilities already loaded by shared dependencies)
         wp_enqueue_script(
             'rwp-caption-writer-app',
             RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/caption-writer.js',
-            array( 'rwp-state-manager' ),
+            array( 'rwp-state-manager', 'rwp-shared-state-utilities' ),
             RWP_CREATOR_SUITE_VERSION,
             true
         );
@@ -383,11 +394,11 @@ class RWP_Creator_Suite_Block_Manager {
             'all'
         );
 
-        // Enqueue Content Repurposer app (state manager already loaded by shared dependencies)
+        // Enqueue Content Repurposer app (state manager and utilities already loaded by shared dependencies)
         wp_enqueue_script(
             'rwp-content-repurposer-app',
             RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/content-repurposer.js',
-            array( 'rwp-state-manager' ),
+            array( 'rwp-state-manager', 'rwp-shared-state-utilities' ),
             RWP_CREATOR_SUITE_VERSION,
             true
         );

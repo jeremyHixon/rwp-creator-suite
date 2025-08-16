@@ -837,7 +837,7 @@ class RWP_Creator_Suite_AI_Service {
         
         if ( $is_guest ) {
             // Use IP-based rate limiting for guests
-            $identifier = $this->get_client_ip();
+            $identifier = RWP_Creator_Suite_Network_Utils::get_client_ip();
             $limit = get_option( 'rwp_creator_suite_rate_limit_guest', 5 );
         } else {
             $identifier = $user_id;
@@ -881,7 +881,7 @@ class RWP_Creator_Suite_AI_Service {
         $is_guest = ! $user_id;
         
         if ( $is_guest ) {
-            $identifier = $this->get_client_ip();
+            $identifier = RWP_Creator_Suite_Network_Utils::get_client_ip();
         } else {
             $identifier = $user_id;
         }
@@ -912,7 +912,7 @@ class RWP_Creator_Suite_AI_Service {
         
         if ( $is_guest ) {
             // For guests, only show rate limit info
-            $identifier = $this->get_client_ip();
+            $identifier = RWP_Creator_Suite_Network_Utils::get_client_ip();
             $transient_key = 'rwp_ai_rate_limit_' . hash( 'sha256', $identifier . wp_salt( 'secure_auth' ) );
             $current_usage = get_transient( $transient_key );
             $limit = get_option( 'rwp_creator_suite_rate_limit_guest', 5 );
@@ -978,36 +978,6 @@ class RWP_Creator_Suite_AI_Service {
         update_user_meta( $user_id, $feature_key, $feature_usage + $usage_count );
     }
     
-    /**
-     * Get client IP address for guest rate limiting.
-     */
-    private function get_client_ip() {
-        // Check for various headers that might contain the real IP
-        $ip_headers = array(
-            'HTTP_CF_CONNECTING_IP',     // Cloudflare
-            'HTTP_CLIENT_IP',            // Proxy
-            'HTTP_X_FORWARDED_FOR',      // Load balancer/proxy
-            'HTTP_X_FORWARDED',          // Proxy
-            'HTTP_X_CLUSTER_CLIENT_IP',  // Cluster
-            'HTTP_FORWARDED_FOR',        // Proxy
-            'HTTP_FORWARDED',            // Proxy
-            'REMOTE_ADDR'                // Standard
-        );
-        
-        foreach ( $ip_headers as $header ) {
-            if ( ! empty( $_SERVER[ $header ] ) ) {
-                $ip_list = explode( ',', $_SERVER[ $header ] );
-                $ip = trim( $ip_list[0] );
-                
-                if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
-                    return $ip;
-                }
-            }
-        }
-        
-        // Fallback to REMOTE_ADDR
-        return $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1';
-    }
     
     /**
      * Log errors securely with fallback.

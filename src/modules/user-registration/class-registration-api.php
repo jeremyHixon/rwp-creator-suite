@@ -337,7 +337,7 @@ class RWP_Creator_Suite_Registration_API {
         }
         
         // Detect suspicious patterns
-        $current_ip = $this->get_client_ip();
+        $current_ip = RWP_Creator_Suite_Network_Utils::get_client_ip();
         if ( $rate_limiter->detect_suspicious_patterns( $current_ip, 'registration' ) ) {
             // Log but don't block immediately
             RWP_Creator_Suite_Error_Logger::log_security_event(
@@ -355,37 +355,6 @@ class RWP_Creator_Suite_Registration_API {
         return true;
     }
     
-    /**
-     * Get client IP address safely.
-     *
-     * @return string Client IP address.
-     */
-    private function get_client_ip() {
-        $ip_keys = array(
-            'HTTP_CLIENT_IP',
-            'HTTP_X_FORWARDED_FOR',
-            'HTTP_X_FORWARDED',
-            'HTTP_X_CLUSTER_CLIENT_IP',
-            'HTTP_FORWARDED_FOR',
-            'HTTP_FORWARDED',
-            'REMOTE_ADDR',
-        );
-
-        foreach ( $ip_keys as $key ) {
-            if ( array_key_exists( $key, $_SERVER ) === true ) {
-                $ip_list = explode( ',', sanitize_text_field( $_SERVER[ $key ] ) );
-                $ip = trim( $ip_list[0] );
-                
-                if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
-                    return $ip;
-                }
-            }
-        }
-
-        return isset( $_SERVER['REMOTE_ADDR'] ) 
-            ? sanitize_text_field( $_SERVER['REMOTE_ADDR'] ) 
-            : '';
-    }
 
     /**
      * Check if registration is enabled for the registration endpoint.

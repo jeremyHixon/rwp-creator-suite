@@ -110,6 +110,7 @@ class RWP_Creator_Suite {
     private function load_dependencies() {
         // Common Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-error-logger.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-network-utils.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-ai-service.php';
 
         // User Registration Module
@@ -135,7 +136,6 @@ class RWP_Creator_Suite {
         // Caption Writer Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-key-manager.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-caption-cache.php';
-        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-ai-caption-service.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-template-manager.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-caption-api.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-admin-settings.php';

@@ -74,6 +74,13 @@ class RWP_Creator_Suite {
         // Load required files
         $this->load_dependencies();
 
+        // Initialize Phase 2 infrastructure
+        $service_container = RWP_Creator_Suite_Service_Container::get_instance();
+        $service_container->init();
+        
+        $transient_manager = RWP_Creator_Suite_Transient_Manager::get_instance();
+        // Transient manager initializes itself through constructor hooks
+
         // Initialize components
         $this->wp_login_integration = new RWP_Creator_Suite_WP_Login_Integration();
         $this->subscriber_restrictions = new RWP_Creator_Suite_Subscriber_Restrictions();
@@ -108,10 +115,19 @@ class RWP_Creator_Suite {
      * Load plugin dependencies.
      */
     private function load_dependencies() {
-        // Common Module
+        // Common Module - Core Services
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-error-logger.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-network-utils.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-ai-service.php';
+        
+        // Phase 2 Enhancements - Load before other modules
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-service-container.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-transient-manager.php';
+        
+        // Shared Traits for API modules
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/traits/trait-api-validation.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/traits/trait-rate-limiting.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/traits/trait-guest-handling.php';
 
         // User Registration Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/user-registration/class-username-generator.php';

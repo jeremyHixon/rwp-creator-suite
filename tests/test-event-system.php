@@ -334,7 +334,7 @@ echo "=== Event System Test Summary ===\n";
 echo "Total Tests: $total_tests\n";
 echo "Passed: $passed_tests\n";
 echo "Failed: " . ($total_tests - $passed_tests) . "\n";
-echo "Success Rate: " . round(($passed_tests / $total_tests) * 100, 2) . "%\n";
+echo "Success Rate: " . ($total_tests > 0 ? round(($passed_tests / $total_tests) * 100, 2) : 0) . "%\n";
 
 if ($passed_tests === $total_tests) {
     echo "\n🎉 All Event System tests passed!\n";

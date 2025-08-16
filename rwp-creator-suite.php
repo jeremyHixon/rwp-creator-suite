@@ -80,6 +80,16 @@ class RWP_Creator_Suite {
         
         $transient_manager = RWP_Creator_Suite_Transient_Manager::get_instance();
         // Transient manager initializes itself through constructor hooks
+        
+        // Initialize Phase 3 infrastructure
+        $event_system = RWP_Creator_Suite_Event_System::get_instance();
+        $cache_manager = RWP_Creator_Suite_Cache_Manager::get_instance();
+        $db_optimizer = RWP_Creator_Suite_Database_Optimizer::get_instance();
+        
+        // Register Phase 3 services in container
+        $service_container->register('event_system', $event_system);
+        $service_container->register('cache_manager', $cache_manager);
+        $service_container->register('database_optimizer', $db_optimizer);
 
         // Initialize components
         $this->wp_login_integration = new RWP_Creator_Suite_WP_Login_Integration();
@@ -123,6 +133,11 @@ class RWP_Creator_Suite {
         // Phase 2 Enhancements - Load before other modules
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-service-container.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-transient-manager.php';
+        
+        // Phase 3 Enhancements - Advanced Architecture
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-event-system.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-cache-manager.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-database-optimizer.php';
         
         // Shared Traits for API modules
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/traits/trait-api-validation.php';

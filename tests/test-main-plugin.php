@@ -33,7 +33,7 @@ class Test_RWP_Creator_Suite extends TestCase {
 		$plugin = RWP_Creator_Suite::get_instance();
 		
 		$this->assertInstanceOf( 'RWP_Creator_Suite', $plugin );
-		$this->assertEquals( '1.5.1', $plugin->get_version() );
+		$this->assertEquals( '1.6.0', $plugin->get_version() );
 	}
 
 	/**
@@ -55,7 +55,7 @@ class Test_RWP_Creator_Suite extends TestCase {
 		$this->assertTrue( defined( 'RWP_CREATOR_SUITE_PLUGIN_URL' ) );
 		$this->assertTrue( defined( 'RWP_CREATOR_SUITE_PLUGIN_FILE' ) );
 		
-		$this->assertEquals( '1.5.1', RWP_CREATOR_SUITE_VERSION );
+		$this->assertEquals( '1.6.0', RWP_CREATOR_SUITE_VERSION );
 	}
 
 	/**

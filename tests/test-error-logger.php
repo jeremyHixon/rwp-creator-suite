@@ -63,7 +63,7 @@ class Test_RWP_Creator_Suite_Error_Logger extends TestCase {
 		}
 		
 		if ( ! defined( 'RWP_CREATOR_SUITE_VERSION' ) ) {
-			define( 'RWP_CREATOR_SUITE_VERSION', '1.5.1' );
+			define( 'RWP_CREATOR_SUITE_VERSION', '1.6.0' );
 		}
 		
 		// Mock error_log to capture logs

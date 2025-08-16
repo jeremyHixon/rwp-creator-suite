@@ -847,35 +847,58 @@
             const content = button.getAttribute('data-content');
             if (!content) return;
             
-            try {
-                await navigator.clipboard.writeText(content);
-                
-                // Update button to show success
-                const originalText = button.textContent;
-                button.textContent = 'Copied!';
-                button.classList.add('rwp-copied');
-                
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.classList.remove('rwp-copied');
-                }, 2000);
-                
-            } catch (error) {
-                console.warn('Failed to copy to clipboard:', error);
-                // Fallback for older browsers
-                this.fallbackCopyToClipboard(content);
+            // Check if Clipboard API is available
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                try {
+                    await navigator.clipboard.writeText(content);
+                    
+                    // Update button to show success
+                    const originalText = button.textContent;
+                    button.textContent = 'Copied!';
+                    button.classList.add('rwp-copied');
+                    
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.classList.remove('rwp-copied');
+                    }, 2000);
+                    
+                    return;
+                } catch (error) {
+                    console.warn('Clipboard API failed:', error);
+                }
             }
+            
+            // Fallback for older browsers or when Clipboard API is not available
+            this.fallbackCopyToClipboard(content, button);
         }
         
-        fallbackCopyToClipboard(text) {
+        fallbackCopyToClipboard(text, button) {
             const textArea = document.createElement('textarea');
             textArea.value = text;
+            
+            // Position off-screen to prevent scrolling
+            textArea.style.position = 'fixed';
+            textArea.style.top = '-9999px';
+            textArea.style.left = '-9999px';
+            textArea.style.opacity = '0';
+            
             document.body.appendChild(textArea);
             textArea.focus();
             textArea.select();
             
             try {
-                document.execCommand('copy');
+                const success = document.execCommand('copy');
+                if (success && button) {
+                    // Update button to show success
+                    const originalText = button.textContent;
+                    button.textContent = 'Copied!';
+                    button.classList.add('rwp-copied');
+                    
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                        button.classList.remove('rwp-copied');
+                    }, 2000);
+                }
             } catch (error) {
                 console.warn('Fallback copy failed:', error);
             }

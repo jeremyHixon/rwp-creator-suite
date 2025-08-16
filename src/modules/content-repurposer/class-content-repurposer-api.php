@@ -10,6 +10,7 @@ defined( 'ABSPATH' ) || exit;
 class RWP_Creator_Suite_Content_Repurposer_API {
     
     private $ai_service;
+    private $advanced_cache_manager;
     
     /**
      * Initialize API endpoints.
@@ -19,6 +20,12 @@ class RWP_Creator_Suite_Content_Repurposer_API {
         
         // Initialize AI service
         $this->ai_service = new RWP_Creator_Suite_AI_Service();
+        
+        // Phase 1 Optimization: Enhanced cache manager integration
+        $this->advanced_cache_manager = RWP_Creator_Suite_Cache_Manager::get_instance();
+        
+        // Phase 1 Optimization: Add caching headers for API responses
+        add_action( 'rest_pre_serve_request', array( $this, 'add_api_cache_headers' ), 10, 4 );
     }
     
     /**
@@ -107,27 +114,76 @@ class RWP_Creator_Suite_Content_Repurposer_API {
             }
         }
         
-        // Check rate limiting based on request type
+        // Phase 1 Optimization: Enhanced caching for content repurposing
+        $cache_key = 'repurpose_' . md5( serialize( array(
+            'content' => trim( strtolower( $content ) ),
+            'platforms' => $platforms,
+            'tone' => $tone,
+            'version' => '1.1' // Increment to invalidate old cache entries
+        ) ) );
+        
+        // For guest users, use shorter cache duration and include IP in key for security
         if ( $is_guest ) {
-            // For guest requests, use dedicated guest rate limiting
-            $guest_limit_result = $this->check_guest_attempts( $request );
-            if ( is_wp_error( $guest_limit_result ) ) {
-                return $guest_limit_result;
-            }
+            $ip = RWP_Creator_Suite_Network_Utils::get_client_ip();
+            $cache_key = 'guest_' . $cache_key . '_' . md5( $ip );
+            $cache_ttl = 15 * MINUTE_IN_SECONDS; // 15 minutes for guest users
         } else {
-            // For logged-in users, use the shared rate limiting system
-            $rate_limit_result = $this->ai_service->check_rate_limit( 'content_repurposing' );
-            if ( is_wp_error( $rate_limit_result ) ) {
-                return $rate_limit_result;
-            }
+            $cache_ttl = 2 * HOUR_IN_SECONDS; // 2 hours for authenticated users
         }
         
-        // Generate repurposed content
-        $result = $this->ai_service->repurpose_content( $content, $platforms, $tone );
+        $cached_result = $this->advanced_cache_manager->remember(
+            $cache_key,
+            function() use ( $content, $platforms, $tone, $is_guest, $request ) {
+                // Check rate limiting based on request type
+                if ( $is_guest ) {
+                    // For guest requests, use dedicated guest rate limiting
+                    $guest_limit_result = $this->check_guest_attempts( $request );
+                    if ( is_wp_error( $guest_limit_result ) ) {
+                        return $guest_limit_result;
+                    }
+                } else {
+                    // For logged-in users, use the shared rate limiting system
+                    $rate_limit_result = $this->ai_service->check_rate_limit( 'content_repurposing' );
+                    if ( is_wp_error( $rate_limit_result ) ) {
+                        return $rate_limit_result;
+                    }
+                }
+                
+                // Generate repurposed content
+                $result = $this->ai_service->repurpose_content( $content, $platforms, $tone );
+                
+                if ( is_wp_error( $result ) ) {
+                    return $result;
+                }
+                
+                // Track usage in shared system (single API call regardless of platform count)
+                $this->ai_service->track_usage( 1, 'content_repurposing' );
+                
+                return array(
+                    'result' => $result,
+                    'generated_at' => current_time( 'mysql' ),
+                    'cached' => false,
+                );
+            },
+            'ai_responses',
+            $cache_ttl
+        );
         
-        if ( is_wp_error( $result ) ) {
-            return $result;
+        // Handle errors from cached callback
+        if ( is_wp_error( $cached_result ) ) {
+            return $cached_result;
         }
+        
+        // If we don't have cached results, something went wrong
+        if ( ! $cached_result || ! isset( $cached_result['result'] ) ) {
+            return new WP_Error(
+                'cache_failure',
+                __( 'Failed to generate or retrieve repurposed content. Please try again.', 'rwp-creator-suite' ),
+                array( 'status' => 500 )
+            );
+        }
+        
+        $result = $cached_result['result'];
         
         // Store full content for guest users before applying limitations
         if ( $is_guest ) {
@@ -135,13 +191,15 @@ class RWP_Creator_Suite_Content_Repurposer_API {
             $result = $this->apply_guest_limitations( $result );
         }
         
-        // Track usage in shared system (single API call regardless of platform count)
-        $this->ai_service->track_usage( 1, 'content_repurposing' );
-        
         $response_data = array(
             'success' => true,
             'data' => $result,
             'usage' => $this->ai_service->get_usage_stats(),
+            'meta' => array(
+                'generated_at' => $cached_result['generated_at'],
+                'cached' => $cached_result['cached'],
+                'cache_key_hash' => substr( $cache_key, -8 ), // For debugging
+            ),
         );
         
         $response = rest_ensure_response( $response_data );
@@ -154,7 +212,13 @@ class RWP_Creator_Suite_Content_Repurposer_API {
             $response->header( 'X-Content-Type-Options', 'nosniff' );
         } else {
             // For authenticated users, allow some caching but mark as private
-            $response->header( 'Cache-Control', 'private, max-age=300' );
+            if ( isset( $cached_result['cached'] ) && $cached_result['cached'] ) {
+                $response->header( 'Cache-Control', 'private, max-age=600' ); // 10 minutes for cached responses
+                $response->header( 'X-Cache-Status', 'HIT' );
+            } else {
+                $response->header( 'Cache-Control', 'private, max-age=300' ); // 5 minutes for fresh responses
+                $response->header( 'X-Cache-Status', 'MISS' );
+            }
             $response->header( 'X-Content-Type-Options', 'nosniff' );
         }
         
@@ -614,6 +678,54 @@ class RWP_Creator_Suite_Content_Repurposer_API {
         set_transient( $transient_key, $attempts + 1, HOUR_IN_SECONDS );
         
         return true;
+    }
+    
+    /**
+     * Phase 1 Optimization: Add caching headers for API responses.
+     */
+    public function add_api_cache_headers( $served, $result, $request, $server ) {
+        // Only apply to our plugin's API endpoints
+        if ( strpos( $request->get_route(), 'rwp-creator-suite/v1' ) !== 0 ) {
+            return $served;
+        }
+        
+        $route = $request->get_route();
+        $method = $request->get_method();
+        
+        // Content repurposing endpoint
+        if ( $method === 'POST' && strpos( $route, '/repurpose-content' ) !== false ) {
+            // Check if this is a guest request or cached response
+            $is_guest = $request->get_param( 'is_guest' ) === true;
+            
+            if ( $is_guest ) {
+                // Guest requests - no caching for security
+                header( 'Cache-Control: private, no-cache, no-store, must-revalidate' );
+                header( 'X-Guest-Request: 1' );
+            } else {
+                // Authenticated user requests
+                if ( isset( $result->data['meta']['cached'] ) && $result->data['meta']['cached'] ) {
+                    // Cached response - longer cache
+                    header( 'Cache-Control: private, max-age=600' ); // 10 minutes
+                    header( 'X-Cache-Status: HIT' );
+                } else {
+                    // Fresh response - shorter cache
+                    header( 'Cache-Control: private, max-age=300' ); // 5 minutes
+                    header( 'X-Cache-Status: MISS' );
+                }
+                header( 'Vary: Authorization' );
+            }
+        } else {
+            // Other endpoints - no cache
+            header( 'Cache-Control: no-cache, no-store, must-revalidate' );
+            header( 'Pragma: no-cache' );
+            header( 'Expires: 0' );
+        }
+        
+        // Add performance headers
+        header( 'X-Content-Type-Options: nosniff' );
+        header( 'X-Frame-Options: SAMEORIGIN' );
+        
+        return $served;
     }
     
 }

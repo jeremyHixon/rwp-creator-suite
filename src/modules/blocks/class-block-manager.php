@@ -26,6 +26,9 @@ class RWP_Creator_Suite_Block_Manager {
         add_action( 'init', array( $this, 'register_blocks' ) );
         add_action( 'enqueue_block_assets', array( $this, 'enqueue_frontend_assets' ) );
         
+        // Phase 1 Optimization: Asset caching and performance enhancements
+        add_action( 'init', array( $this, 'init_asset_optimizations' ) );
+        
         // Initialize Instagram Analyzer API
         $this->instagram_api = new RWP_Creator_Suite_Instagram_Analyzer_API();
         $this->instagram_api->init();
@@ -511,5 +514,215 @@ class RWP_Creator_Suite_Block_Manager {
         }
         
         return $character_limits;
+    }
+    
+    /**
+     * Phase 1 Optimization: Initialize asset optimizations.
+     */
+    public function init_asset_optimizations() {
+        // Asset caching headers
+        add_action( 'send_headers', array( $this, 'add_asset_caching_headers' ) );
+        
+        // Enhanced resource hints
+        add_action( 'wp_head', array( $this, 'add_performance_resource_hints' ), 1 );
+        
+        // Preload critical assets
+        add_action( 'wp_head', array( $this, 'preload_critical_assets' ), 2 );
+        
+        // DNS prefetch for external resources
+        add_action( 'wp_head', array( $this, 'add_dns_prefetch_hints' ), 1 );
+    }
+    
+    /**
+     * Add aggressive caching headers for plugin assets.
+     */
+    public function add_asset_caching_headers() {
+        // Only apply to plugin assets
+        if ( strpos( $_SERVER['REQUEST_URI'], '/wp-content/plugins/rwp-creator-suite/assets/' ) !== false ) {
+            // Set immutable cache headers for plugin assets
+            header( 'Cache-Control: public, max-age=31536000, immutable' );
+            header( 'Expires: ' . gmdate( 'D, d M Y H:i:s', time() + YEAR_IN_SECONDS ) . ' GMT' );
+            
+            // Add ETag for better cache validation
+            $etag = md5( $_SERVER['REQUEST_URI'] . RWP_CREATOR_SUITE_VERSION );
+            header( "ETag: \"$etag\"" );
+            
+            // Handle conditional requests
+            if ( isset( $_SERVER['HTTP_IF_NONE_MATCH'] ) && 
+                 $_SERVER['HTTP_IF_NONE_MATCH'] === "\"$etag\"" ) {
+                header( 'HTTP/1.1 304 Not Modified' );
+                exit;
+            }
+        }
+    }
+    
+    /**
+     * Add DNS prefetch hints for external resources.
+     */
+    public function add_dns_prefetch_hints() {
+        global $post;
+        
+        if ( ! $post ) {
+            return;
+        }
+        
+        // Check if any blocks are present before adding hints
+        $has_blocks = has_block( 'rwp-creator-suite/instagram-analyzer', $post ) ||
+                     has_block( 'rwp-creator-suite/instagram-banner', $post ) ||
+                     has_block( 'rwp-creator-suite/caption-writer', $post ) ||
+                     has_block( 'rwp-creator-suite/content-repurposer', $post );
+        
+        if ( $has_blocks ) {
+            echo '<link rel="dns-prefetch" href="//cdnjs.cloudflare.com">' . "\n";
+            echo '<link rel="dns-prefetch" href="//unpkg.com">' . "\n";
+            
+            // If user is logged in, prefetch API endpoints
+            if ( is_user_logged_in() ) {
+                $rest_url_parts = parse_url( rest_url() );
+                if ( isset( $rest_url_parts['host'] ) ) {
+                    echo '<link rel="dns-prefetch" href="//' . $rest_url_parts['host'] . '">' . "\n";
+                }
+            }
+        }
+    }
+    
+    /**
+     * Add performance resource hints.
+     */
+    public function add_performance_resource_hints() {
+        global $post;
+        
+        if ( ! $post ) {
+            return;
+        }
+        
+        // Preconnect to API endpoints if user is logged in
+        if ( is_user_logged_in() ) {
+            $rest_url_parts = parse_url( rest_url() );
+            if ( isset( $rest_url_parts['scheme'], $rest_url_parts['host'] ) ) {
+                echo '<link rel="preconnect" href="' . $rest_url_parts['scheme'] . '://' . $rest_url_parts['host'] . '">' . "\n";
+            }
+        }
+        
+        // Preconnect to external CDNs used by the plugin
+        if ( has_block( 'rwp-creator-suite/caption-writer', $post ) ) {
+            echo '<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>' . "\n";
+        }
+        
+        if ( has_block( 'rwp-creator-suite/instagram-analyzer', $post ) ) {
+            echo '<link rel="preconnect" href="https://unpkg.com" crossorigin>' . "\n";
+        }
+    }
+    
+    /**
+     * Preload critical assets based on block presence.
+     */
+    public function preload_critical_assets() {
+        global $post;
+        
+        if ( ! $post ) {
+            return;
+        }
+        
+        $preload_assets = array();
+        
+        // Always preload state manager if any block is present
+        $has_any_block = has_block( 'rwp-creator-suite/instagram-analyzer', $post ) ||
+                        has_block( 'rwp-creator-suite/instagram-banner', $post ) ||
+                        has_block( 'rwp-creator-suite/caption-writer', $post ) ||
+                        has_block( 'rwp-creator-suite/content-repurposer', $post );
+        
+        if ( $has_any_block ) {
+            $preload_assets[] = array(
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/state-manager.js',
+                'as' => 'script',
+                'type' => 'text/javascript'
+            );
+            
+            $preload_assets[] = array(
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/shared-state-utilities.js',
+                'as' => 'script',
+                'type' => 'text/javascript'
+            );
+        }
+        
+        // Block-specific preloading
+        if ( has_block( 'rwp-creator-suite/caption-writer', $post ) ) {
+            $preload_assets[] = array(
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/caption-writer.css',
+                'as' => 'style',
+                'type' => 'text/css'
+            );
+            
+            $preload_assets[] = array(
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/caption-writer.js',
+                'as' => 'script',
+                'type' => 'text/javascript'
+            );
+            
+            // Preload Font Awesome if not already cached
+            $preload_assets[] = array(
+                'href' => 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/brands.min.css',
+                'as' => 'style',
+                'type' => 'text/css',
+                'crossorigin' => 'anonymous'
+            );
+        }
+        
+        if ( has_block( 'rwp-creator-suite/content-repurposer', $post ) ) {
+            $preload_assets[] = array(
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/content-repurposer.css',
+                'as' => 'style',
+                'type' => 'text/css'
+            );
+            
+            $preload_assets[] = array(
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/content-repurposer.js',
+                'as' => 'script',
+                'type' => 'text/javascript'
+            );
+        }
+        
+        if ( has_block( 'rwp-creator-suite/instagram-analyzer', $post ) ) {
+            $preload_assets[] = array(
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/instagram-analyzer.js',
+                'as' => 'script',
+                'type' => 'text/javascript'
+            );
+            
+            // Preload JSZip from local path if available, otherwise CDN
+            $jszip_local_path = RWP_CREATOR_SUITE_PLUGIN_DIR . 'assets/vendor/jszip.min.js';
+            if ( file_exists( $jszip_local_path ) ) {
+                $preload_assets[] = array(
+                    'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/vendor/jszip.min.js',
+                    'as' => 'script',
+                    'type' => 'text/javascript'
+                );
+            } else {
+                $preload_assets[] = array(
+                    'href' => 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+                    'as' => 'script',
+                    'type' => 'text/javascript',
+                    'crossorigin' => 'anonymous'
+                );
+            }
+        }
+        
+        if ( has_block( 'rwp-creator-suite/instagram-banner', $post ) ) {
+            $preload_assets[] = array(
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/instagram-banner.js',
+                'as' => 'script',
+                'type' => 'text/javascript'
+            );
+        }
+        
+        // Output preload tags
+        foreach ( $preload_assets as $asset ) {
+            $attributes = array();
+            foreach ( $asset as $key => $value ) {
+                $attributes[] = esc_attr( $key ) . '="' . esc_attr( $value ) . '"';
+            }
+            echo '<link rel="preload" ' . implode( ' ', $attributes ) . '>' . "\n";
+        }
     }
 }

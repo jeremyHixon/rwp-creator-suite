@@ -11,6 +11,7 @@ class RWP_Creator_Suite_Caption_API {
 
     private $namespace = 'rwp-creator-suite/v1';
     private $cache_manager;
+    private $advanced_cache_manager;
     
     /**
      * Initialize the Caption API.
@@ -19,7 +20,13 @@ class RWP_Creator_Suite_Caption_API {
         $this->cache_manager = new RWP_Creator_Suite_Caption_Cache();
         $this->cache_manager->init();
         
+        // Phase 1 Optimization: Enhanced cache manager integration
+        $this->advanced_cache_manager = RWP_Creator_Suite_Cache_Manager::get_instance();
+        
         add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+        
+        // Phase 1 Optimization: Add caching headers for API responses
+        add_action( 'rest_pre_serve_request', array( $this, 'add_api_cache_headers' ), 10, 4 );
     }
     
     /**
@@ -161,49 +168,81 @@ class RWP_Creator_Suite_Caption_API {
         // Initialize AI service first for shared functionality
         $ai_service = new RWP_Creator_Suite_AI_Service();
         
-        // Check cache first for non-logged-in users or if caching is enabled
-        $cached_captions = $this->cache_manager->get_cached_captions( $description, $tone, $primary_platform );
-        if ( $cached_captions && isset( $cached_captions['captions'] ) ) {
-            return rest_ensure_response( array(
-                'success' => true,
-                'data'    => $cached_captions['captions'],
-                'meta'    => array(
-                    'platform_limits' => $this->get_platform_limits( $platforms ),
-                    'platforms' => $platforms,
-                    'generated_at'   => $cached_captions['generated_at'],
-                    'cached'         => true,
-                    'remaining_quota' => $ai_service->get_usage_stats()['remaining'],
-                ),
-            ) );
+        // Phase 1 Optimization: Use advanced cache manager with remember pattern
+        $cache_key = 'captions_' . md5( serialize( array(
+            'description' => trim( strtolower( $description ) ),
+            'tone' => $tone,
+            'platform' => $primary_platform,
+            'version' => '1.1' // Increment to invalidate old cache entries
+        ) ) );
+        
+        $cached_result = $this->advanced_cache_manager->remember(
+            $cache_key,
+            function() use ( $description, $tone, $primary_platform, $ai_service ) {
+                // Check shared rate limiting
+                $rate_limit_result = $ai_service->check_rate_limit( 'caption_generation' );
+                if ( is_wp_error( $rate_limit_result ) ) {
+                    return $rate_limit_result;
+                }
+                
+                $captions = $ai_service->generate_captions( $description, $tone, $primary_platform );
+                
+                if ( is_wp_error( $captions ) ) {
+                    return $captions;
+                }
+                
+                // Track usage in shared system
+                $ai_service->track_usage( 1, 'caption_generation' );
+                
+                // Also cache in legacy system for backward compatibility
+                $this->cache_manager->cache_captions( $description, $tone, $primary_platform, $captions );
+                
+                return array(
+                    'captions' => $captions,
+                    'generated_at' => current_time( 'mysql' ),
+                    'cached' => false,
+                );
+            },
+            'ai_responses',
+            4 * HOUR_IN_SECONDS // 4-hour cache for AI responses
+        );
+        
+        // Handle errors from cached callback
+        if ( is_wp_error( $cached_result ) ) {
+            return $cached_result;
         }
         
-        // Check shared rate limiting
-        $rate_limit_result = $ai_service->check_rate_limit( 'caption_generation' );
-        if ( is_wp_error( $rate_limit_result ) ) {
-            return $rate_limit_result;
+        // Fallback to legacy cache if advanced cache fails
+        if ( ! $cached_result ) {
+            $cached_captions = $this->cache_manager->get_cached_captions( $description, $tone, $primary_platform );
+            if ( $cached_captions && isset( $cached_captions['captions'] ) ) {
+                $cached_result = array(
+                    'captions' => $cached_captions['captions'],
+                    'generated_at' => $cached_captions['generated_at'],
+                    'cached' => true,
+                );
+            }
         }
         
-        $captions = $ai_service->generate_captions( $description, $tone, $primary_platform );
-        
-        if ( is_wp_error( $captions ) ) {
-            return $captions;
+        // If we still don't have results, something went wrong
+        if ( ! $cached_result ) {
+            return new WP_Error(
+                'cache_failure',
+                __( 'Failed to generate or retrieve captions. Please try again.', 'rwp-creator-suite' ),
+                array( 'status' => 500 )
+            );
         }
-        
-        // Track usage in shared system
-        $ai_service->track_usage( 1, 'caption_generation' );
-        
-        // Cache the results
-        $this->cache_manager->cache_captions( $description, $tone, $primary_platform, $captions );
         
         return rest_ensure_response( array(
             'success' => true,
-            'data'    => $captions,
+            'data'    => $cached_result['captions'],
             'meta'    => array(
                 'platform_limits' => $this->get_platform_limits( $platforms ),
                 'platforms' => $platforms,
-                'generated_at'   => current_time( 'mysql' ),
-                'cached'         => false,
+                'generated_at'   => $cached_result['generated_at'],
+                'cached'         => $cached_result['cached'],
                 'remaining_quota' => $ai_service->get_usage_stats()['remaining'],
+                'cache_key_hash' => substr( $cache_key, -8 ), // For debugging
             ),
         ) );
     }
@@ -596,5 +635,58 @@ class RWP_Creator_Suite_Caption_API {
         }
         
         return $platform_limits;
+    }
+    
+    /**
+     * Phase 1 Optimization: Add caching headers for API responses.
+     */
+    public function add_api_cache_headers( $served, $result, $request, $server ) {
+        // Only apply to our plugin's API endpoints
+        if ( strpos( $request->get_route(), $this->namespace ) !== 0 ) {
+            return $served;
+        }
+        
+        $route = $request->get_route();
+        $method = $request->get_method();
+        
+        // Different cache strategies for different endpoints
+        if ( $method === 'GET' ) {
+            if ( strpos( $route, '/favorites' ) !== false ) {
+                // User favorites - short cache, private
+                header( 'Cache-Control: private, max-age=300' ); // 5 minutes
+                header( 'Vary: Authorization' );
+            } elseif ( strpos( $route, '/quota' ) !== false ) {
+                // Quota status - very short cache
+                header( 'Cache-Control: private, max-age=60' ); // 1 minute
+                header( 'Vary: Authorization' );
+            } elseif ( strpos( $route, '/preferences' ) !== false ) {
+                // User preferences - short cache, private
+                header( 'Cache-Control: private, max-age=600' ); // 10 minutes
+                header( 'Vary: Authorization' );
+            }
+        } elseif ( $method === 'POST' && strpos( $route, '/captions/generate' ) !== false ) {
+            // Caption generation - cacheable for same requests
+            if ( isset( $result->data['meta']['cached'] ) && $result->data['meta']['cached'] ) {
+                // Cached response - longer cache
+                header( 'Cache-Control: public, max-age=1800' ); // 30 minutes
+                header( 'X-Cache-Status: HIT' );
+            } else {
+                // Fresh response - shorter cache
+                header( 'Cache-Control: public, max-age=300' ); // 5 minutes
+                header( 'X-Cache-Status: MISS' );
+            }
+            header( 'Vary: Accept-Encoding, Accept-Language' );
+        } else {
+            // Other endpoints (POST/PUT/DELETE) - no cache
+            header( 'Cache-Control: no-cache, no-store, must-revalidate' );
+            header( 'Pragma: no-cache' );
+            header( 'Expires: 0' );
+        }
+        
+        // Add performance headers
+        header( 'X-Content-Type-Options: nosniff' );
+        header( 'X-Frame-Options: SAMEORIGIN' );
+        
+        return $served;
     }
 }

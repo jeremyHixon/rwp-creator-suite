@@ -1,6 +1,5 @@
 # Task
-Analyze the current codebase for maximum cacheability.
-Share any potential optimizations in a comprehensive report.
+{task goes here}
 
 # Project Context
 
@@ -987,3 +986,42 @@ export default function Edit({ attributes, setAttributes }) {
 2. **Version Everything** - Assets, database schemas, API versions
 3. **Environment-Specific Configs** - Different settings per environment
 4. **Automated Testing** - Never deploy without tests passing
+
+## Testing Architecture
+
+### Test Setup & Commands
+- **PHP Tests**: `composer test` or `./vendor/bin/phpunit`
+- **JS Tests**: `npm run test:js` or `npm run test:js:watch`
+- **Coverage**: `npm run test:coverage` (combined PHP + JS)
+- **Bootstrap**: `tests/bootstrap.php` handles WordPress test environment setup
+
+### Test Organization Patterns
+- **PHP Tests**: `tests/test-{component}.php` with Brain Monkey for WordPress mocking
+- **JS Tests**: `tests/js/{component}.test.js` with Jest and WordPress globals mocked
+- **Block Tests**: `tests/js/blocks/{block-name}/edit.test.js` for Gutenberg blocks
+- **Integration Tests**: `tests/integration-*.php` for full workflow testing
+
+### Testing Standards
+- Use Yoast PHPUnit Polyfills for PHP version compatibility
+- Mock WordPress functions via Brain Monkey, not direct function definitions
+- Test both logged-in and guest user scenarios for state management
+- Mock localStorage/sessionStorage in JS tests for storage-dependent features
+- Follow WordPress coding standards in test files
+- Use descriptive test names that explain expected behavior
+
+### Development Phase Testing
+- Phase-based test files (`phase1-simple-test.php`, etc.) for staged development
+- Simple test runners for quick development iteration
+- Integration tests for cross-module functionality validation
+
+### Critical Testing Areas
+- **Security**: Authentication, authorization, nonce verification, input sanitization
+- **State Management**: localStorage fallbacks, guest-to-user transitions
+- **API Endpoints**: Permission checks, data validation, error handling
+- **Block Functionality**: Editor/frontend consistency, attribute handling
+- **Performance**: Database queries, asset loading, caching behavior
+
+### Coverage Requirements
+- **PHP**: 80% minimum for core classes, 100% for security functions
+- **JavaScript**: 85% minimum for modules
+- **API Endpoints**: 100% coverage required

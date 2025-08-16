@@ -1,5 +1,136 @@
 # WordPress Testing for Client-Heavy Architecture (AI-Optimized)
 
+## Available Test Commands
+
+### PHP Testing Commands
+```bash
+# Run all PHP tests
+composer test
+# OR
+./vendor/bin/phpunit
+
+# Run specific test file
+./vendor/bin/phpunit tests/test-error-logger.php
+
+# Run with coverage report
+composer run test:coverage
+# OR  
+./vendor/bin/phpunit --coverage-html coverage/
+
+# Run tests for specific component
+./vendor/bin/phpunit --filter=Error_Logger
+
+# Install WordPress test environment
+composer run install-wp-tests
+```
+
+### JavaScript Testing Commands  
+```bash
+# Run all JS tests
+npm run test:js
+
+# Run tests in watch mode
+npm run test:js:watch
+
+# Run with coverage
+npm run test:js:coverage
+
+# Run specific test file
+npx jest tests/js/state-manager.test.js
+
+# Run all tests (PHP + JS)
+npm test
+```
+
+### Combined Testing Workflow
+```bash
+# Complete test suite for CI/deployment
+npm run test:coverage    # Runs both PHP and JS with coverage
+```
+
+## Test File Organization Standards
+
+### PHP Test File Naming
+- **Unit Tests**: `test-{class-name}.php` (e.g., `test-error-logger.php`)
+- **Integration Tests**: `integration-{feature}.php` (e.g., `integration-test.php`)
+- **API Tests**: `test-{api-name}-api.php` (e.g., `test-registration-api.php`)
+- **Trait Tests**: `test-{trait-name}-trait.php` (e.g., `test-api-validation-trait.php`)
+
+### JavaScript Test File Naming
+- **Unit Tests**: `{component}.test.js` (e.g., `state-manager.test.js`)
+- **Block Tests**: `{block-name}/edit.test.js` (e.g., `caption-writer/edit.test.js`)
+- **Utility Tests**: `utils/{utility}.test.js` (e.g., `utils/dom-helpers.test.js`)
+- **Integration Tests**: `integration/{feature}.test.js`
+
+### Test Directory Structure
+```
+tests/
+├── bootstrap.php                    # PHPUnit bootstrap
+├── test-{core-classes}.php         # Main plugin tests
+├── test-{module-name}*.php         # Module-specific tests
+├── integration-*.php               # Integration tests
+├── phase*-test*.php                # Development phase tests
+└── js/
+    ├── setup.js                    # Jest setup file
+    ├── {component}.test.js         # Component tests
+    ├── blocks/
+    │   └── {block-name}/
+    │       └── edit.test.js        # Block tests
+    └── utils/
+        └── {utility}.test.js       # Utility tests
+```
+
+## Development Phase Testing Strategy
+
+### Phase-Based Test Files (Current Pattern)
+- `phase1-simple-test.php` - Basic functionality tests
+- `phase1-optimization-test.php` - Performance/optimization tests  
+- `phase3-test-runner.php` - Advanced feature tests
+- `simple-test-runner.php` - Quick development tests
+
+### Phase Testing Approach
+1. **Phase 1**: Core functionality, basic unit tests
+2. **Phase 2**: Integration tests, API endpoint tests
+3. **Phase 3**: Performance tests, edge cases, full integration
+
+### When to Create Phase Tests
+- During major feature development requiring staged testing
+- For complex features that need incremental validation
+- When testing performance optimizations step-by-step
+- For experimental features before full integration
+
+## Test Coverage Requirements
+
+### Coverage Targets
+- **PHP Code**: Minimum 80% line coverage for core classes
+- **JavaScript Code**: Minimum 85% line coverage for modules
+- **Critical Paths**: 100% coverage for security-related functions
+- **API Endpoints**: 100% coverage for all REST endpoints
+
+### Coverage Exclusions
+- Vendor dependencies (`vendor/`, `node_modules/`)
+- Build artifacts (`build/`, `assets/dist/`)
+- Development tools (`bin/`, `scripts/`)
+- WordPress core functions (mocked in tests)
+
+### Coverage Commands
+```bash
+# PHP coverage (HTML report)
+composer run test:coverage
+
+# JavaScript coverage  
+npm run test:js:coverage
+
+# Combined coverage report
+npm run test:coverage
+```
+
+### Coverage Analysis
+- Review coverage reports before deployment
+- Identify untested critical paths
+- Add tests for low-coverage areas
+- Document any intentional coverage exclusions
+
 ## LocalWP Development Environment
 
 ### WP-CLI Testing Setup
@@ -581,6 +712,211 @@ wp plugin activate plugin-name
 # Test multisite
 wp core multisite-install --title="Test Network"
 wp plugin activate plugin-name --network
+```
+
+## WordPress Testing Environment Setup (Detailed)
+
+### Environment Configuration and Setup
+
+#### Current Bootstrap Analysis
+The project's `tests/bootstrap.php` implements:
+- WordPress test suite path detection: `/tmp/wordpress-tests-lib`
+- Plugin auto-loading via `_manually_load_plugin()`
+- Conditional Brain Monkey integration
+- Environment-specific constants and configurations
+
+#### Environment Variables
+```bash
+# Required environment variables
+export WP_TESTS_DIR=/tmp/wordpress-tests-lib
+export WP_CORE_DIR=/tmp/wordpress
+export WP_TESTS_CONFIG_FILE_PATH=/tmp/wp-tests-config.php
+
+# Database configuration
+export WP_TESTS_DB_NAME=wordpress_test
+export WP_TESTS_DB_USER=root
+export WP_TESTS_DB_PASSWORD=password
+export WP_TESTS_DB_HOST=localhost
+```
+
+#### Multi-Environment Setup Strategies
+
+**Local Development Environment**
+```bash
+# Method 1: Using Local by Flywheel / LocalWP
+# Access LocalWP site shell and run:
+cd /app/public/wp-content/plugins/rwp-creator-suite
+composer install
+./vendor/bin/phpunit
+
+# Method 2: Using WP-ENV (WordPress official)
+npm install -g @wordpress/env
+wp-env start
+wp-env run tests-cli "cd wp-content/plugins/rwp-creator-suite && composer test"
+
+# Method 3: Custom local setup
+mysql -u root -p -e "CREATE DATABASE rwp_creator_suite_test;"
+bash bin/install-wp-tests.sh rwp_creator_suite_test root password localhost latest
+```
+
+**CI/CD Environment Configuration**
+```yaml
+# GitHub Actions example
+services:
+  mysql:
+    image: mysql:5.7
+    env:
+      MYSQL_DATABASE: wordpress_test
+      MYSQL_ROOT_PASSWORD: password
+
+strategy:
+  matrix:
+    php-version: [7.4, 8.0, 8.1, 8.2]
+    wordpress-version: [5.9, 6.0, 6.1, 6.2, latest]
+
+steps:
+- name: Install WordPress Test Suite
+  run: bash bin/install-wp-tests.sh wordpress_test root password 127.0.0.1:3306 ${{ matrix.wordpress-version }}
+```
+
+#### WordPress Version Compatibility Testing
+```bash
+# Test against multiple WordPress versions
+for version in 5.9 6.0 6.1 6.2 latest; do
+    echo "Testing WordPress $version"
+    bash bin/install-wp-tests.sh wordpress_test_$version root password localhost $version
+    WP_TESTS_DIR=/tmp/wordpress-tests-lib-$version ./vendor/bin/phpunit
+done
+```
+
+#### Database Setup and Cleanup
+```php
+// Enhanced test base class with proper cleanup
+abstract class RWP_Creator_Suite_Test_Case extends \PHPUnit\Framework\TestCase {
+    
+    protected function setUp(): void {
+        parent::setUp();
+        $this->clean_database_state();
+        \Brain\Monkey\setUp();
+        $this->reset_wordpress_globals();
+    }
+    
+    protected function tearDown(): void {
+        $this->clean_database_state();
+        \Brain\Monkey\tearDown();
+        parent::tearDown();
+    }
+    
+    private function clean_database_state() {
+        global $wpdb;
+        
+        // Clean plugin-specific tables
+        $wpdb->query( "TRUNCATE TABLE IF EXISTS {$wpdb->prefix}rwp_creator_suite_cache" );
+        
+        // Clean user meta and options
+        $wpdb->query( "DELETE FROM {$wpdb->usermeta} WHERE meta_key LIKE 'rwp_creator_suite_%'" );
+        $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'rwp_creator_suite_%'" );
+        
+        // Clear WordPress caches
+        wp_cache_flush();
+    }
+}
+```
+
+#### WordPress Function Mocking Patterns
+```php
+// Current project pattern (avoid direct function definitions)
+// BAD - Don't do this:
+if ( ! function_exists( 'get_current_user_id' ) ) {
+    function get_current_user_id() {
+        return 1;
+    }
+}
+
+// GOOD - Use Brain Monkey instead:
+\Brain\Monkey\Functions\when( 'get_current_user_id' )->justReturn( 1 );
+\Brain\Monkey\Functions\when( 'is_user_logged_in' )->justReturn( true );
+\Brain\Monkey\Functions\when( 'current_user_can' )
+    ->with( 'manage_options' )
+    ->justReturn( true );
+```
+
+#### Plugin Dependency Management
+```php
+// Handle plugin dependencies in tests
+class RWP_Creator_Suite_Test_Dependencies {
+    
+    public static function load_required_plugins() {
+        $required_plugins = array(
+            'advanced-custom-fields/acf.php',
+            'woocommerce/woocommerce.php',
+        );
+        
+        foreach ( $required_plugins as $plugin ) {
+            $plugin_path = WP_PLUGIN_DIR . '/' . $plugin;
+            if ( file_exists( $plugin_path ) ) {
+                require_once $plugin_path;
+            } else {
+                self::create_plugin_mock( $plugin );
+            }
+        }
+    }
+    
+    private static function create_plugin_mock( $plugin ) {
+        // Create basic mocks for required plugin functions
+        if ( strpos( $plugin, 'advanced-custom-fields' ) !== false ) {
+            \Brain\Monkey\Functions\when( 'get_field' )->justReturn( 'mocked_value' );
+            \Brain\Monkey\Functions\when( 'update_field' )->justReturn( true );
+        }
+    }
+}
+```
+
+#### Troubleshooting Common Setup Issues
+
+**Environment Validation and Auto-Fix**
+```php
+class RWP_Creator_Suite_Test_Environment_Validator {
+    
+    public static function validate_and_fix() {
+        // Check WordPress test suite
+        if ( ! file_exists( '/tmp/wordpress-tests-lib/includes/functions.php' ) ) {
+            echo "❌ WordPress test suite not found\n";
+            echo "💡 Run: bash bin/install-wp-tests.sh wordpress_test root '' localhost latest\n";
+            exit( 1 );
+        }
+        
+        // Check database connection
+        if ( ! self::can_connect_to_database() ) {
+            echo "❌ Cannot connect to test database\n";
+            echo "💡 Check database credentials and ensure MySQL is running\n";
+            exit( 1 );
+        }
+        
+        // Check required PHP extensions
+        $required_extensions = array( 'mysqli', 'zip', 'gd' );
+        foreach ( $required_extensions as $ext ) {
+            if ( ! extension_loaded( $ext ) ) {
+                echo "❌ Required PHP extension '{$ext}' not loaded\n";
+                echo "💡 Install PHP {$ext} extension\n";
+                exit( 1 );
+            }
+        }
+    }
+    
+    private static function can_connect_to_database() {
+        $host = getenv( 'WP_TESTS_DB_HOST' ) ?: 'localhost';
+        $user = getenv( 'WP_TESTS_DB_USER' ) ?: 'root';
+        $password = getenv( 'WP_TESTS_DB_PASSWORD' ) ?: '';
+        
+        $connection = @mysqli_connect( $host, $user, $password );
+        if ( $connection ) {
+            mysqli_close( $connection );
+            return true;
+        }
+        return false;
+    }
+}
 ```
 
 ## Critical Testing Rules

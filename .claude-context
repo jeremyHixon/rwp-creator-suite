@@ -1,9 +1,6 @@
 # Task
-Begin working through the recommendations in the .phased-recommendation file. Starting with phase 2.
-Notes for phase 2: Ensure that all existing functionality is maintained. All functionality
-from the existing class methods or functions need to be maintained. Do NOT delete files until
-all functionality has been accounted for. Some PHP tests already exist using a Yoast library
-and some JS tests already exist as well. If these are insuffient we can add more.
+Analyze the current codebase for maximum cacheability.
+Share any potential optimizations in a comprehensive report.
 
 # Project Context
 

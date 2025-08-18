@@ -49,6 +49,28 @@ class Plugin_Name_API {
 }
 ```
 
+### Admin API Integration
+Admin settings pages should follow the existing pattern and integrate with the REST API:
+
+```php
+// Settings page follows nesting pattern
+add_submenu_page(
+    'rwp-creator-tools',
+    __( 'Feature Settings', 'rwp-creator-suite' ),
+    __( 'Feature', 'rwp-creator-suite' ),
+    'manage_options',
+    'rwp-feature-settings',
+    array( $this, 'render_settings_page' )
+);
+
+// Corresponding API endpoints
+register_rest_route( $this->namespace, '/admin/feature-settings', array(
+    'methods'             => array( 'GET', 'POST' ),
+    'callback'            => array( $this, 'handle_feature_settings' ),
+    'permission_callback' => array( $this, 'check_admin_permissions' ),
+) );
+```
+
 ### Permission Callbacks
 ```php
 class Plugin_Name_API_Permissions {
@@ -488,3 +510,4 @@ public function get_content( $request ) {
 5. **Error Handling** - User-friendly messages, proper logging
 6. **Data Validation** - Sanitize inputs, validate schemas
 7. **Rate Limiting** - Prevent abuse (WordPress plugins available)
+8. **Nest All Admin Pages** - All admin option pages MUST use `add_submenu_page()` with parent slug `'rwp-creator-tools'` - never create additional top-level menus

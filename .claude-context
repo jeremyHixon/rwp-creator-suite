@@ -1,5 +1,5 @@
 # Task
-Examine the WordPress option pages created by this plugin and fix the errors in their registration.
+{Enter your task here}
 
 # Project Context
 
@@ -29,6 +29,13 @@ Examine the WordPress option pages created by this plugin and fix the errors in 
 - **Version API changes**: Create new API versions rather than breaking existing ones
 - **Feature flags**: Use feature toggles for experimental functionality
 - **Database migrations**: Only add columns/tables, never remove without explicit instruction
+
+### Admin Interface Organization
+- **Single Top-Level Menu**: The plugin uses one top-level menu with slug `'rwp-creator-tools'` (see `src/modules/admin/class-admin-page.php`)
+- **Nested Sub-Pages**: All admin option pages MUST be nested under `'rwp-creator-tools'` using `add_submenu_page()`
+- **Existing Pattern**: Follow the pattern in `src/modules/caption-writer/class-admin-settings.php` line 57-64
+- **Menu Hierarchy**: Dashboard → Tool-specific settings → Advanced configurations
+- **Consistent Permissions**: All admin pages require `'manage_options'` capability
 
 ## WordPress Coding Standards
 

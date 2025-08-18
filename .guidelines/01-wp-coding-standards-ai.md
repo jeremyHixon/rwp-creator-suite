@@ -83,6 +83,44 @@ $output = apply_filters( 'plugin_name_output', $output, $args );
 add_filter( 'the_content', 'plugin_name_filter_content', 10, 1 );
 ```
 
+### Admin Pages
+```php
+// CORRECT: Follow existing pattern - nest under main plugin menu
+add_submenu_page(
+    'rwp-creator-tools',                    // Parent slug (from class-admin-page.php)
+    __( 'New Feature Settings', 'rwp-creator-suite' ),
+    __( 'New Feature', 'rwp-creator-suite' ),
+    'manage_options',
+    'rwp-new-feature',                      // Unique menu slug
+    array( $this, 'render_settings_page' )
+);
+
+// WRONG: Do not create additional top-level menus
+add_menu_page(
+    'Another Tool',
+    'Another Tool',
+    'manage_options',
+    'rwp-another-tool',
+    'callback'
+); // This clutters the admin menu
+
+// Pattern from existing caption writer (class-admin-settings.php:57-64)
+public function add_admin_menu() {
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return;
+    }
+    
+    add_submenu_page(
+        'rwp-creator-tools',                // Always use this parent
+        __( 'Caption Writer AI Settings', 'rwp-creator-suite' ),
+        __( 'Caption Writer', 'rwp-creator-suite' ),
+        'manage_options',
+        $this->menu_slug,
+        array( $this, 'render_settings_page' )
+    );
+}
+```
+
 ### i18n
 ```php
 __( 'Text', 'plugin-name' );
@@ -168,3 +206,4 @@ function name( $id ) {}
 5. Check capabilities
 6. Use `$wpdb->prepare()`
 7. Text domain: `'plugin-name'`
+8. **Nest All Admin Pages**: All admin option pages MUST use `add_submenu_page()` with parent slug `'rwp-creator-tools'` - never create additional top-level menus

@@ -36,6 +36,57 @@
 - **Feature flags**: Use feature toggles for experimental functionality
 - **Database migrations**: Only add columns/tables, never remove without explicit instruction
 
+### Admin Interface Architecture
+
+#### Existing Menu Structure
+The plugin follows a single top-level menu pattern:
+- **Main Dashboard**: `'rwp-creator-tools'` (see `src/modules/admin/class-admin-page.php`)
+- **Sub-pages**: All feature settings nest under the main menu
+
+#### Implementation Pattern for New Features
+```php
+class RWP_Creator_Suite_New_Feature_Admin {
+    private $menu_slug = 'rwp-new-feature';
+    
+    public function init() {
+        add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 20 );
+        // Note: Priority 20 to load after main page (priority 10)
+    }
+    
+    public function add_admin_menu() {
+        // REQUIRED: Check capabilities first
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        
+        // REQUIRED: Use 'rwp-creator-tools' as parent slug
+        add_submenu_page(
+            'rwp-creator-tools',                        // Parent from class-admin-page.php
+            __( 'New Feature Settings', 'rwp-creator-suite' ),
+            __( 'New Feature', 'rwp-creator-suite' ),
+            'manage_options',
+            $this->menu_slug,
+            array( $this, 'render_settings_page' )
+        );
+    }
+}
+```
+
+#### Integration with Main Dashboard
+New features should be represented on the main dashboard (`class-admin-page.php` lines 100-145):
+```php
+// Add to the "Available Tools" section
+<div class="rwp-tool-item">
+    <div class="rwp-tool-icon">
+        <span class="dashicons dashicons-your-icon"></span>
+    </div>
+    <div class="rwp-tool-content">
+        <h4><?php esc_html_e( 'Your Feature Name', 'rwp-creator-suite' ); ?></h4>
+        <p><?php esc_html_e( 'Brief description of the feature.', 'rwp-creator-suite' ); ?></p>
+    </div>
+</div>
+```
+
 ## Modular Architecture
 
 ### Service-Based Organization
@@ -308,9 +359,10 @@ class Plugin_Name_User_API {
 5. **localStorage Primary** - Database only for logged-in user preferences
 6. **WordPress Compliance** - Never deviate from block guidelines
 7. **Warning Over Fallback** - Notify users of storage issues, don't store on server
-8. **Progressive Enhancement** - Ensure basic functionality without JavaScript
-9. **Documentation Over Standards** - Detailed docs for non-traditional patterns
-10. **Private Use Optimization** - Architecture serves specific needs, not general use
+8. **Nest All Admin Pages** - All admin option pages MUST use `add_submenu_page()` with parent slug `'rwp-creator-tools'` - never create additional top-level menus
+9. **Progressive Enhancement** - Ensure basic functionality without JavaScript
+10. **Documentation Over Standards** - Detailed docs for non-traditional patterns
+11. **Private Use Optimization** - Architecture serves specific needs, not general use
 
 ## Performance Goals
 - **Guest users**: Fully cacheable block containers, localStorage for app state

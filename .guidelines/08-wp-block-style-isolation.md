@@ -590,11 +590,12 @@ describe('Block Style Isolation', () => {
 5. **Isolation First** - Use `all: initial` and `isolation: isolate`
 6. **Container Queries** - Responsive design based on block size
 7. **Editor Consistency** - Same styles in editor and frontend
-8. **Performance Aware** - Purge unused styles aggressively
-9. **Theme Agnostic** - Work with any WordPress theme
-10. **CSS Layers** - Use cascade layers for precise control
-11. **Subtle Interactions** - Minimize shadows, animations, and effects
-12. **Clean Typography** - Use system fonts and normal font weights
+8. **Nest All Admin Pages** - All admin option pages MUST use `add_submenu_page()` with parent slug `'rwp-creator-tools'` - never create additional top-level menus
+9. **Performance Aware** - Purge unused styles aggressively
+10. **Theme Agnostic** - Work with any WordPress theme
+11. **CSS Layers** - Use cascade layers for precise control
+12. **Subtle Interactions** - Minimize shadows, animations, and effects
+13. **Clean Typography** - Use system fonts and normal font weights
 
 ## Troubleshooting
 

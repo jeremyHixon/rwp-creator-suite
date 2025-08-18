@@ -375,3 +375,4 @@ import { useState, useEffect, useMemo } from '@wordpress/element';
 8. NO direct DOM manipulation IN BLOCKS
 9. **Blocks are containers only** - complex apps mount into them
 10. **Use Placeholder components** for editor preview
+11. **Nest All Admin Pages** - All admin option pages MUST use `add_submenu_page()` with parent slug `'rwp-creator-tools'` - never create additional top-level menus

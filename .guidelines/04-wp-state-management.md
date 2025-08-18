@@ -706,6 +706,7 @@ if (!storageInfo.persistent) {
 5. **Seamless Transitions** - Guest state smoothly becomes user state
 6. **Auto-Save Everything** - Forms, preferences, view state (when possible)
 7. **Server Sync Only for Users** - Never store guest data in database
-8. **State Validation** - Always sanitize data from any storage
-9. **Memory Management** - Clean up old/unused state data
-10. **Session Awareness** - Track storage mode and inform user accordingly
+8. **Nest All Admin Pages** - All admin option pages MUST use `add_submenu_page()` with parent slug `'rwp-creator-tools'` - never create additional top-level menus
+9. **State Validation** - Always sanitize data from any storage
+10. **Memory Management** - Clean up old/unused state data
+11. **Session Awareness** - Track storage mode and inform user accordingly

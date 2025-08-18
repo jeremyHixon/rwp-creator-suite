@@ -928,4 +928,5 @@ class RWP_Creator_Suite_Test_Environment_Validator {
 5. **User State Testing** - Test logged-in vs guest scenarios
 6. **Form Persistence** - Test form data saving/restoration
 7. **Error Handling** - Test failure scenarios
-8. **Performance Testing** - Test with large datasets
+8. **Nest All Admin Pages** - All admin option pages MUST use `add_submenu_page()` with parent slug `'rwp-creator-tools'` - never create additional top-level menus
+9. **Performance Testing** - Test with large datasets

@@ -994,7 +994,8 @@ module.exports = {
 5. **Database Migrations** - Handle schema changes gracefully
 6. **Asset Optimization** - Minify, compress, cache-bust
 7. **Automated Testing** - Never deploy without tests passing
-8. **Rollback Strategy** - Always have a way to revert changes
+8. **Nest All Admin Pages** - All admin option pages MUST use `add_submenu_page()` with parent slug `'rwp-creator-tools'` - never create additional top-level menus
+9. **Rollback Strategy** - Always have a way to revert changes
 
 ## Monitoring & Health Checks
 

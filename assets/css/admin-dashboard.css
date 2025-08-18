@@ -1,0 +1,251 @@
+/**
+ * RWP Creator Tools Admin Dashboard Styles
+ */
+
+/* Dashboard Grid Layout */
+.rwp-creator-tools-dashboard {
+    margin-top: 20px;
+}
+
+.rwp-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    max-width: 1200px;
+}
+
+/* Dashboard Cards */
+.rwp-dashboard-card {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.rwp-dashboard-card h2,
+.rwp-dashboard-card h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #1d2327;
+}
+
+.rwp-dashboard-card h2 {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.rwp-dashboard-card h3 {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Welcome Card */
+.rwp-welcome-card {
+    grid-column: 1 / -1;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+}
+
+.rwp-welcome-card h2 {
+    color: #fff;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.rwp-welcome-card p {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+    opacity: 0.9;
+}
+
+.rwp-version-info {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+}
+
+.rwp-version-label {
+    margin-right: 8px;
+    font-weight: 500;
+}
+
+.rwp-version-number {
+    font-weight: 600;
+}
+
+/* Quick Actions */
+.rwp-action-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.rwp-action-buttons .button {
+    margin: 0;
+}
+
+/* Tools Overview */
+.rwp-tools-grid {
+    display: grid;
+    gap: 15px;
+}
+
+.rwp-tool-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 15px;
+    background: #f9f9f9;
+    border-radius: 4px;
+    border-left: 4px solid #0073aa;
+}
+
+.rwp-tool-icon {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0073aa;
+    color: #fff;
+    border-radius: 50%;
+}
+
+.rwp-tool-icon .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.rwp-tool-content h4 {
+    margin: 0 0 5px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2327;
+}
+
+.rwp-tool-content p {
+    margin: 0;
+    font-size: 13px;
+    color: #646970;
+    line-height: 1.4;
+}
+
+/* System Status */
+.rwp-status-items {
+    display: grid;
+    gap: 10px;
+}
+
+.rwp-status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.rwp-status-item:last-child {
+    border-bottom: none;
+}
+
+.rwp-status-label {
+    font-weight: 500;
+    color: #1d2327;
+}
+
+.rwp-status-value {
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.rwp-status-value.status-active {
+    background: #d1e7dd;
+    color: #0a3622;
+}
+
+.rwp-status-value.status-warning {
+    background: #fff3cd;
+    color: #664d03;
+}
+
+.rwp-status-value.status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+/* Support Section */
+.rwp-support-links {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.rwp-support-links .button {
+    margin: 0;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 782px) {
+    .rwp-dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .rwp-welcome-card {
+        grid-column: 1;
+    }
+    
+    .rwp-action-buttons,
+    .rwp-support-links {
+        flex-direction: column;
+    }
+    
+    .rwp-action-buttons .button,
+    .rwp-support-links .button {
+        text-align: center;
+    }
+    
+    .rwp-tool-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .rwp-tool-icon {
+        align-self: center;
+    }
+    
+    .rwp-status-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+}
+
+/* WordPress Admin Color Scheme Integration */
+.folded .rwp-dashboard-grid {
+    max-width: calc(100vw - 56px);
+}
+
+@media screen and (max-width: 960px) {
+    .auto-fold .rwp-dashboard-grid {
+        max-width: calc(100vw - 56px);
+    }
+}
+
+@media screen and (max-width: 782px) {
+    .rwp-dashboard-grid {
+        max-width: calc(100vw - 40px);
+    }
+}

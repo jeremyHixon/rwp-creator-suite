@@ -46,6 +46,7 @@ class RWP_Creator_Suite {
     private $caption_admin;
     private $repurposer_api;
     private $comment_security;
+    private $admin_page;
 
     /**
      * Get single instance of the plugin.
@@ -102,6 +103,7 @@ class RWP_Creator_Suite {
         $this->caption_admin = new RWP_Creator_Suite_Caption_Admin_Settings();
         $this->repurposer_api = new RWP_Creator_Suite_Content_Repurposer_API();
         $this->comment_security = new RWP_Creator_Suite_Comment_Security();
+        $this->admin_page = new RWP_Creator_Suite_Admin_Page();
 
         // Initialize all components
         $this->wp_login_integration->init();
@@ -113,6 +115,7 @@ class RWP_Creator_Suite {
         $this->caption_admin->init();
         $this->repurposer_api->init();
         $this->comment_security->init();
+        $this->admin_page->init();
 
         // Additional hooks
         add_action( 'init', array( $this, 'load_textdomain' ) );
@@ -179,6 +182,9 @@ class RWP_Creator_Suite {
 
         // Security Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/security/class-comment-security.php';
+
+        // Admin Module
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/admin/class-admin-page.php';
 
         // Shortcodes Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/class-shortcodes.php';

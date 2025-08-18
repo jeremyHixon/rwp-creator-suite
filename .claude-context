@@ -1,8 +1,7 @@
 # Task
-Analyze the codebase and look for opportunities to gather useful data. This plugin assists content
-creators with creating things like captions. Information like this could be useful for tracking hashtag usage.
-We need to keep things like GDPR concerns in mind but if there's some way to gather anonymous data I think
-that's something we should consider.
+Create a top-level option page for this plugin in WordPress admin. Use the "dashicons-admin-tools" icon
+and put it at position "4" in the menu. It will be called RWP Creator Tools and we'll nest additional
+settings pages under it.
 
 # Project Context
 

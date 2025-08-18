@@ -1,5 +1,6 @@
 # Task
-Analyze the codebase and provide a list of files that should be added to the .gitignore file and a plan to implement the changes.
+Add functionality to disable commenting via XML-RPC and the REST API. Only commenting should be disabled.
+Existing functionality should be maintained.
 
 # Project Context
 

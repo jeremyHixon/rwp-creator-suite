@@ -1,6 +1,8 @@
 # Task
-Add functionality to disable commenting via XML-RPC and the REST API. Only commenting should be disabled.
-Existing functionality should be maintained.
+Analyze the codebase and look for opportunities to gather useful data. This plugin assists content
+creators with creating things like captions. Information like this could be useful for tracking hashtag usage.
+We need to keep things like GDPR concerns in mind but if there's some way to gather anonymous data I think
+that's something we should consider.
 
 # Project Context
 

@@ -9,7 +9,7 @@ defined( 'ABSPATH' ) || exit;
 
 class RWP_Creator_Suite_Caption_Admin_Settings {
 
-    private $settings_page = 'rwp-caption-writer-settings';
+    private $settings_page = 'rwp-caption-writer';
     private $settings_group = 'rwp_caption_writer_settings';
     private $menu_slug = 'rwp-caption-writer';
     private $key_manager;
@@ -18,9 +18,9 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
      * Initialize admin settings.
      */
     public function init() {
-        add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
-        add_action( 'admin_init', array( $this, 'register_settings' ) );
-        add_action( 'admin_init', array( $this, 'init_key_manager' ) );
+        add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 20 );
+        add_action( 'admin_init', array( $this, 'init_key_manager' ), 5 );
+        add_action( 'admin_init', array( $this, 'register_settings' ), 10 );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
     }
     
@@ -49,8 +49,13 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
      * Add admin menu page.
      */
     public function add_admin_menu() {
+        // Only add menu if user has capability
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        
         add_submenu_page(
-            'options-general.php',
+            'rwp-creator-tools',
             __( 'Caption Writer AI Settings', 'rwp-creator-suite' ),
             __( 'Caption Writer', 'rwp-creator-suite' ),
             'manage_options',
@@ -63,6 +68,10 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
      * Register settings and fields.
      */
     public function register_settings() {
+        // Only register settings if user has capability
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
         // Register setting groups
         register_setting( $this->settings_group, 'rwp_creator_suite_ai_provider', array(
             'type' => 'string',

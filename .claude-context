@@ -1,7 +1,5 @@
 # Task
-Create a top-level option page for this plugin in WordPress admin. Use the "dashicons-admin-tools" icon
-and put it at position "4" in the menu. It will be called RWP Creator Tools and we'll nest additional
-settings pages under it.
+Examine the WordPress option pages created by this plugin and fix the errors in their registration.
 
 # Project Context
 

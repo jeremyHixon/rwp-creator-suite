@@ -24,7 +24,7 @@ class RWP_Creator_Suite_Admin_Page {
      * Initialize the admin page.
      */
     public function init() {
-        add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
+        add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 10 );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
     }
 
@@ -32,6 +32,11 @@ class RWP_Creator_Suite_Admin_Page {
      * Add the main admin menu page.
      */
     public function add_admin_menu() {
+        // Only add menu if user has capability
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        
         add_menu_page(
             __( 'RWP Creator Tools', 'rwp-creator-suite' ),
             __( 'RWP Creator Tools', 'rwp-creator-suite' ),
@@ -40,6 +45,16 @@ class RWP_Creator_Suite_Admin_Page {
             array( $this, 'render_admin_page' ),
             'dashicons-admin-tools',
             4
+        );
+
+        // Add the dashboard as the first submenu item to ensure proper URL structure
+        add_submenu_page(
+            $this->menu_slug,
+            __( 'Dashboard', 'rwp-creator-suite' ),
+            __( 'Dashboard', 'rwp-creator-suite' ),
+            'manage_options',
+            $this->menu_slug,
+            array( $this, 'render_admin_page' )
         );
     }
 
@@ -72,7 +87,7 @@ class RWP_Creator_Suite_Admin_Page {
                         <h3><?php esc_html_e( 'Quick Actions', 'rwp-creator-suite' ); ?></h3>
                         <div class="rwp-action-buttons">
                             <?php if ( current_user_can( 'manage_options' ) ) : ?>
-                                <a href="<?php echo esc_url( admin_url( 'options-general.php?page=rwp-caption-writer' ) ); ?>" class="button button-primary">
+                                <a href="<?php echo esc_url( admin_url( 'admin.php?page=rwp-caption-writer' ) ); ?>" class="button button-primary">
                                     <?php esc_html_e( 'Configure AI Settings', 'rwp-creator-suite' ); ?>
                                 </a>
                             <?php endif; ?>

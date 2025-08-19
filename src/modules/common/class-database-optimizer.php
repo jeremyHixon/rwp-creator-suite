@@ -681,17 +681,17 @@ class RWP_Creator_Suite_Database_Optimizer {
         $suggestions = array();
 
         // Check for missing indexes
-        if ( strpos( $query_data['sql_text'], 'WHERE' ) !== false ) {
+        if ( str_contains( $query_data['sql_text'] ?? '', 'WHERE' ) ) {
             $suggestions[] = 'Consider adding indexes on WHERE clause columns';
         }
 
         // Check for inefficient JOINs
-        if ( strpos( $query_data['sql_text'], 'JOIN' ) !== false ) {
+        if ( str_contains( $query_data['sql_text'] ?? '', 'JOIN' ) ) {
             $suggestions[] = 'Review JOIN conditions and ensure proper indexing';
         }
 
         // Check for SELECT *
-        if ( strpos( $query_data['sql_text'], 'SELECT *' ) !== false ) {
+        if ( str_contains( $query_data['sql_text'] ?? '', 'SELECT *' ) ) {
             $suggestions[] = 'Avoid SELECT * - specify only needed columns';
         }
 

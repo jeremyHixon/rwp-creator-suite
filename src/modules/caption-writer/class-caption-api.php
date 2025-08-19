@@ -642,7 +642,7 @@ class RWP_Creator_Suite_Caption_API {
      */
     public function add_api_cache_headers( $served, $result, $request, $server ) {
         // Only apply to our plugin's API endpoints
-        if ( strpos( $request->get_route(), $this->namespace ) !== 0 ) {
+        if ( ! str_starts_with( $request->get_route() ?? '', $this->namespace ) ) {
             return $served;
         }
         
@@ -651,20 +651,20 @@ class RWP_Creator_Suite_Caption_API {
         
         // Different cache strategies for different endpoints
         if ( $method === 'GET' ) {
-            if ( strpos( $route, '/favorites' ) !== false ) {
+            if ( str_contains( $route ?? '', '/favorites' ) ) {
                 // User favorites - short cache, private
                 header( 'Cache-Control: private, max-age=300' ); // 5 minutes
                 header( 'Vary: Authorization' );
-            } elseif ( strpos( $route, '/quota' ) !== false ) {
+            } elseif ( str_contains( $route ?? '', '/quota' ) ) {
                 // Quota status - very short cache
                 header( 'Cache-Control: private, max-age=60' ); // 1 minute
                 header( 'Vary: Authorization' );
-            } elseif ( strpos( $route, '/preferences' ) !== false ) {
+            } elseif ( str_contains( $route ?? '', '/preferences' ) ) {
                 // User preferences - short cache, private
                 header( 'Cache-Control: private, max-age=600' ); // 10 minutes
                 header( 'Vary: Authorization' );
             }
-        } elseif ( $method === 'POST' && strpos( $route, '/captions/generate' ) !== false ) {
+        } elseif ( $method === 'POST' && str_contains( $route ?? '', '/captions/generate' ) ) {
             // Caption generation - cacheable for same requests
             if ( isset( $result->data['meta']['cached'] ) && $result->data['meta']['cached'] ) {
                 // Cached response - longer cache

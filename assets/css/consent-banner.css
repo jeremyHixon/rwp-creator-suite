@@ -1,0 +1,326 @@
+/**
+ * Consent Banner Styles
+ * 
+ * Styles for the analytics consent banner and related components.
+ */
+
+/* Consent Banner */
+.rwp-consent-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border-top: 3px solid #0073aa;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 999999;
+    transform: translateY(100%);
+    transition: transform 0.3s ease-in-out;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.rwp-consent-banner.rwp-consent-banner-visible {
+    transform: translateY(0);
+}
+
+.rwp-consent-banner-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.rwp-consent-banner-text {
+    flex: 1;
+    min-width: 300px;
+}
+
+.rwp-consent-banner-title {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #23282d;
+    line-height: 1.3;
+}
+
+.rwp-consent-banner-message {
+    margin: 0;
+    font-size: 14px;
+    color: #555;
+    line-height: 1.5;
+}
+
+.rwp-consent-banner-buttons {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.rwp-consent-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+    line-height: 1;
+}
+
+.rwp-consent-accept {
+    background: #0073aa;
+    color: #fff;
+}
+
+.rwp-consent-accept:hover {
+    background: #005a87;
+}
+
+.rwp-consent-decline {
+    background: #f1f1f1;
+    color: #555;
+}
+
+.rwp-consent-decline:hover {
+    background: #e0e0e0;
+}
+
+.rwp-consent-learn-more {
+    color: #0073aa;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+.rwp-consent-learn-more:hover {
+    text-decoration: underline;
+}
+
+/* Confirmation Messages */
+.rwp-consent-confirmation,
+.rwp-consent-error {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 1000000;
+    max-width: 400px;
+    animation: rwpSlideIn 0.3s ease-out;
+}
+
+.rwp-consent-confirmation.rwp-consent-positive {
+    border-left: 4px solid #46b450;
+}
+
+.rwp-consent-confirmation.rwp-consent-neutral {
+    border-left: 4px solid #00a0d2;
+}
+
+.rwp-consent-error {
+    border-left: 4px solid #dc3232;
+}
+
+.rwp-consent-confirmation-content,
+.rwp-consent-error-content {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.rwp-consent-confirmation-icon,
+.rwp-consent-error-icon {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.rwp-consent-confirmation.rwp-consent-positive .rwp-consent-confirmation-icon {
+    color: #46b450;
+}
+
+.rwp-consent-confirmation.rwp-consent-neutral .rwp-consent-confirmation-icon {
+    color: #00a0d2;
+}
+
+.rwp-consent-error-icon {
+    color: #dc3232;
+}
+
+.rwp-consent-confirmation-text,
+.rwp-consent-error-text {
+    flex: 1;
+    font-size: 14px;
+    color: #23282d;
+    line-height: 1.4;
+}
+
+.rwp-consent-confirmation-close,
+.rwp-consent-error-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #666;
+    cursor: pointer;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.rwp-consent-confirmation-close:hover,
+.rwp-consent-error-close:hover {
+    color: #000;
+}
+
+/* Settings Page Styles */
+.rwp-consent-settings {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    border-radius: 4px;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+.rwp-consent-settings h4 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    color: #23282d;
+}
+
+.rwp-consent-settings p {
+    margin: 0 0 16px 0;
+    color: #555;
+    line-height: 1.5;
+}
+
+.rwp-consent-settings-buttons {
+    margin: 16px 0;
+}
+
+.rwp-consent-settings-buttons .button {
+    margin-right: 10px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .rwp-consent-banner-content {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+        padding: 16px;
+    }
+
+    .rwp-consent-banner-text {
+        min-width: auto;
+    }
+
+    .rwp-consent-banner-buttons {
+        justify-content: center;
+    }
+
+    .rwp-consent-button {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    .rwp-consent-confirmation,
+    .rwp-consent-error {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .rwp-consent-banner-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .rwp-consent-learn-more {
+        margin-left: 0;
+        text-align: center;
+        display: block;
+        margin-top: 8px;
+    }
+}
+
+/* Animations */
+@keyframes rwpSlideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .rwp-consent-banner {
+        border-top-width: 5px;
+    }
+    
+    .rwp-consent-button {
+        border: 2px solid transparent;
+    }
+    
+    .rwp-consent-accept {
+        border-color: #fff;
+    }
+    
+    .rwp-consent-decline {
+        border-color: #555;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .rwp-consent-banner {
+        transition: none;
+    }
+    
+    .rwp-consent-confirmation,
+    .rwp-consent-error {
+        animation: none;
+    }
+}
+
+/* Admin-specific adjustments */
+.wp-admin .rwp-consent-banner {
+    bottom: 32px; /* Account for admin bar */
+}
+
+@media screen and (max-width: 782px) {
+    .wp-admin .rwp-consent-banner {
+        bottom: 46px; /* Account for mobile admin bar */
+    }
+}
+
+/* Focus styles for accessibility */
+.rwp-consent-button:focus,
+.rwp-consent-learn-more:focus {
+    outline: 2px solid #005fcc;
+    outline-offset: 2px;
+}
+
+.rwp-consent-confirmation-close:focus,
+.rwp-consent-error-close:focus {
+    outline: 2px solid #005fcc;
+    outline-offset: 1px;
+}

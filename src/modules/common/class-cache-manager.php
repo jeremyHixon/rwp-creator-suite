@@ -368,7 +368,7 @@ class RWP_Creator_Suite_Cache_Manager {
 
         // Clear memory cache
         foreach ( $this->memory_cache as $key => $data ) {
-            if ( 0 === strpos( $key, $prefix ) ) {
+            if ( str_starts_with( $key, $prefix ) ) {
                 unset( $this->memory_cache[ $key ] );
                 $invalidated++;
             }

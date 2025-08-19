@@ -123,12 +123,12 @@ class RWP_Creator_Suite_Redirect_Handler {
         }
 
         // Exclude admin pages
-        if ( isset( $parsed_url['path'] ) && strpos( $parsed_url['path'], '/wp-admin' ) !== false ) {
+        if ( isset( $parsed_url['path'] ) && str_contains( $parsed_url['path'], '/wp-admin' ) ) {
             return false;
         }
 
         // Exclude login pages
-        if ( isset( $parsed_url['path'] ) && strpos( $parsed_url['path'], '/wp-login' ) !== false ) {
+        if ( isset( $parsed_url['path'] ) && str_contains( $parsed_url['path'], '/wp-login' ) ) {
             return false;
         }
 
@@ -158,7 +158,7 @@ class RWP_Creator_Suite_Redirect_Handler {
         $path = isset( $parsed_url['path'] ) ? trim( $parsed_url['path'], '/' ) : '';
 
         foreach ( $auth_pages as $auth_page ) {
-            if ( strpos( $path, $auth_page ) !== false ) {
+            if ( str_contains( $path, $auth_page ) ) {
                 return true;
             }
         }
@@ -229,7 +229,7 @@ class RWP_Creator_Suite_Redirect_Handler {
         $path = isset( $parsed_url['path'] ) ? $parsed_url['path'] : '';
 
         foreach ( $core_paths as $core_path ) {
-            if ( strpos( $path, $core_path ) !== false ) {
+            if ( str_contains( $path, $core_path ) ) {
                 return true;
             }
         }
@@ -265,7 +265,7 @@ class RWP_Creator_Suite_Redirect_Handler {
         );
 
         foreach ( $excluded_patterns as $pattern ) {
-            if ( strpos( $path, $pattern ) !== false ) {
+            if ( str_contains( $path, $pattern ) ) {
                 return false;
             }
         }

@@ -113,7 +113,7 @@ class RWP_Creator_Suite_Network_Utils {
      * @return bool True if the IP is within the range.
      */
     public static function ip_in_range( $ip, $range ) {
-        if ( strpos( $range, '/' ) === false ) {
+        if ( ! str_contains( $range ?? '', '/' ) ) {
             return $ip === $range;
         }
         

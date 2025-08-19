@@ -538,7 +538,7 @@ class RWP_Creator_Suite_Block_Manager {
      */
     public function add_asset_caching_headers() {
         // Only apply to plugin assets
-        if ( strpos( $_SERVER['REQUEST_URI'], '/wp-content/plugins/rwp-creator-suite/assets/' ) !== false ) {
+        if ( isset( $_SERVER['REQUEST_URI'] ) && str_contains( $_SERVER['REQUEST_URI'], '/wp-content/plugins/rwp-creator-suite/assets/' ) ) {
             // Set immutable cache headers for plugin assets
             header( 'Cache-Control: public, max-age=31536000, immutable' );
             header( 'Expires: ' . gmdate( 'D, d M Y H:i:s', time() + YEAR_IN_SECONDS ) . ' GMT' );

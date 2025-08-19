@@ -48,12 +48,12 @@ class RWP_Creator_Suite_Key_Manager {
         }
         
         // Handle fallback encoding
-        if ( strpos( $encrypted_key, 'fallback:' ) === 0 ) {
+        if ( str_starts_with( $encrypted_key, 'fallback:' ) ) {
             return base64_decode( substr( $encrypted_key, 9 ) );
         }
         
         // Handle encrypted data
-        if ( strpos( $encrypted_key, 'encrypted:' ) === 0 ) {
+        if ( str_starts_with( $encrypted_key, 'encrypted:' ) ) {
             $data = base64_decode( substr( $encrypted_key, 10 ) );
             if ( false === $data ) {
                 return '';

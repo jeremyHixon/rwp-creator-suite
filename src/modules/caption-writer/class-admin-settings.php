@@ -811,7 +811,7 @@ class RWP_Creator_Suite_Caption_Admin_Settings {
      * Enqueue admin scripts.
      */
     public function enqueue_admin_scripts( $hook ) {
-        if ( strpos( $hook, $this->menu_slug ) === false ) {
+        if ( ! str_contains( $hook ?? '', $this->menu_slug ) ) {
             return;
         }
         

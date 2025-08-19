@@ -47,6 +47,10 @@ class RWP_Creator_Suite {
     private $repurposer_api;
     private $comment_security;
     private $admin_page;
+    private $analytics;
+    private $consent_manager;
+    private $hashtag_tracker;
+    private $analytics_api;
 
     /**
      * Get single instance of the plugin.
@@ -105,6 +109,12 @@ class RWP_Creator_Suite {
         $this->comment_security = new RWP_Creator_Suite_Comment_Security();
         $this->admin_page = new RWP_Creator_Suite_Admin_Page();
 
+        // Initialize Analytics Module - Phase 1 Data Collection
+        $this->analytics = RWP_Creator_Suite_Anonymous_Analytics::get_instance();
+        $this->consent_manager = RWP_Creator_Suite_Consent_Manager::get_instance();
+        $this->hashtag_tracker = new RWP_Creator_Suite_Hashtag_Tracker();
+        $this->analytics_api = new RWP_Creator_Suite_Analytics_API();
+
         // Initialize all components
         $this->wp_login_integration->init();
         $this->subscriber_restrictions->init();
@@ -116,6 +126,12 @@ class RWP_Creator_Suite {
         $this->repurposer_api->init();
         $this->comment_security->init();
         $this->admin_page->init();
+
+        // Initialize Analytics components
+        $this->analytics->init();
+        $this->consent_manager->init();
+        $this->hashtag_tracker->init();
+        $this->analytics_api->init();
 
         // Additional hooks
         add_action( 'init', array( $this, 'load_textdomain' ) );
@@ -131,6 +147,9 @@ class RWP_Creator_Suite {
      * Load plugin dependencies.
      */
     private function load_dependencies() {
+        // PHP Compatibility functions for older PHP versions
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/php-compatibility.php';
+        
         // Common Module - Core Services
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-error-logger.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/class-network-utils.php';
@@ -185,6 +204,12 @@ class RWP_Creator_Suite {
 
         // Admin Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/admin/class-admin-page.php';
+
+        // Analytics Module - Phase 1 Data Collection
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-anonymous-analytics.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-consent-manager.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-hashtag-tracker.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-analytics-api.php';
 
         // Shortcodes Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/class-shortcodes.php';

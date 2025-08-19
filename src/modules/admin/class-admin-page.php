@@ -208,7 +208,7 @@ class RWP_Creator_Suite_Admin_Page {
      */
     public function enqueue_admin_scripts( $hook ) {
         // Only load on our admin page
-        if ( strpos( $hook, $this->menu_slug ) === false ) {
+        if ( ! str_contains( $hook ?? '', $this->menu_slug ) ) {
             return;
         }
 

@@ -685,7 +685,7 @@ class RWP_Creator_Suite_Content_Repurposer_API {
      */
     public function add_api_cache_headers( $served, $result, $request, $server ) {
         // Only apply to our plugin's API endpoints
-        if ( strpos( $request->get_route(), 'rwp-creator-suite/v1' ) !== 0 ) {
+        if ( ! str_starts_with( $request->get_route() ?? '', 'rwp-creator-suite/v1' ) ) {
             return $served;
         }
         
@@ -693,7 +693,7 @@ class RWP_Creator_Suite_Content_Repurposer_API {
         $method = $request->get_method();
         
         // Content repurposing endpoint
-        if ( $method === 'POST' && strpos( $route, '/repurpose-content' ) !== false ) {
+        if ( $method === 'POST' && str_contains( $route ?? '', '/repurpose-content' ) ) {
             // Check if this is a guest request or cached response
             $is_guest = $request->get_param( 'is_guest' ) === true;
             

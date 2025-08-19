@@ -520,6 +520,7 @@ class RWP_Creator_Suite_Block_Manager {
                     'consentEnabled' => __( 'Advanced analytics enabled', 'rwp-creator-suite' ),
                     'consentDisabled' => __( 'Advanced analytics disabled', 'rwp-creator-suite' ),
                     'updateConsent' => __( 'Update Consent', 'rwp-creator-suite' ),
+                    'updateProfile' => __( 'Update Profile', 'rwp-creator-suite' ),
                 ),
             )
         );

@@ -1,5 +1,5 @@
 # Task
-Analyze the account-manager block (src/blocks/account-manager) to identify why the fields in the "Profile Settings" tab aren't being populated. They appear to be stuck loading.
+Analyze the account-manager block (src/blocks/account-manager) to identify why the "Enable advanced analytics features for personalized insights" checkbox isn't toggled on when the user has checked the consent box during registration.
 
 # Project Context
 

@@ -62,6 +62,11 @@ class RWPAccountManager {
                 e.preventDefault();
                 this.handleConsentUpdate(e.target);
             }
+            
+            if (e.target.classList.contains('rwp-profile-form')) {
+                e.preventDefault();
+                this.handleProfileUpdate(e.target);
+            }
         });
     }
     
@@ -202,7 +207,7 @@ class RWPAccountManager {
                                 <input type="checkbox" 
                                        name="advanced_features_consent" 
                                        value="1" 
-                                       ${currentConsent === true ? 'checked' : ''}>
+                                       ${(currentConsent === true || currentConsent === 1 || currentConsent === '1') ? 'checked' : ''}>
                                 <span class="rwp-toggle-slider"></span>
                                 <span class="rwp-toggle-text">
                                     Enable advanced analytics features for personalized insights
@@ -238,22 +243,26 @@ class RWPAccountManager {
             <div class="rwp-profile-view">
                 <h2>${this.data.strings.profileSettings}</h2>
                 <div class="rwp-profile-card">
-                    <h3>Profile Information</h3>
-                    <p>Profile management features will be available here in future updates.</p>
-                    <div class="rwp-profile-placeholder">
-                        <div class="rwp-placeholder-item">
-                            <label>Display Name</label>
-                            <div class="rwp-placeholder-input"></div>
-                        </div>
-                        <div class="rwp-placeholder-item">
-                            <label>Email Preferences</label>
-                            <div class="rwp-placeholder-input"></div>
-                        </div>
-                        <div class="rwp-placeholder-item">
-                            <label>Notification Settings</label>
-                            <div class="rwp-placeholder-input"></div>
-                        </div>
+                    <div class="rwp-profile-loading">
+                        <div class="rwp-loading-spinner"></div>
+                        <p>${this.data.strings.loading}</p>
                     </div>
+                    <form class="rwp-profile-form hidden">
+                        <div class="rwp-form-group">
+                            <label for="profile-display-name">Display Name</label>
+                            <input type="text" id="profile-display-name" name="display_name" required>
+                        </div>
+                        <div class="rwp-form-group">
+                            <label for="profile-email">Email Address</label>
+                            <input type="email" id="profile-email" name="user_email" required>
+                        </div>
+                        <div class="rwp-profile-actions">
+                            <button type="submit" class="primary">
+                                ${this.data.strings.updateProfile || 'Update Profile'}
+                            </button>
+                        </div>
+                        <div class="rwp-profile-status hidden"></div>
+                    </form>
                 </div>
             </div>
         `;
@@ -283,6 +292,11 @@ class RWPAccountManager {
             // Get the config from this specific container
             const config = JSON.parse(targetContainer.dataset.config || '{}');
             contentContainer.innerHTML = this.renderCurrentView(config);
+            
+            // Load profile data if switching to profile view
+            if (view === 'profile') {
+                this.loadProfileData(targetContainer);
+            }
         }
     }
     
@@ -341,6 +355,106 @@ class RWPAccountManager {
             console.error('Consent update error:', error);
             statusDiv.className = 'rwp-consent-status error';
             statusDiv.textContent = this.data.strings.error;
+        } finally {
+            submitButton.disabled = false;
+        }
+    }
+
+    async loadProfileData(containerElement) {
+        const loadingDiv = containerElement.querySelector('.rwp-profile-loading');
+        const formDiv = containerElement.querySelector('.rwp-profile-form');
+        
+        if (!loadingDiv || !formDiv) {
+            console.warn('Profile loading elements not found');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${this.data.restUrl}account/profile`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': this.data.nonce,
+                },
+                credentials: 'same-origin',
+            });
+
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                // Populate form fields
+                const displayNameInput = formDiv.querySelector('#profile-display-name');
+                const emailInput = formDiv.querySelector('#profile-email');
+
+                if (displayNameInput && emailInput) {
+                    displayNameInput.value = result.data.display_name || '';
+                    emailInput.value = result.data.user_email || '';
+                }
+
+                // Show form, hide loading
+                loadingDiv.style.display = 'none';
+                formDiv.classList.remove('hidden');
+            } else {
+                throw new Error(result.message || 'Failed to load profile data');
+            }
+
+        } catch (error) {
+            console.error('Profile data loading error:', error);
+            loadingDiv.innerHTML = `
+                <div class="rwp-error">
+                    <p>Failed to load profile data. Please try again.</p>
+                    <button type="button" onclick="window.location.reload()">Reload</button>
+                </div>
+            `;
+        }
+    }
+
+    async handleProfileUpdate(form) {
+        const formData = new FormData(form);
+        const displayName = formData.get('display_name');
+        const userEmail = formData.get('user_email');
+        
+        const statusDiv = form.querySelector('.rwp-profile-status');
+        const submitButton = form.querySelector('button[type="submit"]');
+        
+        // Show loading state
+        statusDiv.className = 'rwp-profile-status loading';
+        statusDiv.textContent = this.data.strings.saving;
+        submitButton.disabled = true;
+        
+        try {
+            const response = await fetch(`${this.data.restUrl}account/profile`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-WP-Nonce': this.data.nonce,
+                },
+                body: JSON.stringify({
+                    display_name: displayName,
+                    user_email: userEmail
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Show success message
+                statusDiv.className = 'rwp-profile-status success';
+                statusDiv.textContent = this.data.strings.saved;
+                
+                // Hide status after 3 seconds
+                setTimeout(() => {
+                    statusDiv.className = 'rwp-profile-status hidden';
+                }, 3000);
+                
+            } else {
+                throw new Error(result.message || 'Update failed');
+            }
+            
+        } catch (error) {
+            console.error('Profile update error:', error);
+            statusDiv.className = 'rwp-profile-status error';
+            statusDiv.textContent = error.message || this.data.strings.error;
         } finally {
             submitButton.disabled = false;
         }

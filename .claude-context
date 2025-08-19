@@ -1,5 +1,5 @@
 # Task
-Perform the task in docs/analytics-phase-1-data-collection.md
+Add a "consent" checkbox to the built-in WordPress registration form. We have already minimized the form to just be an email field and I don't want to change that. I just want to add the one new checkbox. This "advanced_features_consent" checkbox fill be labeled with "Yes, I would like to enable advanced analytics features to get more personalized reports and insights". It will need to be managed as "user meta" as it will be referenced throughout the rest of the development work.
 
 # Project Context
 

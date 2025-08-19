@@ -7,6 +7,20 @@
 - **Guest vs authenticated** response patterns
 - **Cache-friendly headers** for guest content
 
+## API Design Analysis Phase
+
+Before writing any endpoints, complete this analysis:
+- [ ] Document all client-side data needs
+- [ ] Design complete request/response schemas
+- [ ] Plan authentication and permission requirements
+- [ ] Map all error scenarios and responses
+- [ ] Design caching strategies for each endpoint
+- [ ] Define rate limiting requirements
+- [ ] Document all validation rules
+- [ ] Plan API versioning strategy
+- [ ] Map guest vs authenticated endpoint differences
+- [ ] Document all WordPress hook integration points
+
 ## API Structure
 
 ### Endpoint Registration

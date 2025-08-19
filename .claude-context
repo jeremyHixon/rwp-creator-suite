@@ -30,6 +30,35 @@
 - **Feature flags**: Use feature toggles for experimental functionality
 - **Database migrations**: Only add columns/tables, never remove without explicit instruction
 
+## Pre-Implementation Analysis Protocol
+
+### Analysis-First Development Workflow
+- **Phase 1: Complete Requirements Analysis** (MANDATORY before any code)
+  - Define all user stories and edge cases
+  - Map complete data flow (guest → localStorage → authenticated → database)
+  - Document all API endpoints needed (with request/response schemas)
+  - Identify all admin pages and their relationships to main dashboard
+  - List all blocks/components and their state dependencies
+
+- **Phase 2: Architecture Design** (MANDATORY before any implementation)
+  - Choose storage strategy (localStorage vs database vs hybrid)
+  - Design complete state management flow
+  - Plan block isolation and styling approach
+  - Map all WordPress hooks and filters needed
+  - Document security/permission requirements
+
+- **Phase 3: Implementation Agreement** (MANDATORY checkpoint)
+  - Review complete analysis with stakeholder
+  - Confirm no additional features will be added mid-sprint
+  - Lock scope and begin implementation
+  - Document any assumptions made during analysis
+
+### Anti-Waste Development Rules
+1. **No Code Until Analysis Complete** - Writing code before full analysis leads to rewrites
+2. **No Assumptions During Implementation** - All decisions must be made in analysis phase
+3. **No Feature Creep Mid-Sprint** - New requirements trigger new analysis phase
+4. **No "We'll Figure It Out Later"** - All unknowns resolved before implementation
+
 ### Admin Interface Organization
 - **Single Top-Level Menu**: The plugin uses one top-level menu with slug `'rwp-creator-tools'` (see `src/modules/admin/class-admin-page.php`)
 - **Nested Sub-Pages**: All admin option pages MUST be nested under `'rwp-creator-tools'` using `add_submenu_page()`

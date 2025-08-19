@@ -1,5 +1,5 @@
 # Task
-Add a "consent" checkbox to the built-in WordPress registration form. We have already minimized the form to just be an email field and I don't want to change that. I just want to add the one new checkbox. This "advanced_features_consent" checkbox fill be labeled with "Yes, I would like to enable advanced analytics features to get more personalized reports and insights". It will need to be managed as "user meta" as it will be referenced throughout the rest of the development work.
+Create a new block/application. This will serve as an account interface for subscribers. The first of may interatcions will be to manage their consent for advanced features. The first instance of this is in the user registration form (src/modules/user-registration/class-registration-consent-handler.php). But this will serve as a way to manage it once the user has registered and logged in.
 
 # Project Context
 

@@ -1,5 +1,5 @@
 # Task
-{task goes here}
+Analyze the account-manager block (src/blocks/account-manager) to identify why the fields in the "Profile Settings" tab aren't being populated. They appear to be stuck loading.
 
 # Project Context
 

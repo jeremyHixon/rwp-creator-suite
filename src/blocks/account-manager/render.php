@@ -7,19 +7,26 @@
 
 defined( 'ABSPATH' ) || exit;
 
+// Ensure we have default attributes
+$block_attributes = wp_parse_args( $attributes, array(
+    'viewType' => 'dashboard',
+    'showConsentSettings' => true,
+    'allowGuestView' => false,
+) );
+
 $wrapper_attributes = get_block_wrapper_attributes( array(
     'id' => 'rwp-account-manager-' . wp_unique_id(),
-    'data-view-type' => $attributes['viewType'] ?? 'dashboard',
-    'data-show-consent' => isset( $attributes['showConsentSettings'] ) && $attributes['showConsentSettings'] ? '1' : '0',
-    'data-allow-guest' => isset( $attributes['allowGuestView'] ) && $attributes['allowGuestView'] ? '1' : '0',
-    'data-config' => wp_json_encode( $attributes ),
+    'data-view-type' => $block_attributes['viewType'],
+    'data-show-consent' => $block_attributes['showConsentSettings'] ? '1' : '0',
+    'data-allow-guest' => $block_attributes['allowGuestView'] ? '1' : '0',
+    'data-config' => wp_json_encode( $block_attributes ),
 ) );
 
 ?>
 <div <?php echo $wrapper_attributes; ?>>
     <div class="rwp-account-manager-container">
         <?php if ( ! is_user_logged_in() ) : ?>
-            <?php if ( isset( $attributes['allowGuestView'] ) && $attributes['allowGuestView'] ) : ?>
+            <?php if ( $block_attributes['allowGuestView'] ) : ?>
                 <div class="rwp-login-prompt">
                     <h3><?php esc_html_e( 'Account Access Required', 'rwp-creator-suite' ); ?></h3>
                     <p><?php esc_html_e( 'Please log in or register to access your account settings and manage your preferences.', 'rwp-creator-suite' ); ?></p>

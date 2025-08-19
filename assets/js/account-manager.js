@@ -50,7 +50,9 @@ class RWPAccountManager {
             if (e.target.classList.contains('rwp-account-tab')) {
                 e.preventDefault();
                 const view = e.target.dataset.view;
-                this.switchView(view);
+                // Find which container this tab belongs to
+                const containerElement = e.target.closest('[id^="rwp-account-manager-"]');
+                this.switchView(view, containerElement);
             }
         });
         
@@ -257,18 +259,29 @@ class RWPAccountManager {
         `;
     }
     
-    switchView(view) {
+    switchView(view, targetContainer = null) {
         this.currentView = view;
         
-        // Update active tab
-        document.querySelectorAll('.rwp-account-tab').forEach(tab => {
+        // If no specific container is provided, find the first one (legacy behavior)
+        if (!targetContainer) {
+            targetContainer = document.querySelector('[id^="rwp-account-manager-"]');
+        }
+        
+        if (!targetContainer) {
+            console.warn('No target container found for switchView');
+            return;
+        }
+        
+        // Update active tab only within this container
+        targetContainer.querySelectorAll('.rwp-account-tab').forEach(tab => {
             tab.classList.toggle('active', tab.dataset.view === view);
         });
         
-        // Update content
-        const contentContainer = document.querySelector('.rwp-account-content');
+        // Update content only within this container
+        const contentContainer = targetContainer.querySelector('.rwp-account-content');
         if (contentContainer) {
-            const config = { showConsentSettings: true }; // Get from container data if needed
+            // Get the config from this specific container
+            const config = JSON.parse(targetContainer.dataset.config || '{}');
             contentContainer.innerHTML = this.renderCurrentView(config);
         }
     }
@@ -314,9 +327,9 @@ class RWPAccountManager {
                 
                 // Update dashboard if it's visible
                 if (document.querySelector('.rwp-dashboard-view')) {
-                    const dashboardContainer = document.querySelector('.rwp-account-manager-container');
-                    if (dashboardContainer) {
-                        this.switchView('dashboard');
+                    const blockContainer = form.closest('[id^="rwp-account-manager-"]');
+                    if (blockContainer) {
+                        this.switchView('dashboard', blockContainer);
                     }
                 }
                 

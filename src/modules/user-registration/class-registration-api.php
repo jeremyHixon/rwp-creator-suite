@@ -63,6 +63,12 @@ class RWP_Creator_Suite_Registration_API {
                         'sanitize_callback' => 'esc_url_raw',
                         'description'       => 'URL to redirect to after registration',
                     ),
+                    'advanced_features_consent' => array(
+                        'required'          => false,
+                        'validate_callback' => 'rest_validate_request_arg',
+                        'sanitize_callback' => 'rest_sanitize_boolean',
+                        'description'       => 'Consent for advanced analytics features',
+                    ),
                     'nonce' => array(
                         'required'          => false,
                         'sanitize_callback' => 'sanitize_text_field',
@@ -173,6 +179,7 @@ class RWP_Creator_Suite_Registration_API {
             $result = $this->user_registration->handle_registration_request( array(
                 'email'       => $request->get_param( 'email' ),
                 'redirect_to' => $request->get_param( 'redirect_to' ),
+                'advanced_features_consent' => $request->get_param( 'advanced_features_consent' ),
                 'nonce'       => $request->get_param( 'nonce' ),
             ) );
 

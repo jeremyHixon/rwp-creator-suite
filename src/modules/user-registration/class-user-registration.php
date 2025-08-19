@@ -46,9 +46,10 @@ class RWP_Creator_Suite_User_Registration {
      *
      * @param string $email The user's email address.
      * @param string $redirect_to Optional redirect URL after registration.
+     * @param bool   $consent Optional consent for advanced analytics features.
      * @return array|WP_Error Registration result or error.
      */
-    public function register_user( $email, $redirect_to = '' ) {
+    public function register_user( $email, $redirect_to = '', $consent = false ) {
         // Validate email
         $email = sanitize_email( $email );
         if ( ! is_email( $email ) ) {
@@ -110,6 +111,9 @@ class RWP_Creator_Suite_User_Registration {
         add_user_meta( $user_id, 'rwp_creator_suite_registration_method', 'email_only' );
         add_user_meta( $user_id, 'rwp_creator_suite_auto_login', true );
         add_user_meta( $user_id, 'rwp_creator_suite_original_url', sanitize_text_field( $redirect_to ) );
+        
+        // Store consent preference
+        add_user_meta( $user_id, 'advanced_features_consent', $consent ? 1 : 0 );
 
         // Fire after registration action
         do_action( 'rwp_creator_suite_after_user_registration', $user_id, array(
@@ -159,7 +163,8 @@ class RWP_Creator_Suite_User_Registration {
 
         $email = isset( $data['email'] ) ? sanitize_email( $data['email'] ) : '';
         $redirect_to = isset( $data['redirect_to'] ) ? esc_url_raw( $data['redirect_to'] ) : '';
+        $consent = isset( $data['advanced_features_consent'] ) ? (bool) $data['advanced_features_consent'] : false;
 
-        return $this->register_user( $email, $redirect_to );
+        return $this->register_user( $email, $redirect_to, $consent );
     }
 }

@@ -173,6 +173,7 @@ class RWP_Creator_Suite {
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/user-registration/class-username-generator.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/user-registration/class-rate-limiter.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/user-registration/class-user-registration.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/user-registration/class-registration-consent-handler.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/user-registration/class-registration-api.php';
 
         // User Authentication Module

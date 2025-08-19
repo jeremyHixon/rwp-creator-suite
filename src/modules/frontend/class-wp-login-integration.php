@@ -26,17 +26,28 @@ class RWP_Creator_Suite_WP_Login_Integration {
     private $redirect_handler;
 
     /**
+     * Consent handler instance.
+     *
+     * @var RWP_Creator_Suite_Registration_Consent_Handler
+     */
+    private $consent_handler;
+
+    /**
      * Constructor.
      */
     public function __construct() {
         $this->user_registration = new RWP_Creator_Suite_User_Registration();
         $this->redirect_handler = new RWP_Creator_Suite_Redirect_Handler();
+        $this->consent_handler = new RWP_Creator_Suite_Registration_Consent_Handler();
     }
 
     /**
      * Initialize WordPress login integration.
      */
     public function init() {
+        // Initialize consent handler
+        $this->consent_handler->init();
+        
         // Hook into WordPress registration process
         add_action( 'user_register', array( $this, 'handle_wp_registration' ), 10, 1 );
         
@@ -92,6 +103,8 @@ class RWP_Creator_Suite_WP_Login_Integration {
         }
         
         add_user_meta( $user_id, 'rwp_creator_suite_original_url', $redirect_to );
+
+        // Consent is handled by the Registration Consent Handler
 
         // Fire our custom action
         do_action( 'rwp_creator_suite_after_user_registration', $user_id, array(

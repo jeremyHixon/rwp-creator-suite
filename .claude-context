@@ -1,5 +1,5 @@
 # Task
-Analyze the account-manager block (src/blocks/account-manager) to identify why the "Enable advanced analytics features for personalized insights" checkbox isn't toggled on when the user has checked the consent box during registration.
+Analyze the codebase and determine if the foundations are in place to begin collecting the analytics data while still respecting GDPR and CCPA.
 
 # Project Context
 

@@ -177,8 +177,9 @@ class RWP_Creator_Suite_Anonymous_Analytics {
         
         // Check for logged-in user preference
         if ( is_user_logged_in() ) {
-            $user_consent = get_user_meta( get_current_user_id(), 'rwp_analytics_consent', true );
-            if ( $user_consent === 'yes' ) {
+            $consent_key = RWP_Creator_Suite_Registration_Consent_Handler::get_consent_meta_key();
+            $user_consent = get_user_meta( get_current_user_id(), $consent_key, true );
+            if ( $user_consent == 1 || $user_consent === 'yes' ) {
                 $this->user_consented = true;
             }
         }
@@ -208,7 +209,8 @@ class RWP_Creator_Suite_Anonymous_Analytics {
         
         // Save preference for logged-in users
         if ( is_user_logged_in() ) {
-            update_user_meta( get_current_user_id(), 'rwp_analytics_consent', $consent ? 'yes' : 'no' );
+            $consent_key = RWP_Creator_Suite_Registration_Consent_Handler::get_consent_meta_key();
+            update_user_meta( get_current_user_id(), $consent_key, $consent ? 1 : 0 );
         }
     }
 

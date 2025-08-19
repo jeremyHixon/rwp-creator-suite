@@ -137,7 +137,7 @@ class RWPOptimizationEngine {
 ```php
 class RWP_Beta_Access_Manager {
     public function check_beta_eligibility($user_id) {
-        $consent_level = get_user_meta($user_id, 'rwp_analytics_consent', true);
+        $consent_level = get_user_meta($user_id, 'advanced_features_consent', true);
         $contribution_score = $this->calculate_contribution_score($user_id);
         
         return [

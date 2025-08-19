@@ -60,7 +60,7 @@ class RWP_GDPR_Consent_Manager {
             update_user_meta($user_id, 'rwp_gdpr_consent_record', $existing_consent);
             
             // Immediately stop data collection
-            update_user_meta($user_id, 'rwp_analytics_consent', false);
+            update_user_meta($user_id, 'advanced_features_consent', 0);
             
             // Schedule data deletion
             wp_schedule_single_event(
@@ -316,7 +316,7 @@ class RWP_Data_Erasure_Handler {
             'rwp_caption_preferences',
             'rwp_ai_total_usage',
             'rwp_gdpr_consent_record',
-            'rwp_analytics_consent'
+            'advanced_features_consent'
         ];
         
         foreach ($meta_keys as $meta_key) {

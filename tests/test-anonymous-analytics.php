@@ -118,16 +118,17 @@ class Test_Anonymous_Analytics extends WP_UnitTestCase {
         $user_id = 123;
         \Brain\Monkey\Functions\when( 'is_user_logged_in' )->justReturn( true );
         \Brain\Monkey\Functions\when( 'get_current_user_id' )->justReturn( $user_id );
+        $consent_key = 'advanced_features_consent';
         \Brain\Monkey\Functions\when( 'get_user_meta' )
-            ->with( $user_id, 'rwp_analytics_consent', true )
-            ->justReturn( 'yes' );
+            ->with( $user_id, $consent_key, true )
+            ->justReturn( 1 );
         
         $this->assertTrue( $this->analytics->user_has_consented() );
         
         // Test declining consent
         \Brain\Monkey\Functions\when( 'get_user_meta' )
-            ->with( $user_id, 'rwp_analytics_consent', true )
-            ->justReturn( 'no' );
+            ->with( $user_id, $consent_key, true )
+            ->justReturn( 0 );
         
         $this->assertFalse( $this->analytics->user_has_consented() );
     }

@@ -77,23 +77,25 @@ class Test_Consent_Manager extends WP_UnitTestCase {
         \Brain\Monkey\Functions\when( 'is_user_logged_in' )->justReturn( true );
         \Brain\Monkey\Functions\when( 'get_current_user_id' )->justReturn( $user_id );
         
+        $consent_key = 'advanced_features_consent';
+        
         // Test user consent given
         \Brain\Monkey\Functions\when( 'get_user_meta' )
-            ->with( $user_id, 'rwp_analytics_consent', true )
-            ->justReturn( 'yes' );
+            ->with( $user_id, $consent_key, true )
+            ->justReturn( 1 );
         
         $this->assertTrue( $this->consent_manager->has_user_consented() );
         
         // Test user consent declined
         \Brain\Monkey\Functions\when( 'get_user_meta' )
-            ->with( $user_id, 'rwp_analytics_consent', true )
-            ->justReturn( 'no' );
+            ->with( $user_id, $consent_key, true )
+            ->justReturn( 0 );
         
         $this->assertFalse( $this->consent_manager->has_user_consented() );
         
         // Test no user preference (should check cookie)
         \Brain\Monkey\Functions\when( 'get_user_meta' )
-            ->with( $user_id, 'rwp_analytics_consent', true )
+            ->with( $user_id, $consent_key, true )
             ->justReturn( '' );
         
         $_COOKIE[ RWP_Creator_Suite_Consent_Manager::CONSENT_COOKIE ] = 'yes';
@@ -217,11 +219,13 @@ class Test_Consent_Manager extends WP_UnitTestCase {
     public function test_consent_data_export() {
         $user_id = 123;
         
+        $consent_key = 'advanced_features_consent';
+        
         \Brain\Monkey\Functions\when( 'get_user_meta' )
-            ->with( $user_id, 'rwp_analytics_consent', true )
-            ->justReturn( 'yes' );
+            ->with( $user_id, $consent_key, true )
+            ->justReturn( 1 );
         \Brain\Monkey\Functions\when( 'get_user_meta' )
-            ->with( $user_id, 'rwp_analytics_consent_updated', true )
+            ->with( $user_id, $consent_key . '_updated', true )
             ->justReturn( '2023-01-01 12:00:00' );
         
         $export_data = $this->consent_manager->export_user_consent_data( $user_id );
@@ -237,9 +241,11 @@ class Test_Consent_Manager extends WP_UnitTestCase {
     public function test_consent_data_clearing() {
         $user_id = 123;
         
+        $consent_key = 'advanced_features_consent';
+        
         \Brain\Monkey\Functions\expect( 'delete_user_meta' )
             ->once()
-            ->with( $user_id, 'rwp_analytics_consent' );
+            ->with( $user_id, $consent_key );
         
         $this->consent_manager->clear_consent_data( $user_id );
     }

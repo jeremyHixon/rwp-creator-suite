@@ -298,10 +298,11 @@ class RWP_Creator_Suite_Consent_Manager {
     public function has_user_consented() {
         // Check logged-in user preference first
         if ( is_user_logged_in() ) {
-            $user_consent = get_user_meta( get_current_user_id(), 'rwp_analytics_consent', true );
-            if ( $user_consent === 'yes' ) {
+            $consent_key = RWP_Creator_Suite_Registration_Consent_Handler::get_consent_meta_key();
+            $user_consent = get_user_meta( get_current_user_id(), $consent_key, true );
+            if ( $user_consent == 1 || $user_consent === 'yes' ) {
                 return true;
-            } elseif ( $user_consent === 'no' ) {
+            } elseif ( $user_consent == 0 || $user_consent === 'no' ) {
                 return false;
             }
         }
@@ -337,7 +338,8 @@ class RWP_Creator_Suite_Consent_Manager {
         
         // Save preference for logged-in users
         if ( is_user_logged_in() ) {
-            update_user_meta( get_current_user_id(), 'rwp_analytics_consent', $consent_value );
+            $consent_key = RWP_Creator_Suite_Registration_Consent_Handler::get_consent_meta_key();
+            update_user_meta( get_current_user_id(), $consent_key, $consent ? 1 : 0 );
         }
         
         // Initialize analytics with new consent status
@@ -362,7 +364,8 @@ class RWP_Creator_Suite_Consent_Manager {
      * @param WP_User $user User object.
      */
     public function add_user_consent_field( $user ) {
-        $consent = get_user_meta( $user->ID, 'rwp_analytics_consent', true );
+        $consent_key = RWP_Creator_Suite_Registration_Consent_Handler::get_consent_meta_key();
+        $consent = get_user_meta( $user->ID, $consent_key, true );
         ?>
         <h3><?php esc_html_e( 'Analytics Preferences', 'rwp-creator-suite' ); ?></h3>
         <table class="form-table">
@@ -371,10 +374,10 @@ class RWP_Creator_Suite_Consent_Manager {
                 <td>
                     <label>
                         <input type="checkbox" 
-                               name="rwp_analytics_consent" 
-                               id="rwp_analytics_consent" 
-                               value="yes" 
-                               <?php checked( $consent, 'yes' ); ?> />
+                               name="<?php echo esc_attr( $consent_key ); ?>" 
+                               id="<?php echo esc_attr( $consent_key ); ?>" 
+                               value="1" 
+                               <?php checked( $consent, 1 ); ?> />
                         <?php esc_html_e( 'Allow anonymous analytics data collection to help improve the Creator Suite', 'rwp-creator-suite' ); ?>
                     </label>
                     <p class="description">
@@ -400,13 +403,14 @@ class RWP_Creator_Suite_Consent_Manager {
             return;
         }
 
-        $consent = isset( $_POST['rwp_analytics_consent'] ) && $_POST['rwp_analytics_consent'] === 'yes' ? 'yes' : 'no';
-        update_user_meta( $user_id, 'rwp_analytics_consent', $consent );
+        $consent_key = RWP_Creator_Suite_Registration_Consent_Handler::get_consent_meta_key();
+        $consent = isset( $_POST[ $consent_key ] ) && $_POST[ $consent_key ] === '1' ? 1 : 0;
+        update_user_meta( $user_id, $consent_key, $consent );
         
         // Update analytics system if this is the current user
         if ( $user_id === get_current_user_id() ) {
             $analytics = RWP_Creator_Suite_Anonymous_Analytics::get_instance();
-            $analytics->set_user_consent( $consent === 'yes' );
+            $analytics->set_user_consent( $consent === 1 );
         }
     }
 
@@ -419,11 +423,15 @@ class RWP_Creator_Suite_Consent_Manager {
         global $wpdb;
         
         // Count user meta consent preferences
+        $consent_key = RWP_Creator_Suite_Registration_Consent_Handler::get_consent_meta_key();
         $user_consents = $wpdb->get_results(
-            "SELECT meta_value, COUNT(*) as count 
-             FROM {$wpdb->usermeta} 
-             WHERE meta_key = 'rwp_analytics_consent' 
-             GROUP BY meta_value"
+            $wpdb->prepare(
+                "SELECT meta_value, COUNT(*) as count 
+                 FROM {$wpdb->usermeta} 
+                 WHERE meta_key = %s 
+                 GROUP BY meta_value",
+                $consent_key
+            )
         );
         
         $stats = array(
@@ -434,9 +442,9 @@ class RWP_Creator_Suite_Consent_Manager {
         
         foreach ( $user_consents as $consent ) {
             $stats['total_users_with_preference'] += $consent->count;
-            if ( $consent->meta_value === 'yes' ) {
+            if ( $consent->meta_value == 1 || $consent->meta_value === 'yes' ) {
                 $stats['consented_users'] = $consent->count;
-            } elseif ( $consent->meta_value === 'no' ) {
+            } elseif ( $consent->meta_value == 0 || $consent->meta_value === 'no' ) {
                 $stats['declined_users'] = $consent->count;
             }
         }
@@ -451,7 +459,8 @@ class RWP_Creator_Suite_Consent_Manager {
      */
     public function clear_consent_data( $user_id = null ) {
         if ( $user_id ) {
-            delete_user_meta( $user_id, 'rwp_analytics_consent' );
+            $consent_key = RWP_Creator_Suite_Registration_Consent_Handler::get_consent_meta_key();
+            delete_user_meta( $user_id, $consent_key );
         } else {
             // Clear current session cookies
             if ( ! headers_sent() ) {
@@ -468,11 +477,12 @@ class RWP_Creator_Suite_Consent_Manager {
      * @return array
      */
     public function export_user_consent_data( $user_id ) {
-        $consent = get_user_meta( $user_id, 'rwp_analytics_consent', true );
+        $consent_key = RWP_Creator_Suite_Registration_Consent_Handler::get_consent_meta_key();
+        $consent = get_user_meta( $user_id, $consent_key, true );
         
         return array(
-            'analytics_consent' => $consent ?: 'not_set',
-            'last_updated' => get_user_meta( $user_id, 'rwp_analytics_consent_updated', true ),
+            'analytics_consent' => $consent ? ($consent == 1 ? 'yes' : 'no') : 'not_set',
+            'last_updated' => get_user_meta( $user_id, $consent_key . '_updated', true ),
         );
     }
 }

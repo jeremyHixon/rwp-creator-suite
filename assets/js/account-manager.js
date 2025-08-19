@@ -11,7 +11,15 @@ class RWPAccountManager {
         this.containers = [];
         this.currentView = 'dashboard';
         
-        if (!this.data.isLoggedIn && !this.data.allowGuestView) {
+        // Debug logging to help troubleshoot
+        if (typeof console !== 'undefined' && console.log) {
+            console.log('RWPAccountManager initialized with data:', this.data);
+        }
+        
+        // Only exit early if we have explicit data showing user is not logged in
+        // The PHP template handles the guest view logic, so we should only exit if we have clear data
+        if (this.data.hasOwnProperty('isLoggedIn') && this.data.isLoggedIn === false) {
+            console.log('Exiting early: user is not logged in');
             return;
         }
         
@@ -19,11 +27,17 @@ class RWPAccountManager {
     }
     
     init() {
-        document.addEventListener('DOMContentLoaded', () => {
+        const initializeApp = () => {
             this.findContainers();
             this.setupEventListeners();
             this.render();
-        });
+        };
+        
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
     }
     
     findContainers() {
@@ -50,11 +64,18 @@ class RWPAccountManager {
     }
     
     render() {
+        if (typeof console !== 'undefined' && console.log) {
+            console.log('Rendering account manager with containers:', this.containers.length);
+        }
+        
         this.containers.forEach(container => {
             const config = JSON.parse(container.dataset.config || '{}');
             this.currentView = config.viewType || 'dashboard';
             
-            if (!this.data.isLoggedIn) {
+            // Use data from localized script or fallback to defaults
+            const isLoggedIn = this.data.isLoggedIn !== undefined ? this.data.isLoggedIn : false;
+            
+            if (!isLoggedIn) {
                 this.renderLoginPrompt(container);
             } else {
                 this.renderAccountInterface(container, config);
@@ -66,10 +87,11 @@ class RWPAccountManager {
         const loginUrl = window.location.origin + '/wp-login.php?redirect_to=' + encodeURIComponent(window.location.href);
         const registerUrl = window.location.origin + '/wp-login.php?action=register';
         
+        const strings = this.data.strings || {};
         container.innerHTML = `
             <div class="rwp-account-manager-container">
                 <div class="rwp-login-prompt">
-                    <h3>${this.data.strings.loginRequired}</h3>
+                    <h3>${strings.loginRequired || 'Account Access Required'}</h3>
                     <p>Please log in or register to access your account settings and manage your preferences.</p>
                     <div class="rwp-auth-buttons">
                         <button type="button" class="primary" onclick="window.location.href='${loginUrl}'">
@@ -86,21 +108,22 @@ class RWPAccountManager {
     
     renderAccountInterface(container, config) {
         const showConsent = config.showConsentSettings !== false;
+        const strings = this.data.strings || {};
         
         container.innerHTML = `
             <div class="rwp-account-manager-container">
                 <div class="rwp-account-header">
                     <nav class="rwp-account-tabs">
                         <button class="rwp-account-tab ${this.currentView === 'dashboard' ? 'active' : ''}" data-view="dashboard">
-                            ${this.data.strings.dashboard}
+                            ${strings.dashboard || 'Dashboard'}
                         </button>
                         ${showConsent ? `
                             <button class="rwp-account-tab ${this.currentView === 'consent' ? 'active' : ''}" data-view="consent">
-                                ${this.data.strings.consentSettings}
+                                ${strings.consentSettings || 'Consent Settings'}
                             </button>
                         ` : ''}
                         <button class="rwp-account-tab ${this.currentView === 'profile' ? 'active' : ''}" data-view="profile">
-                            ${this.data.strings.profileSettings}
+                            ${strings.profileSettings || 'Profile Settings'}
                         </button>
                     </nav>
                 </div>

@@ -52,6 +52,10 @@ module.exports = {
 			__dirname,
 			'src/blocks/account-manager/editor.js'
 		),
+		'blocks/account-manager/style': path.resolve(
+			__dirname,
+			'src/blocks/account-manager/style.js'
+		),
 	},
 	// Performance monitoring for development
 	performance: {

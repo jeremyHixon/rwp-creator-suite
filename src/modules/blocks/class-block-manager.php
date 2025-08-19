@@ -59,6 +59,14 @@ class RWP_Creator_Suite_Block_Manager {
                 'render_callback' => array( $this, 'render_content_repurposer_block' ),
             )
         );
+        
+        // Register Account Manager block from build directory
+        register_block_type( 
+            RWP_CREATOR_SUITE_PLUGIN_DIR . 'build/blocks/account-manager',
+            array(
+                'render_callback' => array( $this, 'render_account_manager_block' ),
+            )
+        );
     }
 
     /**
@@ -81,7 +89,8 @@ class RWP_Creator_Suite_Block_Manager {
             'instagram-analyzer' => 'rwp-creator-suite/instagram-analyzer',
             'instagram-banner' => 'rwp-creator-suite/instagram-banner', 
             'caption-writer' => 'rwp-creator-suite/caption-writer',
-            'content-repurposer' => 'rwp-creator-suite/content-repurposer'
+            'content-repurposer' => 'rwp-creator-suite/content-repurposer',
+            'account-manager' => 'rwp-creator-suite/account-manager'
         );
         
         foreach ( $block_types as $key => $block_name ) {
@@ -114,6 +123,10 @@ class RWP_Creator_Suite_Block_Manager {
         if ( isset( $blocks_present['content-repurposer'] ) ) {
             $this->enqueue_content_repurposer_assets();
         }
+        
+        if ( isset( $blocks_present['account-manager'] ) ) {
+            $this->enqueue_account_manager_assets();
+        }
     }
     
     /**
@@ -124,7 +137,8 @@ class RWP_Creator_Suite_Block_Manager {
         $needs_state_manager = isset( $blocks_present['instagram-analyzer'] ) || 
                               isset( $blocks_present['instagram-banner'] ) || 
                               isset( $blocks_present['caption-writer'] ) ||
-                              isset( $blocks_present['content-repurposer'] );
+                              isset( $blocks_present['content-repurposer'] ) ||
+                              isset( $blocks_present['account-manager'] );
         
         if ( $needs_state_manager && ! isset( $this->enqueued_assets['state-manager'] ) ) {
             // Enqueue base state manager first
@@ -315,6 +329,16 @@ class RWP_Creator_Suite_Block_Manager {
     }
     
     /**
+     * Render Account Manager block.
+     */
+    public function render_account_manager_block( $attributes, $content ) {
+        // Include the render template
+        ob_start();
+        include RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/blocks/account-manager/render.php';
+        return ob_get_clean();
+    }
+    
+    /**
      * Enqueue Caption Writer specific assets.
      */
     private function enqueue_caption_writer_assets() {
@@ -431,6 +455,72 @@ class RWP_Creator_Suite_Block_Manager {
                 ),
                 'characterLimits' => $this->get_platform_character_limits(),
                 'platformsConfig' => RWP_Creator_Suite_Caption_Admin_Settings::get_platforms_config(),
+            )
+        );
+    }
+    
+    /**
+     * Enqueue Account Manager specific assets.
+     */
+    private function enqueue_account_manager_assets() {
+        if ( isset( $this->enqueued_assets['account-manager'] ) ) {
+            return; // Already enqueued
+        }
+
+        // Enqueue Account Manager CSS
+        wp_enqueue_style(
+            'rwp-account-manager-style',
+            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/account-manager.css',
+            array(),
+            RWP_CREATOR_SUITE_VERSION,
+            'all'
+        );
+
+        // Enqueue Account Manager app (state manager and utilities already loaded by shared dependencies)
+        wp_enqueue_script(
+            'rwp-account-manager-app',
+            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/account-manager.js',
+            array( 'rwp-state-manager', 'rwp-shared-state-utilities' ),
+            RWP_CREATOR_SUITE_VERSION,
+            true
+        );
+        
+        $this->enqueued_assets['account-manager'] = true;
+
+        // Get current user's consent status for pre-population
+        $consent_handler = new RWP_Creator_Suite_Registration_Consent_Handler();
+        $current_consent = null;
+        if ( is_user_logged_in() ) {
+            $current_consent = $consent_handler->get_user_consent();
+        }
+
+        // Localize script with WordPress data
+        wp_localize_script(
+            'rwp-account-manager-app',
+            'rwpAccountManager',
+            array(
+                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                'restUrl' => rest_url( 'rwp-creator-suite/v1/' ),
+                'nonce' => wp_create_nonce( 'wp_rest' ),
+                'isLoggedIn' => is_user_logged_in(),
+                'currentUserId' => get_current_user_id(),
+                'currentConsent' => $current_consent,
+                'consentMetaKey' => RWP_Creator_Suite_Registration_Consent_Handler::get_consent_meta_key(),
+                'strings' => array(
+                    'dashboard' => __( 'Dashboard', 'rwp-creator-suite' ),
+                    'consentSettings' => __( 'Consent Settings', 'rwp-creator-suite' ),
+                    'profileSettings' => __( 'Profile Settings', 'rwp-creator-suite' ),
+                    'loading' => __( 'Loading...', 'rwp-creator-suite' ),
+                    'saving' => __( 'Saving...', 'rwp-creator-suite' ),
+                    'saved' => __( 'Settings saved successfully!', 'rwp-creator-suite' ),
+                    'error' => __( 'Something went wrong. Please try again.', 'rwp-creator-suite' ),
+                    'loginRequired' => __( 'Please log in to access your account settings', 'rwp-creator-suite' ),
+                    'consentTitle' => __( 'Advanced Analytics Features', 'rwp-creator-suite' ),
+                    'consentDescription' => __( 'Enable advanced analytics to get more personalized reports and insights about your content performance.', 'rwp-creator-suite' ),
+                    'consentEnabled' => __( 'Advanced analytics enabled', 'rwp-creator-suite' ),
+                    'consentDisabled' => __( 'Advanced analytics disabled', 'rwp-creator-suite' ),
+                    'updateConsent' => __( 'Update Consent', 'rwp-creator-suite' ),
+                ),
             )
         );
     }

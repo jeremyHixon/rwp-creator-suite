@@ -51,6 +51,7 @@ class RWP_Creator_Suite {
     private $consent_manager;
     private $hashtag_tracker;
     private $analytics_api;
+    private $account_manager;
 
     /**
      * Get single instance of the plugin.
@@ -114,6 +115,7 @@ class RWP_Creator_Suite {
         $this->consent_manager = RWP_Creator_Suite_Consent_Manager::get_instance();
         $this->hashtag_tracker = new RWP_Creator_Suite_Hashtag_Tracker();
         $this->analytics_api = new RWP_Creator_Suite_Analytics_API();
+        $this->account_manager = new RWP_Creator_Suite_Account_Manager();
 
         // Initialize all components
         $this->wp_login_integration->init();
@@ -132,6 +134,7 @@ class RWP_Creator_Suite {
         $this->consent_manager->init();
         $this->hashtag_tracker->init();
         $this->analytics_api->init();
+        $this->account_manager->init();
 
         // Additional hooks
         add_action( 'init', array( $this, 'load_textdomain' ) );
@@ -211,6 +214,9 @@ class RWP_Creator_Suite {
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-consent-manager.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-hashtag-tracker.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-analytics-api.php';
+
+        // Account Manager Module
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/account-manager/class-account-manager.php';
 
         // Shortcodes Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/class-shortcodes.php';

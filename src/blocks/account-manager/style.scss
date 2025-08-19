@@ -1,0 +1,139 @@
+.wp-block-rwp-creator-suite-account-manager {
+    /* Block isolation */
+    all: initial;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    
+    /* Re-enable inheritance for children */
+    * {
+        all: unset;
+        display: revert;
+        box-sizing: border-box;
+    }
+    
+    /* Ensure block boundary */
+    container-type: inline-size;
+    isolation: isolate;
+    
+    /* Light theme variables */
+    --blk-primary: #3b82f6;
+    --blk-secondary: #64748b;
+    --blk-accent: #10b981;
+    --blk-neutral: #f8fafc;
+    --blk-base-100: #ffffff;
+    --blk-base-content: #1f2937;
+    --blk-border: #e5e7eb;
+    --blk-success: #22c55e;
+    --blk-warning: #f59e0b;
+    --blk-error: #ef4444;
+    
+    /* Container styles */
+    background: var(--blk-base-100);
+    border: 1px solid var(--blk-border);
+    border-radius: 8px;
+    overflow: hidden;
+    min-height: 400px;
+    
+    .rwp-account-manager-container {
+        width: 100%;
+        height: 100%;
+        min-height: inherit;
+    }
+    
+    /* Loading states */
+    .rwp-loading {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 400px;
+        color: var(--blk-secondary);
+        
+        &::after {
+            content: "";
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--blk-border);
+            border-top: 2px solid var(--blk-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+    }
+    
+    /* Login prompt for guests */
+    .rwp-login-prompt {
+        padding: 40px;
+        text-align: center;
+        
+        h3 {
+            color: var(--blk-base-content);
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        p {
+            color: var(--blk-secondary);
+            font-size: 16px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+        
+        .rwp-auth-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            
+            button {
+                padding: 12px 24px;
+                border-radius: 6px;
+                font-size: 14px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                border: 1px solid transparent;
+                
+                &.primary {
+                    background: var(--blk-primary);
+                    color: white;
+                    
+                    &:hover {
+                        background: #2563eb;
+                    }
+                }
+                
+                &.secondary {
+                    background: transparent;
+                    color: var(--blk-primary);
+                    border-color: var(--blk-primary);
+                    
+                    &:hover {
+                        background: var(--blk-neutral);
+                    }
+                }
+            }
+        }
+    }
+    
+    /* Responsive design */
+    @media (max-width: 782px) {
+        .rwp-login-prompt {
+            padding: 20px;
+            
+            .rwp-auth-buttons {
+                flex-direction: column;
+                align-items: center;
+                
+                button {
+                    width: 100%;
+                    max-width: 200px;
+                }
+            }
+        }
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+}

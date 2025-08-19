@@ -44,6 +44,14 @@ module.exports = {
 			__dirname,
 			'src/blocks/content-repurposer/editor.js'
 		),
+		'blocks/account-manager/index': path.resolve(
+			__dirname,
+			'src/blocks/account-manager/index.js'
+		),
+		'blocks/account-manager/editor': path.resolve(
+			__dirname,
+			'src/blocks/account-manager/editor.js'
+		),
 	},
 	// Performance monitoring for development
 	performance: {

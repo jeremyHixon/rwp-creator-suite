@@ -1,0 +1,51 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "rwp-creator-suite/account-manager",
+	"version": "1.0.0",
+	"title": "Account Manager",
+	"category": "common",
+	"icon": "admin-users",
+	"description": "Account interface for subscribers to manage their consent preferences and account settings.",
+	"keywords": [
+		"account",
+		"settings",
+		"consent",
+		"privacy",
+		"subscriber",
+		"profile"
+	],
+	"textdomain": "rwp-creator-suite",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./editor.css",
+	"style": "file:./style-style.css",
+	"render": "file:./render.php",
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ],
+		"spacing": {
+			"padding": true,
+			"margin": true
+		}
+	},
+	"attributes": {
+		"viewType": {
+			"type": "string",
+			"default": "dashboard"
+		},
+		"showConsentSettings": {
+			"type": "boolean",
+			"default": true
+		},
+		"allowGuestView": {
+			"type": "boolean",
+			"default": false
+		}
+	},
+	"example": {
+		"attributes": {
+			"viewType": "dashboard",
+			"showConsentSettings": true
+		}
+	}
+}

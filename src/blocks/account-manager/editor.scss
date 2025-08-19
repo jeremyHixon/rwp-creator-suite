@@ -1,0 +1,51 @@
+.rwp-account-manager-block-isolation {
+    /* Block isolation */
+    all: initial;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    
+    /* Re-enable inheritance for children */
+    * {
+        all: unset;
+        display: revert;
+        box-sizing: border-box;
+    }
+    
+    /* Ensure block boundary */
+    container-type: inline-size;
+    isolation: isolate;
+    
+    .rwp-account-manager-preview {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        background: #f9f9f9;
+        
+        .rwp-account-manager-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+            
+            .tab {
+                padding: 8px 16px;
+                background: #e0e0e0;
+                border-radius: 4px 4px 0 0;
+                font-size: 14px;
+                font-weight: 500;
+                color: #666;
+                
+                &.active {
+                    background: #3b82f6;
+                    color: white;
+                }
+            }
+        }
+        
+        .tab-content {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+    }
+}

@@ -85,7 +85,7 @@ tests/
 ### Phase-Based Test Files (Current Pattern)
 - `phase1-simple-test.php` - Basic functionality tests
 - `phase1-optimization-test.php` - Performance/optimization tests  
-- `phase3-test-runner.php` - Advanced feature tests
+- `user-value-test-runner.php` - Advanced feature tests
 - `simple-test-runner.php` - Quick development tests
 
 ### Phase Testing Approach

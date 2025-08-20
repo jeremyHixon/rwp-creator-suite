@@ -1,5 +1,5 @@
 # Task
-Analyze the analytics admin module (src/modules/analytics) and diagnose the source of a massive number of console errors that are sapping the browser's resources.
+Read the contents of docs/analytics-phase-2-admin-dashboard.md for the task. There is an existing analytics dashboard (src/modules/analytics/class-analytics-dashboard.php) with various supporting files causing many errors and bogging down the admin area that needs to be refactored based on that markdown document. 
 
 # Project Context
 

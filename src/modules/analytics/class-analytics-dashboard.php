@@ -1,9 +1,9 @@
 <?php
 /**
- * Analytics Dashboard Admin Page
+ * Analytics Dashboard Admin Page - Refactored for Phase 2
  * 
- * Handles the WordPress admin analytics dashboard for visualizing 
- * Phase 1 collected data with real-time insights and privacy transparency.
+ * Simplified WordPress admin analytics dashboard that visualizes 
+ * Phase 1 collected data with better performance and error handling.
  * 
  * @package    RWP_Creator_Suite
  * @subpackage Analytics
@@ -24,31 +24,40 @@ class RWP_Creator_Suite_Analytics_Dashboard {
     /**
      * Analytics system instance.
      *
-     * @var RWP_Creator_Suite_Anonymous_Analytics
+     * @var RWP_Creator_Suite_Anonymous_Analytics|null
      */
     private $analytics;
 
     /**
-     * Consent manager instance.
+     * Error flag to track dashboard health.
      *
-     * @var RWP_Creator_Suite_Consent_Manager
+     * @var bool
      */
-    private $consent_manager;
-
-    /**
-     * Cache manager instance.
-     *
-     * @var RWP_Creator_Suite_Cache_Manager
-     */
-    private $cache_manager;
+    private $has_errors = false;
 
     /**
      * Constructor.
      */
     public function __construct() {
-        $this->analytics = RWP_Creator_Suite_Anonymous_Analytics::get_instance();
-        $this->consent_manager = RWP_Creator_Suite_Consent_Manager::get_instance();
-        $this->cache_manager = RWP_Creator_Suite_Cache_Manager::get_instance();
+        $this->init_dependencies();
+    }
+
+    /**
+     * Initialize dependencies with error handling.
+     */
+    private function init_dependencies() {
+        try {
+            // Try to get analytics instance safely
+            if ( class_exists( 'RWP_Creator_Suite_Anonymous_Analytics' ) ) {
+                $this->analytics = RWP_Creator_Suite_Anonymous_Analytics::get_instance();
+            } else {
+                $this->has_errors = true;
+                error_log( 'RWP Analytics Dashboard: Anonymous Analytics class not found' );
+            }
+        } catch ( Exception $e ) {
+            $this->has_errors = true;
+            error_log( 'RWP Analytics Dashboard Error: ' . $e->getMessage() );
+        }
     }
 
     /**
@@ -57,17 +66,12 @@ class RWP_Creator_Suite_Analytics_Dashboard {
     public function init() {
         add_action( 'admin_menu', array( $this, 'add_admin_menu' ), 15 );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
-        add_action( 'wp_ajax_rwp_get_dashboard_metrics', array( $this, 'ajax_get_dashboard_metrics' ) );
-        add_action( 'wp_ajax_rwp_export_analytics', array( $this, 'ajax_export_analytics' ) );
         
-        // Add AJAX handlers for dashboard endpoints
-        add_action( 'wp_ajax_rwp_analytics_analytics_summary', array( $this, 'ajax_analytics_summary' ) );
-        add_action( 'wp_ajax_rwp_analytics_analytics_platforms', array( $this, 'ajax_analytics_platforms' ) );
-        add_action( 'wp_ajax_rwp_analytics_analytics_trends', array( $this, 'ajax_analytics_trends' ) );
-        add_action( 'wp_ajax_rwp_analytics_analytics_hashtags', array( $this, 'ajax_analytics_hashtags' ) );
-        add_action( 'wp_ajax_rwp_analytics_analytics_templates', array( $this, 'ajax_analytics_templates' ) );
-        add_action( 'wp_ajax_rwp_analytics_analytics_features', array( $this, 'ajax_analytics_features' ) );
-        add_action( 'wp_ajax_rwp_analytics_analytics_consent', array( $this, 'ajax_analytics_consent' ) );
+        // Only add AJAX handlers if not in error state
+        if ( ! $this->has_errors ) {
+            add_action( 'wp_ajax_rwp_get_dashboard_metrics', array( $this, 'ajax_get_dashboard_metrics' ) );
+            add_action( 'wp_ajax_rwp_export_analytics', array( $this, 'ajax_export_analytics' ) );
+        }
     }
 
     /**
@@ -97,7 +101,13 @@ class RWP_Creator_Suite_Analytics_Dashboard {
             return;
         }
 
-        $dashboard_data = $this->get_cached_dashboard_data();
+        // Check for errors first
+        if ( $this->has_errors ) {
+            $this->render_error_page();
+            return;
+        }
+
+        $dashboard_data = $this->get_dashboard_data();
         ?>
         <div class="wrap">
             <h1>
@@ -110,10 +120,7 @@ class RWP_Creator_Suite_Analytics_Dashboard {
                 
                 <div class="rwp-dashboard-content">
                     <?php $this->render_community_overview( $dashboard_data ); ?>
-                    <?php $this->render_hashtag_center( $dashboard_data ); ?>
-                    <?php $this->render_content_analytics( $dashboard_data ); ?>
-                    <?php $this->render_ai_performance( $dashboard_data ); ?>
-                    <?php $this->render_privacy_center( $dashboard_data ); ?>
+                    <?php $this->render_privacy_center(); ?>
                 </div>
             </div>
         </div>
@@ -121,28 +128,60 @@ class RWP_Creator_Suite_Analytics_Dashboard {
     }
 
     /**
-     * Render dashboard navigation tabs.
+     * Render error page when dashboard cannot initialize.
+     */
+    private function render_error_page() {
+        ?>
+        <div class="wrap">
+            <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+            
+            <div class="notice notice-warning">
+                <p>
+                    <strong><?php esc_html_e( 'Analytics Dashboard Unavailable', 'rwp-creator-suite' ); ?></strong>
+                </p>
+                <p>
+                    <?php esc_html_e( 'The analytics dashboard is temporarily unavailable. This may be due to missing dependencies or database issues.', 'rwp-creator-suite' ); ?>
+                </p>
+                <p>
+                    <?php esc_html_e( 'Please check the error logs or contact support if this problem persists.', 'rwp-creator-suite' ); ?>
+                </p>
+            </div>
+            
+            <div class="card">
+                <h2><?php esc_html_e( 'What you can do:', 'rwp-creator-suite' ); ?></h2>
+                <ul>
+                    <li><?php esc_html_e( 'Check that all plugin modules are properly activated', 'rwp-creator-suite' ); ?></li>
+                    <li><?php esc_html_e( 'Verify database tables were created successfully', 'rwp-creator-suite' ); ?></li>
+                    <li><?php esc_html_e( 'Review error logs for specific issues', 'rwp-creator-suite' ); ?></li>
+                    <li><?php esc_html_e( 'Try deactivating and reactivating the plugin', 'rwp-creator-suite' ); ?></li>
+                </ul>
+            </div>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render simplified dashboard navigation.
      */
     private function render_dashboard_nav() {
         ?>
         <nav class="rwp-dashboard-nav">
             <ul class="rwp-nav-tabs">
-                <li><a href="#overview" class="nav-tab nav-tab-active"><?php esc_html_e( 'Overview', 'rwp-creator-suite' ); ?></a></li>
-                <li><a href="#hashtags" class="nav-tab"><?php esc_html_e( 'Hashtag Intelligence', 'rwp-creator-suite' ); ?></a></li>
-                <li><a href="#content" class="nav-tab"><?php esc_html_e( 'Content Performance', 'rwp-creator-suite' ); ?></a></li>
-                <li><a href="#ai-metrics" class="nav-tab"><?php esc_html_e( 'AI Metrics', 'rwp-creator-suite' ); ?></a></li>
-                <li><a href="#privacy" class="nav-tab"><?php esc_html_e( 'Privacy Center', 'rwp-creator-suite' ); ?></a></li>
+                <li><a href="#overview" class="nav-tab nav-tab-active"><?php esc_html_e( 'Community Overview', 'rwp-creator-suite' ); ?></a></li>
+                <li><a href="#privacy" class="nav-tab"><?php esc_html_e( 'Privacy & Transparency', 'rwp-creator-suite' ); ?></a></li>
             </ul>
             
             <div class="rwp-dashboard-actions">
                 <button type="button" class="button" id="refresh-dashboard">
                     <span class="dashicons dashicons-update"></span>
-                    <?php esc_html_e( 'Refresh Data', 'rwp-creator-suite' ); ?>
+                    <?php esc_html_e( 'Refresh', 'rwp-creator-suite' ); ?>
                 </button>
+                <?php if ( ! $this->has_errors ) : ?>
                 <button type="button" class="button" id="export-analytics">
                     <span class="dashicons dashicons-download"></span>
-                    <?php esc_html_e( 'Export Report', 'rwp-creator-suite' ); ?>
+                    <?php esc_html_e( 'Export', 'rwp-creator-suite' ); ?>
                 </button>
+                <?php endif; ?>
             </div>
         </nav>
         <?php
@@ -230,141 +269,14 @@ class RWP_Creator_Suite_Analytics_Dashboard {
         <?php
     }
 
-    /**
-     * Render hashtag intelligence center.
-     *
-     * @param array $data Dashboard data.
-     */
-    private function render_hashtag_center( $data ) {
-        $hashtag_stats = $data['hashtag_stats'] ?? array();
-        ?>
-        <div id="hashtags" class="rwp-dashboard-section" style="display: none;">
-            <div class="rwp-section-header">
-                <h2><?php esc_html_e( '🔥 Trending Hashtags Intelligence', 'rwp-creator-suite' ); ?></h2>
-                <p class="description"><?php esc_html_e( 'Analyze hashtag trends and patterns in your community.', 'rwp-creator-suite' ); ?></p>
-            </div>
 
-            <div class="rwp-hashtag-insights">
-                <div class="rwp-trending-widget">
-                    <h3><?php esc_html_e( 'Top Trending Hashtags (This Week)', 'rwp-creator-suite' ); ?></h3>
-                    <div class="rwp-trending-list" id="trending-hashtags">
-                        <!-- Populated via JavaScript -->
-                    </div>
-                </div>
 
-                <div class="rwp-hashtag-analytics">
-                    <h3><?php esc_html_e( 'Hashtag Usage Over Time', 'rwp-creator-suite' ); ?></h3>
-                    <canvas id="hashtag-trends-chart" width="600" height="300"></canvas>
-                </div>
-
-                <div class="rwp-platform-hashtags">
-                    <h3><?php esc_html_e( 'Platform-Specific Hashtag Performance', 'rwp-creator-suite' ); ?></h3>
-                    <canvas id="platform-hashtags-chart" width="600" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-        <?php
-    }
 
     /**
-     * Render content performance analytics.
-     *
-     * @param array $data Dashboard data.
+     * Render simplified privacy transparency center.
      */
-    private function render_content_analytics( $data ) {
-        $content_stats = $data['content_stats'] ?? array();
-        ?>
-        <div id="content" class="rwp-dashboard-section" style="display: none;">
-            <div class="rwp-section-header">
-                <h2><?php esc_html_e( 'Content Performance Analytics', 'rwp-creator-suite' ); ?></h2>
-                <p class="description"><?php esc_html_e( 'Insights into template usage, completion rates, and content creation patterns.', 'rwp-creator-suite' ); ?></p>
-            </div>
-
-            <div class="rwp-content-insights">
-                <div class="rwp-template-performance">
-                    <h3><?php esc_html_e( 'Template Performance Report', 'rwp-creator-suite' ); ?></h3>
-                    <div class="rwp-template-stats" id="template-performance">
-                        <!-- Populated via JavaScript -->
-                    </div>
-                </div>
-
-                <div class="rwp-content-patterns">
-                    <h3><?php esc_html_e( 'Content Creation Patterns', 'rwp-creator-suite' ); ?></h3>
-                    <canvas id="content-patterns-chart" width="600" height="300"></canvas>
-                </div>
-
-                <div class="rwp-tone-analysis">
-                    <h3><?php esc_html_e( 'Tone Effectiveness by Platform', 'rwp-creator-suite' ); ?></h3>
-                    <canvas id="tone-effectiveness-chart" width="600" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-        <?php
-    }
-
-    /**
-     * Render AI performance monitoring.
-     *
-     * @param array $data Dashboard data.
-     */
-    private function render_ai_performance( $data ) {
-        $ai_stats = $data['ai_stats'] ?? array();
-        $response_time = $ai_stats['avg_response_time'] ?? 0;
-        $success_rate = $ai_stats['success_rate'] ?? 0;
-        $cache_hit_rate = $ai_stats['cache_hit_rate'] ?? 0;
-        ?>
-        <div id="ai-metrics" class="rwp-dashboard-section" style="display: none;">
-            <div class="rwp-section-header">
-                <h2><?php esc_html_e( 'AI Service Performance', 'rwp-creator-suite' ); ?></h2>
-                <p class="description"><?php esc_html_e( 'Monitor AI service reliability, performance, and user satisfaction.', 'rwp-creator-suite' ); ?></p>
-            </div>
-
-            <div class="rwp-ai-metrics-grid">
-                <div class="rwp-metric-card">
-                    <h4><?php esc_html_e( 'Response Time', 'rwp-creator-suite' ); ?></h4>
-                    <span class="rwp-metric-value"><?php echo esc_html( number_format( $response_time, 1 ) ); ?>s</span>
-                    <span class="rwp-metric-trend <?php echo $response_time < 3 ? 'positive' : 'negative'; ?>">
-                        <?php echo $response_time < 3 ? '↓' : '↑'; ?> avg
-                    </span>
-                </div>
-
-                <div class="rwp-metric-card">
-                    <h4><?php esc_html_e( 'Success Rate', 'rwp-creator-suite' ); ?></h4>
-                    <span class="rwp-metric-value"><?php echo esc_html( number_format( $success_rate, 1 ) ); ?>%</span>
-                    <span class="rwp-metric-trend <?php echo $success_rate > 95 ? 'positive' : 'negative'; ?>">
-                        <?php echo $success_rate > 95 ? '↑' : '↓'; ?> trend
-                    </span>
-                </div>
-
-                <div class="rwp-metric-card">
-                    <h4><?php esc_html_e( 'Cache Hit Rate', 'rwp-creator-suite' ); ?></h4>
-                    <span class="rwp-metric-value"><?php echo esc_html( number_format( $cache_hit_rate, 1 ) ); ?>%</span>
-                    <span class="rwp-metric-trend positive">↑ efficiency</span>
-                </div>
-            </div>
-
-            <div class="rwp-ai-charts">
-                <div class="rwp-chart-container">
-                    <h3><?php esc_html_e( 'AI Performance Over Time', 'rwp-creator-suite' ); ?></h3>
-                    <canvas id="ai-performance-chart" width="600" height="300"></canvas>
-                </div>
-
-                <div class="rwp-chart-container">
-                    <h3><?php esc_html_e( 'Error Patterns Analysis', 'rwp-creator-suite' ); ?></h3>
-                    <canvas id="error-patterns-chart" width="600" height="300"></canvas>
-                </div>
-            </div>
-        </div>
-        <?php
-    }
-
-    /**
-     * Render privacy transparency center.
-     *
-     * @param array $data Dashboard data.
-     */
-    private function render_privacy_center( $data ) {
-        $consent_stats = $this->consent_manager->get_consent_stats();
+    private function render_privacy_center() {
+        $consent_stats = $this->get_consent_stats();
         ?>
         <div id="privacy" class="rwp-dashboard-section" style="display: none;">
             <div class="rwp-section-header">
@@ -411,15 +323,15 @@ class RWP_Creator_Suite_Analytics_Dashboard {
                     <h3><?php esc_html_e( 'User Consent Status', 'rwp-creator-suite' ); ?></h3>
                     <div class="rwp-consent-metrics">
                         <div class="rwp-consent-metric">
-                            <span class="rwp-metric-number"><?php echo esc_html( number_format( $consent_stats['total_users'] ?? 0 ) ); ?></span>
+                            <span class="rwp-metric-number"><?php echo esc_html( $consent_stats['total_users'] ); ?></span>
                             <span class="rwp-metric-label"><?php esc_html_e( 'Total Users', 'rwp-creator-suite' ); ?></span>
                         </div>
                         <div class="rwp-consent-metric">
-                            <span class="rwp-metric-number"><?php echo esc_html( number_format( $consent_stats['consented_users'] ?? 0 ) ); ?></span>
+                            <span class="rwp-metric-number"><?php echo esc_html( $consent_stats['consented_users'] ); ?></span>
                             <span class="rwp-metric-label"><?php esc_html_e( 'Consented to Analytics', 'rwp-creator-suite' ); ?></span>
                         </div>
                         <div class="rwp-consent-metric">
-                            <span class="rwp-metric-number"><?php echo esc_html( number_format( $consent_stats['consent_rate'] ?? 0, 1 ) ); ?>%</span>
+                            <span class="rwp-metric-number"><?php echo esc_html( $consent_stats['consent_rate'] ); ?>%</span>
                             <span class="rwp-metric-label"><?php esc_html_e( 'Consent Rate', 'rwp-creator-suite' ); ?></span>
                         </div>
                     </div>
@@ -452,7 +364,48 @@ class RWP_Creator_Suite_Analytics_Dashboard {
     }
 
     /**
-     * Enqueue admin scripts and styles.
+     * Get consent stats safely.
+     *
+     * @return array
+     */
+    private function get_consent_stats() {
+        if ( $this->has_errors ) {
+            return array(
+                'total_users' => '--',
+                'consented_users' => '--',
+                'consent_rate' => '--',
+            );
+        }
+
+        try {
+            // Try to get consent stats from user meta
+            global $wpdb;
+            $total_users = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->users}" );
+            $consented_users = $wpdb->get_var( 
+                "SELECT COUNT(*) FROM {$wpdb->usermeta} 
+                 WHERE meta_key LIKE '%consent%' 
+                 AND meta_value = '1'"
+            );
+            
+            $consent_rate = $total_users > 0 ? round( ( $consented_users / $total_users ) * 100, 1 ) : 0;
+            
+            return array(
+                'total_users' => number_format( (int) $total_users ),
+                'consented_users' => number_format( (int) $consented_users ),
+                'consent_rate' => $consent_rate,
+            );
+        } catch ( Exception $e ) {
+            error_log( 'RWP Analytics: Failed to get consent stats: ' . $e->getMessage() );
+            return array(
+                'total_users' => 'N/A',
+                'consented_users' => 'N/A',
+                'consent_rate' => 'N/A',
+            );
+        }
+    }
+
+    /**
+     * Enqueue simplified admin scripts and styles.
      *
      * @param string $hook The current admin page hook.
      */
@@ -462,82 +415,83 @@ class RWP_Creator_Suite_Analytics_Dashboard {
             return;
         }
 
-        // Chart.js library
-        wp_enqueue_script(
-            'chart-js',
-            'https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js',
-            array(),
-            '3.9.1',
-            true
-        );
-
+        // Load simplified CSS
         wp_enqueue_style(
             'rwp-analytics-dashboard',
-            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/analytics-dashboard.css',
+            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/analytics-dashboard-simple.css',
             array(),
             RWP_CREATOR_SUITE_VERSION
         );
 
-        wp_enqueue_script(
-            'rwp-analytics-dashboard',
-            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/analytics-dashboard.js',
-            array( 'jquery', 'chart-js' ),
-            RWP_CREATOR_SUITE_VERSION,
-            true
-        );
+        // Only load JavaScript if no errors
+        if ( ! $this->has_errors ) {
+            wp_enqueue_script(
+                'rwp-analytics-dashboard',
+                RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/js/analytics-dashboard-simple.js',
+                array( 'jquery' ),
+                RWP_CREATOR_SUITE_VERSION,
+                true
+            );
 
-        // Build REST URL more safely
-        $rest_url = rest_url( 'rwp-creator-suite/v1/' );
-        if ( empty( $rest_url ) ) {
-            $rest_url = home_url( '/wp-json/rwp-creator-suite/v1/' );
+            wp_localize_script(
+                'rwp-analytics-dashboard',
+                'rwpAnalyticsDashboard',
+                array(
+                    'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                    'nonce'   => wp_create_nonce( 'rwp_analytics_dashboard_nonce' ),
+                    'hasErrors' => $this->has_errors,
+                    'strings' => array(
+                        'loading' => __( 'Loading...', 'rwp-creator-suite' ),
+                        'error'   => __( 'An error occurred. Please try again.', 'rwp-creator-suite' ),
+                        'refresh_success' => __( 'Dashboard refreshed successfully.', 'rwp-creator-suite' ),
+                        'export_success' => __( 'Analytics report exported successfully.', 'rwp-creator-suite' ),
+                    ),
+                )
+            );
         }
-
-        wp_localize_script(
-            'rwp-analytics-dashboard',
-            'rwpAnalyticsDashboard',
-            array(
-                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-                'nonce'   => wp_create_nonce( 'rwp_analytics_dashboard_nonce' ),
-                'apiUrl'  => $rest_url,
-                'restNonce' => wp_create_nonce( 'wp_rest' ),
-                'strings' => array(
-                    'loading' => __( 'Loading...', 'rwp-creator-suite' ),
-                    'error'   => __( 'An error occurred. Please try again.', 'rwp-creator-suite' ),
-                    'refresh_success' => __( 'Dashboard data refreshed successfully.', 'rwp-creator-suite' ),
-                    'export_success' => __( 'Analytics report exported successfully.', 'rwp-creator-suite' ),
-                ),
-            )
-        );
     }
 
     /**
-     * Get cached dashboard data.
+     * Get dashboard data with proper error handling.
      *
      * @return array
      */
-    private function get_cached_dashboard_data() {
-        // Temporarily bypass cache to debug issues
+    private function get_dashboard_data() {
         try {
+            if ( ! $this->analytics ) {
+                return $this->get_fallback_data();
+            }
+            
             return $this->compile_dashboard_data();
         } catch ( Exception $e ) {
             error_log( 'RWP Analytics Dashboard Error: ' . $e->getMessage() );
-            return array(
-                'community_stats' => array(
-                    'active_creators' => 0,
-                    'content_generated_24h' => 0,
-                    'top_platform' => 'N/A',
-                    'most_used_tone' => 'N/A',
-                ),
-                'hashtag_stats' => array(),
-                'content_stats' => array(),
-                'ai_stats' => array(
-                    'avg_response_time' => 0,
-                    'success_rate' => 0,
-                    'cache_hit_rate' => 0,
-                ),
-                'timestamp' => current_time( 'timestamp' ),
-            );
+            return $this->get_fallback_data();
         }
+    }
+
+    /**
+     * Get fallback data when analytics are unavailable.
+     *
+     * @return array
+     */
+    private function get_fallback_data() {
+        return array(
+            'community_stats' => array(
+                'active_creators' => '--',
+                'content_generated_24h' => '--',
+                'top_platform' => 'N/A',
+                'most_used_tone' => 'N/A',
+            ),
+            'hashtag_stats' => array(),
+            'content_stats' => array(),
+            'ai_stats' => array(
+                'avg_response_time' => '--',
+                'success_rate' => '--',
+                'cache_hit_rate' => '--',
+            ),
+            'timestamp' => current_time( 'timestamp' ),
+            'is_fallback' => true,
+        );
     }
 
     /**
@@ -737,9 +691,8 @@ class RWP_Creator_Suite_Analytics_Dashboard {
                 return;
             }
 
-        // Clear cache and get fresh data
-        $this->cache_manager->delete( 'analytics_dashboard_data', 'analytics' );
-        $dashboard_data = $this->get_cached_dashboard_data();
+            // Get fresh data
+            $dashboard_data = $this->get_dashboard_data();
 
             wp_send_json_success( $dashboard_data );
         } catch ( Exception $e ) {
@@ -763,20 +716,25 @@ class RWP_Creator_Suite_Analytics_Dashboard {
                 return;
             }
 
-        $export_data = $this->prepare_export_data();
-        
-        // Set headers for CSV download
-        header( 'Content-Type: text/csv' );
-        header( 'Content-Disposition: attachment; filename="analytics-report-' . date( 'Y-m-d' ) . '.csv"' );
-        
-        // Output CSV
-        $output = fopen( 'php://output', 'w' );
-        fputcsv( $output, array( 'Metric', 'Value', 'Period' ) );
-        
-        foreach ( $export_data as $row ) {
-            fputcsv( $output, $row );
-        }
-        
+            if ( $this->has_errors ) {
+                wp_die( 'Analytics data unavailable', 'Export Error', array( 'response' => 503 ) );
+                return;
+            }
+
+            $export_data = $this->prepare_export_data();
+            
+            // Set headers for CSV download
+            header( 'Content-Type: text/csv' );
+            header( 'Content-Disposition: attachment; filename="analytics-report-' . date( 'Y-m-d' ) . '.csv"' );
+            
+            // Output CSV
+            $output = fopen( 'php://output', 'w' );
+            fputcsv( $output, array( 'Metric', 'Value', 'Period' ) );
+            
+            foreach ( $export_data as $row ) {
+                fputcsv( $output, $row );
+            }
+            
             fclose( $output );
             exit;
         } catch ( Exception $e ) {
@@ -791,7 +749,7 @@ class RWP_Creator_Suite_Analytics_Dashboard {
      * @return array
      */
     private function prepare_export_data() {
-        $dashboard_data = $this->get_cached_dashboard_data();
+        $dashboard_data = $this->get_dashboard_data();
         $export_data = array();
 
         // Community stats
@@ -801,260 +759,17 @@ class RWP_Creator_Suite_Analytics_Dashboard {
         $export_data[] = array( 'Top Platform', $community['top_platform'] ?? 'N/A', 'Last 30 days' );
         $export_data[] = array( 'Most Used Tone', $community['most_used_tone'] ?? 'N/A', 'Last 30 days' );
 
-        // AI stats
-        $ai = $dashboard_data['ai_stats'] ?? array();
-        $export_data[] = array( 'AI Avg Response Time (s)', $ai['avg_response_time'] ?? 0, 'Last 7 days' );
-        $export_data[] = array( 'AI Success Rate (%)', $ai['success_rate'] ?? 0, 'Last 7 days' );
-        $export_data[] = array( 'Cache Hit Rate (%)', $ai['cache_hit_rate'] ?? 0, 'Current' );
+        // Add export timestamp
+        $export_data[] = array( 'Export Date', date( 'Y-m-d H:i:s' ), 'Generated' );
+        $export_data[] = array( 'Data Source', $dashboard_data['is_fallback'] ? 'Fallback Data' : 'Live Data', 'System' );
 
         return $export_data;
     }
 
-    /**
-     * AJAX handler for analytics summary.
-     */
-    public function ajax_analytics_summary() {
-        try {
-            if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'rwp_analytics_dashboard_nonce' ) ) {
-                wp_send_json_error( 'Invalid nonce' );
-                return;
-            }
 
-            if ( ! current_user_can( 'manage_options' ) ) {
-                wp_send_json_error( 'Unauthorized' );
-                return;
-            }
 
-            $start_date = sanitize_text_field( $_POST['start_date'] ?? date( 'Y-m-d', strtotime( '-30 days' ) ) );
-            $end_date = sanitize_text_field( $_POST['end_date'] ?? date( 'Y-m-d' ) );
 
-            $summary = $this->analytics->get_analytics_summary( array(
-                'start_date' => $start_date,
-                'end_date' => $end_date,
-            ) );
 
-            $response_data = array(
-                'totals' => array(
-                    'unique_sessions' => is_array( $summary ) ? count( array_unique( array_column( $summary, 'anonymous_session_hash' ) ) ) : 0,
-                    'content_generated' => is_array( $summary ) ? count( array_filter( $summary, function( $item ) {
-                        return isset( $item['event_type'] ) && $item['event_type'] === RWP_Creator_Suite_Anonymous_Analytics::EVENT_CONTENT_GENERATED;
-                    } ) ) : 0,
-                ),
-            );
 
-            wp_send_json_success( $response_data );
-        } catch ( Exception $e ) {
-            error_log( 'RWP Analytics AJAX Error: ' . $e->getMessage() );
-            wp_send_json_error( 'Server error occurred' );
-        }
-    }
 
-    /**
-     * AJAX handler for platform stats.
-     */
-    public function ajax_analytics_platforms() {
-        try {
-            if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'rwp_analytics_dashboard_nonce' ) ) {
-                wp_send_json_error( 'Invalid nonce' );
-                return;
-            }
-
-            if ( ! current_user_can( 'manage_options' ) ) {
-                wp_send_json_error( 'Unauthorized' );
-                return;
-            }
-
-            global $wpdb;
-            $table_name = $wpdb->prefix . 'rwp_anonymous_analytics';
-
-            // Check if table exists
-            $table_exists = $wpdb->get_var( "SHOW TABLES LIKE '{$table_name}'" );
-            if ( ! $table_exists ) {
-                // Return sample data if table doesn't exist yet
-                wp_send_json_success( array(
-                    array( 'platform' => 'instagram', 'total_usage' => 42 ),
-                    array( 'platform' => 'twitter', 'total_usage' => 28 ),
-                    array( 'platform' => 'linkedin', 'total_usage' => 15 ),
-                ) );
-                return;
-            }
-
-            $results = $wpdb->get_results(
-                "SELECT platform, COUNT(*) as total_usage
-                 FROM {$table_name} 
-                 WHERE platform != '' 
-                 AND timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-                 GROUP BY platform
-                 ORDER BY total_usage DESC",
-                ARRAY_A
-            );
-
-            wp_send_json_success( $results ?: array() );
-        } catch ( Exception $e ) {
-            error_log( 'RWP Analytics Platform Stats Error: ' . $e->getMessage() );
-            wp_send_json_error( 'Server error occurred' );
-        }
-    }
-
-    /**
-     * AJAX handler for usage trends.
-     */
-    public function ajax_analytics_trends() {
-        try {
-            if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'rwp_analytics_dashboard_nonce' ) ) {
-                wp_send_json_error( 'Invalid nonce' );
-                return;
-            }
-
-            if ( ! current_user_can( 'manage_options' ) ) {
-                wp_send_json_error( 'Unauthorized' );
-                return;
-            }
-
-        $period = sanitize_text_field( $_POST['period'] ?? 'daily' );
-        $days = (int) ( $_POST['days'] ?? 7 );
-
-        // Simulated trend data for now
-        $trends = array();
-        for ( $i = $days - 1; $i >= 0; $i-- ) {
-            $date = date( 'Y-m-d', strtotime( "-{$i} days" ) );
-            $trends[] = array(
-                'period' => $date,
-                'total_events' => rand( 50, 200 ),
-                'unique_sessions' => rand( 20, 80 ),
-            );
-        }
-
-        wp_send_json_success( $trends );
-        } catch ( Exception $e ) {
-            error_log( 'RWP Analytics Trends Error: ' . $e->getMessage() );
-            wp_send_json_error( 'Server error occurred' );
-        }
-    }
-
-    /**
-     * AJAX handler for hashtag stats.
-     */
-    public function ajax_analytics_hashtags() {
-        try {
-            if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'rwp_analytics_dashboard_nonce' ) ) {
-                wp_send_json_error( 'Invalid nonce' );
-                return;
-            }
-
-            if ( ! current_user_can( 'manage_options' ) ) {
-                wp_send_json_error( 'Unauthorized' );
-                return;
-            }
-
-            $hashtags = $this->analytics->get_popular_hashtags( 10 );
-            wp_send_json_success( $hashtags ?: array() );
-        } catch ( Exception $e ) {
-            error_log( 'RWP Analytics Hashtags Error: ' . $e->getMessage() );
-            wp_send_json_error( 'Server error occurred' );
-        }
-    }
-
-    /**
-     * AJAX handler for template stats.
-     */
-    public function ajax_analytics_templates() {
-        try {
-            if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'rwp_analytics_dashboard_nonce' ) ) {
-                wp_send_json_error( 'Invalid nonce' );
-                return;
-            }
-
-            if ( ! current_user_can( 'manage_options' ) ) {
-                wp_send_json_error( 'Unauthorized' );
-                return;
-            }
-
-        global $wpdb;
-        $table_name = $wpdb->prefix . 'rwp_anonymous_analytics';
-
-        $results = $wpdb->get_results(
-            $wpdb->prepare(
-                "SELECT 
-                    JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.template_hash')) as template_hash,
-                    JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.platform')) as platform,
-                    JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.completion_status')) as completion_status,
-                    COUNT(*) as usage_count
-                 FROM {$table_name} 
-                 WHERE event_type = %s
-                 AND timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-                 GROUP BY template_hash, platform
-                 ORDER BY usage_count DESC
-                 LIMIT 10",
-                RWP_Creator_Suite_Anonymous_Analytics::EVENT_TEMPLATE_USED
-            ),
-            ARRAY_A
-        );
-
-        // Process results to add template_id
-        $processed = array_map( function( $result ) {
-            $result['template_id'] = substr( $result['template_hash'] ?? '', 0, 8 );
-            $result['avg_customizations'] = (float) rand( 1, 5 );
-            return $result;
-        }, $results ?: array() );
-
-            wp_send_json_success( $processed );
-        } catch ( Exception $e ) {
-            error_log( 'RWP Analytics Templates Error: ' . $e->getMessage() );
-            wp_send_json_error( 'Server error occurred' );
-        }
-    }
-
-    /**
-     * AJAX handler for feature stats.
-     */
-    public function ajax_analytics_features() {
-        try {
-            if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'rwp_analytics_dashboard_nonce' ) ) {
-                wp_send_json_error( 'Invalid nonce' );
-                return;
-            }
-
-            if ( ! current_user_can( 'manage_options' ) ) {
-                wp_send_json_error( 'Unauthorized' );
-                return;
-            }
-
-        // Simulated feature data
-        $features = array(
-            array( 'feature' => 'caption_writer', 'usage_count' => rand( 100, 500 ) ),
-            array( 'feature' => 'content_repurposer', 'usage_count' => rand( 50, 300 ) ),
-            array( 'feature' => 'hashtag_tracker', 'usage_count' => rand( 30, 200 ) ),
-            array( 'feature' => 'instagram_analyzer', 'usage_count' => rand( 20, 150 ) ),
-        );
-
-            wp_send_json_success( $features );
-        } catch ( Exception $e ) {
-            error_log( 'RWP Analytics Features Error: ' . $e->getMessage() );
-            wp_send_json_error( 'Server error occurred' );
-        }
-    }
-
-    /**
-     * AJAX handler for consent stats.
-     */
-    public function ajax_analytics_consent() {
-        try {
-            if ( ! wp_verify_nonce( $_POST['nonce'] ?? '', 'rwp_analytics_dashboard_nonce' ) ) {
-                wp_send_json_error( 'Invalid nonce' );
-                return;
-            }
-
-            if ( ! current_user_can( 'manage_options' ) ) {
-                wp_send_json_error( 'Unauthorized' );
-                return;
-            }
-
-            $consent_stats = $this->consent_manager->get_consent_stats();
-            wp_send_json_success( $consent_stats );
-        } catch ( Exception $e ) {
-            error_log( 'RWP Analytics Consent Error: ' . $e->getMessage() );
-            wp_send_json_error( 'Server error occurred' );
-        }
-    }
 }

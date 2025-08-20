@@ -16,6 +16,10 @@
             this.charts = {};
             this.updateInterval = null;
             this.currentTab = 'overview';
+            this.requestInProgress = false;
+            this.failureCount = 0;
+            this.maxFailures = 3;
+            this.circuitBreakerOpen = false;
             
             this.init();
         }
@@ -27,7 +31,7 @@
             this.bindEvents();
             this.initializeTabs();
             this.loadDashboardData();
-            this.startPeriodicUpdates();
+            // this.startPeriodicUpdates(); // DISABLED - causing infinite AJAX requests consuming browser resources
         }
 
         /**
@@ -88,13 +92,16 @@
         async loadDashboardData() {
             try {
                 const response = await this.apiRequest('analytics/summary');
-                if (response.success) {
+                if (response.success && response.data) {
                     this.updateDashboardMetrics(response.data);
                     this.renderCharts(response.data);
+                } else {
+                    console.warn('Dashboard data request failed or returned no data:', response.message);
+                    this.showFallbackData();
                 }
             } catch (error) {
                 console.error('Failed to load dashboard data:', error);
-                this.showError('Failed to load dashboard data. Please try refreshing the page.');
+                this.showFallbackData();
             }
         }
 
@@ -102,22 +109,27 @@
          * Load tab-specific data
          */
         async loadTabData(tabId) {
-            switch (tabId) {
-                case 'overview':
-                    await this.loadOverviewData();
-                    break;
-                case 'hashtags':
-                    await this.loadHashtagData();
-                    break;
-                case 'content':
-                    await this.loadContentData();
-                    break;
-                case 'ai-metrics':
-                    await this.loadAIMetricsData();
-                    break;
-                case 'privacy':
-                    await this.loadPrivacyData();
-                    break;
+            try {
+                switch (tabId) {
+                    case 'overview':
+                        await this.loadOverviewData();
+                        break;
+                    case 'hashtags':
+                        await this.loadHashtagData();
+                        break;
+                    case 'content':
+                        await this.loadContentData();
+                        break;
+                    case 'ai-metrics':
+                        await this.loadAIMetricsData();
+                        break;
+                    case 'privacy':
+                        await this.loadPrivacyData();
+                        break;
+                }
+            } catch (error) {
+                console.error(`Failed to load ${tabId} tab data:`, error);
+                this.showTabError(tabId);
             }
         }
 
@@ -128,20 +140,27 @@
             try {
                 // Load platform stats
                 const platformResponse = await this.apiRequest('analytics/platforms');
-                if (platformResponse.success) {
+                if (platformResponse.success && platformResponse.data) {
                     this.renderPlatformChart(platformResponse.data);
+                } else {
+                    console.warn('Platform data unavailable, showing placeholder');
+                    this.showChartPlaceholder('platform-chart');
                 }
 
                 // Load usage trends
                 const trendsResponse = await this.apiRequest('analytics/trends', { period: 'daily', days: 7 });
-                if (trendsResponse.success) {
+                if (trendsResponse.success && trendsResponse.data) {
                     this.renderUsageTimelineChart(trendsResponse.data);
+                } else {
+                    console.warn('Trends data unavailable, showing placeholder');
+                    this.showChartPlaceholder('usage-timeline-chart');
                 }
 
-                // Load activity feed
+                // Load activity feed (always succeeds with fallback)
                 this.loadActivityFeed();
             } catch (error) {
                 console.error('Failed to load overview data:', error);
+                throw error; // Re-throw to be caught by loadTabData
             }
         }
 
@@ -239,9 +258,10 @@
             const ctx = document.getElementById('platform-chart');
             if (!ctx) return;
 
-            // Destroy existing chart
+            // Properly destroy existing chart and clear references
             if (this.charts.platformChart) {
                 this.charts.platformChart.destroy();
+                this.charts.platformChart = null;
             }
 
             const platforms = data.map(item => this.capitalizeFirst(item.platform));
@@ -297,9 +317,10 @@
             const ctx = document.getElementById('usage-timeline-chart');
             if (!ctx) return;
 
-            // Destroy existing chart
+            // Properly destroy existing chart and clear references
             if (this.charts.usageTimelineChart) {
                 this.charts.usageTimelineChart.destroy();
+                this.charts.usageTimelineChart = null;
             }
 
             const dates = data.map(item => this.formatDate(item.period));
@@ -379,9 +400,10 @@
             const ctx = document.getElementById('hashtag-trends-chart');
             if (!ctx) return;
 
-            // Destroy existing chart
+            // Properly destroy existing chart and clear references
             if (this.charts.hashtagTrendsChart) {
                 this.charts.hashtagTrendsChart.destroy();
+                this.charts.hashtagTrendsChart = null;
             }
 
             // Simulated trend data
@@ -433,9 +455,10 @@
             const ctx = document.getElementById('platform-hashtags-chart');
             if (!ctx) return;
 
-            // Destroy existing chart
+            // Properly destroy existing chart and clear references
             if (this.charts.platformHashtagsChart) {
                 this.charts.platformHashtagsChart.destroy();
+                this.charts.platformHashtagsChart = null;
             }
 
             // Group data by platform
@@ -524,9 +547,10 @@
             const ctx = document.getElementById('content-patterns-chart');
             if (!ctx) return;
 
-            // Destroy existing chart
+            // Properly destroy existing chart and clear references
             if (this.charts.contentPatternsChart) {
                 this.charts.contentPatternsChart.destroy();
+                this.charts.contentPatternsChart = null;
             }
 
             // Prepare data
@@ -573,9 +597,10 @@
             const ctx = document.getElementById('tone-effectiveness-chart');
             if (!ctx) return;
 
-            // Destroy existing chart
+            // Properly destroy existing chart and clear references
             if (this.charts.toneEffectivenessChart) {
                 this.charts.toneEffectivenessChart.destroy();
+                this.charts.toneEffectivenessChart = null;
             }
 
             // Simulated tone data by platform
@@ -622,9 +647,10 @@
             const ctx = document.getElementById('ai-performance-chart');
             if (!ctx) return;
 
-            // Destroy existing chart
+            // Properly destroy existing chart and clear references
             if (this.charts.aiPerformanceChart) {
                 this.charts.aiPerformanceChart.destroy();
+                this.charts.aiPerformanceChart = null;
             }
 
             // Simulated performance data
@@ -692,9 +718,10 @@
             const ctx = document.getElementById('error-patterns-chart');
             if (!ctx) return;
 
-            // Destroy existing chart
+            // Properly destroy existing chart and clear references
             if (this.charts.errorPatternsChart) {
                 this.charts.errorPatternsChart.destroy();
+                this.charts.errorPatternsChart = null;
             }
 
             // Simulated error data
@@ -854,43 +881,107 @@
         }
 
         /**
-         * Make API request
+         * Make API request with circuit breaker pattern
          */
         async apiRequest(endpoint, params = {}) {
-            // For now, use AJAX fallback since REST API might not be properly initialized
-            return await this.ajaxRequest(endpoint, params);
+            // Check circuit breaker
+            if (this.circuitBreakerOpen) {
+                console.warn('Circuit breaker open - blocking API requests to prevent resource consumption');
+                return { success: false, data: [], message: 'Circuit breaker open' };
+            }
+
+            // Prevent concurrent requests
+            if (this.requestInProgress) {
+                console.warn('Request already in progress - blocking duplicate request');
+                return { success: false, data: [], message: 'Request in progress' };
+            }
+
+            this.requestInProgress = true;
+
+            try {
+                const result = await this.restApiRequest(endpoint, params);
+                
+                if (result.success) {
+                    // Reset failure count on success
+                    this.failureCount = 0;
+                } else {
+                    this.handleRequestFailure();
+                }
+                
+                return result;
+            } catch (error) {
+                this.handleRequestFailure();
+                console.error('API request failed:', error);
+                return { success: false, data: [], message: error.message };
+            } finally {
+                this.requestInProgress = false;
+            }
         }
 
         /**
-         * Make AJAX request as fallback
+         * Handle request failure and manage circuit breaker
          */
-        async ajaxRequest(endpoint, params = {}) {
-            return new Promise((resolve, reject) => {
-                // Convert endpoint like 'analytics/summary' to 'rwp_analytics_analytics_summary'
-                const action = 'rwp_analytics_' + endpoint.replace(/[\/\-]/g, '_');
-                console.log('Making AJAX request:', action, params); // Debug log
+        handleRequestFailure() {
+            this.failureCount++;
+            console.warn(`API request failure ${this.failureCount}/${this.maxFailures}`);
+            
+            if (this.failureCount >= this.maxFailures) {
+                this.circuitBreakerOpen = true;
+                console.error('Circuit breaker opened - too many failures. API requests disabled to protect browser resources.');
                 
-                const ajaxData = {
-                    action: action,
-                    nonce: rwpAnalyticsDashboard.nonce,
-                    ...params
-                };
+                // Auto-reset circuit breaker after 5 minutes
+                setTimeout(() => {
+                    this.circuitBreakerOpen = false;
+                    this.failureCount = 0;
+                    console.info('Circuit breaker reset - API requests re-enabled');
+                }, 300000); // 5 minutes
+            }
+        }
 
-                $.post(rwpAnalyticsDashboard.ajaxUrl, ajaxData)
-                    .done(function(response) {
-                        console.log('AJAX response:', response); // Debug log
-                        if (response.success) {
-                            resolve(response);
-                        } else {
-                            console.error('AJAX request failed:', response);
-                            reject(new Error(response.data || 'AJAX request failed'));
-                        }
-                    })
-                    .fail(function(xhr, status, error) {
-                        console.error('AJAX error details:', {xhr, status, error, responseText: xhr.responseText});
-                        reject(new Error(`AJAX Error: ${error}`));
-                    });
+        /**
+         * Make REST API request
+         */
+        async restApiRequest(endpoint, params = {}) {
+            // Build the REST API URL
+            const baseUrl = rwpAnalyticsDashboard.apiUrl;
+            // Ensure baseUrl ends with slash and endpoint doesn't start with slash
+            const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+            const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+            const fullUrl = cleanBaseUrl + cleanEndpoint;
+            const url = new URL(fullUrl);
+            
+            // Add query parameters for GET requests
+            Object.keys(params).forEach(key => {
+                if (params[key] !== undefined && params[key] !== null) {
+                    url.searchParams.append(key, params[key]);
+                }
             });
+
+            console.log('Making REST API request:', url.toString()); // Debug log
+
+            try {
+                const response = await fetch(url.toString(), {
+                    method: 'GET',
+                    headers: {
+                        'X-WP-Nonce': rwpAnalyticsDashboard.restNonce,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('REST API response status:', response.status); // Debug log
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('REST API response data:', data); // Debug log
+
+                return data;
+            } catch (error) {
+                console.error('REST API request failed:', error);
+                throw error;
+            }
         }
 
         /**
@@ -945,6 +1036,78 @@
         showError(message) {
             // You could implement a notification system here
             console.error('Error:', message);
+        }
+
+        /**
+         * Show fallback data when API fails
+         */
+        showFallbackData() {
+            console.info('Showing fallback data due to API failure');
+            
+            // Update metrics with placeholder data
+            $('#active-creators').text('--');
+            $('#content-generated').text('--');
+            $('#top-platform').text('N/A');
+            $('#most-used-tone').text('N/A');
+            
+            // Show message in activity feed
+            const activityFeed = $('#activity-feed');
+            if (activityFeed.length) {
+                activityFeed.html(`
+                    <div class="rwp-activity-error">
+                        <p><strong>Analytics data unavailable</strong></p>
+                        <p>Dashboard is in offline mode. Data will reload when connection is restored.</p>
+                    </div>
+                `);
+            }
+        }
+
+        /**
+         * Show tab-specific error
+         */
+        showTabError(tabId) {
+            const tabElement = $(`#${tabId}`);
+            if (tabElement.length) {
+                // Find chart containers and show error messages
+                tabElement.find('canvas').each(function() {
+                    const canvas = $(this);
+                    const container = canvas.closest('.rwp-chart-container');
+                    if (container.length) {
+                        container.append(`
+                            <div class="rwp-chart-error">
+                                <p>Unable to load chart data</p>
+                            </div>
+                        `);
+                        canvas.hide();
+                    }
+                });
+            }
+        }
+
+        /**
+         * Show placeholder for individual charts
+         */
+        showChartPlaceholder(chartId) {
+            const canvas = document.getElementById(chartId);
+            if (canvas) {
+                const container = canvas.closest('.rwp-chart-container');
+                if (container) {
+                    // Remove any existing error messages
+                    const existingError = container.querySelector('.rwp-chart-error');
+                    if (existingError) {
+                        existingError.remove();
+                    }
+                    
+                    // Add placeholder message
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'rwp-chart-placeholder';
+                    placeholder.innerHTML = '<p>Chart data temporarily unavailable</p>';
+                    container.appendChild(placeholder);
+                    
+                    // Hide canvas
+                    canvas.style.display = 'none';
+                }
+            }
         }
 
         /**

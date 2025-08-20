@@ -997,6 +997,51 @@ module.exports = {
 8. **Nest All Admin Pages** - All admin option pages MUST use `add_submenu_page()` with parent slug `'rwp-creator-tools'` - never create additional top-level menus
 9. **Rollback Strategy** - Always have a way to revert changes
 
+## LocalWP Development Environment Issues
+
+### NODE_ENV Production Override Issue
+
+**Problem**: LocalWP's site shell automatically sets `NODE_ENV=production`, which tells npm to skip installing devDependencies entirely, causing build failures for WordPress block development.
+
+**Root Cause**: 
+- LocalWP sets `NODE_ENV=production` by default in site shells
+- This is a known issue in the LocalWP community  
+- npm respects `NODE_ENV` and skips devDependencies when set to "production"
+- WordPress block development requires devDependencies like `@wordpress/scripts`
+
+**Solution**: Override the environment variable before installing:
+```bash
+export NODE_ENV=development && npm install
+```
+
+**Key Findings**:
+- LocalWP sets `NODE_ENV=production` by default in site shells
+- npm skips devDependencies when `NODE_ENV=production` 
+- The fix is simple but not obvious - requires manually setting `NODE_ENV=development`
+- After fix: 1500+ packages install successfully vs 0 devDependencies before
+- `wp-scripts build` works properly after environment override
+- All WordPress blocks compile correctly with proper dependencies
+
+**Best Practices for LocalWP Development**:
+1. Always check `NODE_ENV` value when setting up a new LocalWP site: `echo $NODE_ENV`
+2. Override to development before any npm operations: `export NODE_ENV=development`
+3. Add to shell profile for permanent fix: `echo "export NODE_ENV=development" >> ~/.bashrc`
+4. Verify devDependencies installed: `npm list --depth=0 --dev`
+
+**Alternative Solutions**:
+```bash
+# Option 1: One-time override
+NODE_ENV=development npm install
+
+# Option 2: Permanent shell override
+echo "export NODE_ENV=development" >> ~/.zshrc && source ~/.zshrc
+
+# Option 3: Package.json script override
+"scripts": {
+  "install:dev": "NODE_ENV=development npm install"
+}
+```
+
 ## Monitoring & Health Checks
 
 ### Plugin Health Monitor

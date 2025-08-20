@@ -1,0 +1,550 @@
+/**
+ * GDPR Admin Interface Styles
+ * 
+ * Styles for the GDPR compliance admin interface.
+ */
+
+/* Main admin container */
+.rwp-gdpr-admin {
+    margin: 20px 0;
+}
+
+.rwp-gdpr-content {
+    margin-top: 20px;
+}
+
+/* Navigation tabs */
+.nav-tab-wrapper {
+    border-bottom: 1px solid #ccd0d4;
+    margin-bottom: 20px;
+}
+
+/* Overview section */
+.rwp-gdpr-overview {
+    display: grid;
+    gap: 20px;
+}
+
+/* Card layout */
+.rwp-gdpr-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.rwp-card {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.rwp-card h3 {
+    margin: 0 0 15px 0;
+    font-size: 1.2em;
+    color: #1d2327;
+}
+
+.rwp-card h4 {
+    margin: 0 0 10px 0;
+    font-size: 1.1em;
+    color: #1d2327;
+}
+
+/* Compliance score display */
+.compliance-score {
+    text-align: center;
+}
+
+.score-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.score-number {
+    font-size: 3em;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.score-number.score-compliant {
+    color: #00a32a;
+}
+
+.score-number.score-minor_issues {
+    color: #dba617;
+}
+
+.score-number.score-warning {
+    color: #f56e28;
+}
+
+.score-number.score-critical {
+    color: #d63638;
+}
+
+.score-status {
+    font-size: 1.1em;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #646970;
+}
+
+/* Metrics display */
+.consent-metrics,
+.data-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 15px;
+}
+
+.metric {
+    text-align: center;
+}
+
+.metric-number {
+    display: block;
+    font-size: 1.8em;
+    font-weight: bold;
+    color: #2271b1;
+    line-height: 1.2;
+}
+
+.metric-number.metric-compliant {
+    color: #00a32a;
+}
+
+.metric-number.metric-non_compliant {
+    color: #d63638;
+}
+
+.metric-label {
+    display: block;
+    font-size: 0.9em;
+    color: #646970;
+    margin-top: 5px;
+}
+
+/* Recent activity */
+.rwp-gdpr-recent-activity {
+    margin-bottom: 30px;
+}
+
+.activity-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+}
+
+.activity-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-item.activity-compliance_check::before {
+    content: "🔍";
+    margin-right: 10px;
+}
+
+.activity-item.activity-data_cleanup::before {
+    content: "🧹";
+    margin-right: 10px;
+}
+
+.activity-description {
+    flex: 1;
+}
+
+.activity-time {
+    font-size: 0.9em;
+    color: #646970;
+}
+
+/* Quick actions */
+.rwp-gdpr-quick-actions {
+    margin-bottom: 30px;
+}
+
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+/* Compliance monitor */
+.rwp-compliance-monitor {
+    max-width: 1000px;
+}
+
+.rwp-compliance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.compliance-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Compliance status banner */
+.compliance-status-banner {
+    padding: 20px;
+    border-radius: 4px;
+    margin-bottom: 25px;
+}
+
+.compliance-status-banner.status-compliant {
+    background: #d7eddb;
+    border-left: 4px solid #00a32a;
+}
+
+.compliance-status-banner.status-minor_issues {
+    background: #fcf2cd;
+    border-left: 4px solid #dba617;
+}
+
+.compliance-status-banner.status-warning {
+    background: #fcebcd;
+    border-left: 4px solid #f56e28;
+}
+
+.compliance-status-banner.status-critical {
+    background: #fcdddd;
+    border-left: 4px solid #d63638;
+}
+
+.status-info h4 {
+    margin: 0 0 8px 0;
+}
+
+.status-description {
+    margin: 0;
+    font-size: 1.1em;
+}
+
+/* Compliance issues */
+.compliance-issues {
+    margin-bottom: 25px;
+}
+
+.issue-item {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.issue-item.severity-low {
+    border-left: 4px solid #72aee6;
+}
+
+.issue-item.severity-medium {
+    border-left: 4px solid #dba617;
+}
+
+.issue-item.severity-high {
+    border-left: 4px solid #f56e28;
+}
+
+.issue-item.severity-critical {
+    border-left: 4px solid #d63638;
+}
+
+.issue-item h5 {
+    margin: 0 0 10px 0;
+    color: #1d2327;
+}
+
+.issue-action,
+.issue-count {
+    margin: 5px 0;
+    font-size: 0.9em;
+}
+
+.issue-action strong,
+.issue-count strong {
+    color: #1d2327;
+}
+
+/* Checks performed */
+.compliance-checks-performed {
+    margin-bottom: 25px;
+}
+
+.checks-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+}
+
+.check-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.check-item:last-child {
+    border-bottom: none;
+}
+
+.check-name {
+    font-weight: 500;
+}
+
+.check-status.check-passed {
+    color: #00a32a;
+    font-weight: 600;
+}
+
+.check-status.check-passed::before {
+    content: "✓ ";
+}
+
+/* Compliance trends */
+.compliance-trends {
+    margin-bottom: 25px;
+}
+
+.trend-info p {
+    margin: 5px 0;
+}
+
+.trend-improving {
+    color: #00a32a;
+    font-weight: 600;
+}
+
+.trend-declining {
+    color: #d63638;
+    font-weight: 600;
+}
+
+.trend-stable {
+    color: #dba617;
+    font-weight: 600;
+}
+
+/* No compliance data */
+.no-compliance-data {
+    text-align: center;
+    padding: 40px 20px;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+}
+
+/* Consent management */
+.rwp-consent-management {
+    max-width: 1000px;
+}
+
+.consent-overview-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.consent-category {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.consent-category .metric-number {
+    color: white;
+    font-size: 2.2em;
+}
+
+.consent-category .metric-label {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Banner preview */
+.consent-banner-preview {
+    margin-bottom: 30px;
+}
+
+.banner-preview-container {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+}
+
+/* Data subject rights */
+.rwp-data-rights {
+    max-width: 1000px;
+}
+
+.data-rights-overview {
+    margin-bottom: 30px;
+}
+
+.data-rights-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.data-rights-cards .rwp-card {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+.data-rights-cards .rwp-card h4 {
+    color: white;
+}
+
+.rights-info p {
+    color: rgba(255, 255, 255, 0.9);
+    margin: 8px 0;
+}
+
+.rights-info strong {
+    color: white;
+}
+
+/* Recent requests table */
+.recent-requests {
+    margin-bottom: 30px;
+}
+
+.recent-requests .wp-list-table {
+    border: 1px solid #c3c4c7;
+}
+
+.status-completed {
+    color: #00a32a;
+    font-weight: 600;
+}
+
+.status-pending {
+    color: #dba617;
+    font-weight: 600;
+}
+
+.status-failed {
+    color: #d63638;
+    font-weight: 600;
+}
+
+/* Data rights tools */
+.data-rights-tools {
+    margin-bottom: 30px;
+}
+
+.tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.tool-item {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+}
+
+.tool-item h5 {
+    margin: 0 0 10px 0;
+    color: #1d2327;
+}
+
+.tool-item p {
+    color: #646970;
+    margin-bottom: 15px;
+}
+
+/* GDPR settings */
+.rwp-gdpr-settings {
+    max-width: 800px;
+}
+
+.rwp-gdpr-settings h3 {
+    margin-top: 30px;
+    margin-bottom: 15px;
+    color: #1d2327;
+    border-bottom: 1px solid #c3c4c7;
+    padding-bottom: 8px;
+}
+
+.rwp-gdpr-settings .form-table th {
+    width: 250px;
+}
+
+/* Responsive design */
+@media screen and (max-width: 768px) {
+    .rwp-gdpr-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .consent-metrics,
+    .data-metrics {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .quick-actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .rwp-compliance-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .compliance-actions {
+        width: 100%;
+    }
+    
+    .compliance-actions .button {
+        flex: 1;
+    }
+    
+    .data-rights-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .tools-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Loading states */
+.button.updating-message {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* Chart containers */
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin: 20px 0;
+}

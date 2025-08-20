@@ -54,6 +54,11 @@ class RWP_Creator_Suite {
     private $analytics_dashboard;
     private $account_manager;
     private $phase_3_initializer;
+    private $granular_consent;
+    private $data_subject_rights;
+    private $compliance_monitor;
+    private $privacy_by_design;
+    private $gdpr_admin_interface;
 
     /**
      * Get single instance of the plugin.
@@ -122,6 +127,13 @@ class RWP_Creator_Suite {
         
         // Initialize Analytics Module - Phase 3 User Value Delivery
         $this->phase_3_initializer = RWP_Creator_Suite_Phase_3_Initializer::get_instance();
+        
+        // Initialize Analytics Module - Phase 4 GDPR Compliance
+        $this->granular_consent = new RWP_Creator_Suite_Granular_Consent();
+        $this->data_subject_rights = new RWP_Creator_Suite_Data_Subject_Rights();
+        $this->compliance_monitor = new RWP_Creator_Suite_Compliance_Monitor();
+        $this->privacy_by_design = new RWP_Creator_Suite_Privacy_By_Design();
+        $this->gdpr_admin_interface = new RWP_Creator_Suite_GDPR_Admin_Interface();
 
         // Initialize all components
         $this->wp_login_integration->init();
@@ -145,6 +157,13 @@ class RWP_Creator_Suite {
         
         // Initialize Phase 3 User Value Delivery
         $this->phase_3_initializer->init();
+        
+        // Initialize Phase 4 GDPR Compliance
+        $this->granular_consent->init();
+        $this->data_subject_rights->init();
+        $this->compliance_monitor->init();
+        $this->privacy_by_design->init();
+        $this->gdpr_admin_interface->init();
 
         // Additional hooks
         add_action( 'init', array( $this, 'load_textdomain' ) );
@@ -228,6 +247,13 @@ class RWP_Creator_Suite {
         
         // Analytics Module - Phase 3 User Value Delivery
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-phase-3-initializer.php';
+        
+        // Analytics Module - Phase 4 GDPR Compliance
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-granular-consent.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-data-subject-rights.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-compliance-monitor.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-privacy-by-design.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-gdpr-admin-interface.php';
 
         // Account Manager Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/account-manager/class-account-manager.php';

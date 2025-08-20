@@ -2,7 +2,7 @@
 /**
  * Plugin Name: RWP Creator Suite
  * Description: A suite of tools for content creators including streamlined user authentication.
- * Version: 1.6.0
+ * Version: 1.7.0
  * Author: Jeremy Hixon
  * Author URI: https://jeremyhixon.com
  * Text Domain: rwp-creator-suite
@@ -17,7 +17,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Define plugin constants
-define( 'RWP_CREATOR_SUITE_VERSION', '1.6.0' );
+define( 'RWP_CREATOR_SUITE_VERSION', '1.7.0' );
 define( 'RWP_CREATOR_SUITE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'RWP_CREATOR_SUITE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'RWP_CREATOR_SUITE_PLUGIN_FILE', __FILE__ );
@@ -53,6 +53,7 @@ class RWP_Creator_Suite {
     private $analytics_api;
     private $analytics_dashboard;
     private $account_manager;
+    private $phase_3_initializer;
 
     /**
      * Get single instance of the plugin.
@@ -118,6 +119,9 @@ class RWP_Creator_Suite {
         $this->analytics_api = new RWP_Creator_Suite_Analytics_API();
         $this->analytics_dashboard = new RWP_Creator_Suite_Analytics_Dashboard();
         $this->account_manager = new RWP_Creator_Suite_Account_Manager();
+        
+        // Initialize Analytics Module - Phase 3 User Value Delivery
+        $this->phase_3_initializer = RWP_Creator_Suite_Phase_3_Initializer::get_instance();
 
         // Initialize all components
         $this->wp_login_integration->init();
@@ -138,6 +142,9 @@ class RWP_Creator_Suite {
         $this->analytics_api->init();
         $this->analytics_dashboard->init();
         $this->account_manager->init();
+        
+        // Initialize Phase 3 User Value Delivery
+        $this->phase_3_initializer->init();
 
         // Additional hooks
         add_action( 'init', array( $this, 'load_textdomain' ) );
@@ -218,6 +225,9 @@ class RWP_Creator_Suite {
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-hashtag-tracker.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-analytics-api.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-analytics-dashboard.php';
+        
+        // Analytics Module - Phase 3 User Value Delivery
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-phase-3-initializer.php';
 
         // Account Manager Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/account-manager/class-account-manager.php';

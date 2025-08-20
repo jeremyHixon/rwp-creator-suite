@@ -1,0 +1,696 @@
+/**
+ * RWP Creator Suite - Insights Admin Styles
+ * 
+ * Styles for the analytics insights dashboard and related admin pages.
+ */
+
+/* Base Layout */
+.rwp-insights-page,
+.rwp-notifications-page,
+.rwp-achievements-page {
+    background: #f6f7f7;
+}
+
+/* Consent Notice */
+.rwp-consent-notice {
+    max-width: 800px;
+    margin: 40px auto;
+}
+
+.rwp-consent-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    padding: 40px;
+    text-align: center;
+}
+
+.rwp-consent-icon .dashicons {
+    font-size: 80px;
+    color: #3b82f6;
+    margin-bottom: 20px;
+}
+
+.rwp-consent-card h2 {
+    color: #1f2937;
+    font-size: 28px;
+    margin-bottom: 16px;
+}
+
+.rwp-consent-card > p {
+    font-size: 16px;
+    color: #6b7280;
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+.rwp-consent-benefits {
+    text-align: left;
+    margin: 30px 0;
+    padding: 20px;
+    background: #f0f9ff;
+    border-radius: 8px;
+}
+
+.rwp-consent-benefits h3 {
+    color: #1e40af;
+    margin-top: 0;
+}
+
+.rwp-consent-benefits ul {
+    list-style: none;
+    padding: 0;
+}
+
+.rwp-consent-benefits li {
+    padding: 8px 0;
+    color: #374151;
+    font-size: 15px;
+}
+
+.rwp-consent-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.rwp-consent-actions .button-large {
+    font-size: 16px;
+    padding: 12px 24px;
+    height: auto;
+}
+
+/* Insights Dashboard */
+.rwp-insights-dashboard {
+    max-width: 1200px;
+}
+
+.rwp-insights-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30px;
+    gap: 20px;
+}
+
+.rwp-insights-summary {
+    flex: 1;
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.rwp-insights-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.rwp-insights-actions .button .dashicons {
+    margin-right: 5px;
+}
+
+/* Stats Grid */
+.rwp-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.rwp-stat-item {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    border-left: 4px solid #3b82f6;
+}
+
+.rwp-stat-number {
+    display: block;
+    font-size: 32px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 5px;
+}
+
+.rwp-stat-label {
+    color: #6b7280;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Tab Navigation */
+.rwp-insights-tabs {
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.rwp-tab-nav {
+    display: flex;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.rwp-tab-button {
+    background: none;
+    border: none;
+    padding: 16px 24px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.rwp-tab-button:hover {
+    color: #374151;
+    background: #f3f4f6;
+}
+
+.rwp-tab-button.active {
+    color: #3b82f6;
+    background: #ffffff;
+}
+
+.rwp-tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #3b82f6;
+}
+
+.rwp-tab-content {
+    padding: 30px;
+}
+
+.rwp-tab-panel {
+    display: none;
+}
+
+.rwp-tab-panel.active {
+    display: block;
+}
+
+/* Insights Grid */
+.rwp-insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 20px;
+}
+
+.rwp-insight-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+}
+
+.rwp-insight-card h3 {
+    margin-top: 0;
+    color: #1f2937;
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.rwp-chart-container {
+    position: relative;
+    height: 300px;
+    margin-top: 20px;
+}
+
+.rwp-chart-container canvas {
+    max-height: 100%;
+}
+
+/* Trending Section */
+.rwp-trending-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.rwp-trending-item {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-left: 4px solid #10b981;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.rwp-trending-title {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 5px;
+}
+
+.rwp-trending-description {
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.rwp-hashtag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.rwp-hashtag {
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Benchmarks */
+.rwp-benchmark-item {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    border: 1px solid #e5e7eb;
+}
+
+.rwp-benchmark-metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.rwp-benchmark-label {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.rwp-benchmark-score {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rwp-score-excellent { color: #10b981; }
+.rwp-score-good { color: #3b82f6; }
+.rwp-score-average { color: #f59e0b; }
+.rwp-score-needs-improvement { color: #ef4444; }
+
+.rwp-benchmark-description {
+    color: #6b7280;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+/* Recommendations */
+.rwp-recommendation {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+    border-left: 4px solid #f59e0b;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.rwp-recommendation-header {
+    display: flex;
+    justify-content: between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.rwp-recommendation-title {
+    font-weight: 600;
+    color: #1f2937;
+    flex: 1;
+}
+
+.rwp-recommendation-meta {
+    display: flex;
+    gap: 10px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.rwp-impact-high { color: #10b981; }
+.rwp-impact-medium { color: #f59e0b; }
+.rwp-impact-low { color: #6b7280; }
+
+.rwp-recommendation-description {
+    color: #374151;
+    margin-bottom: 15px;
+    line-height: 1.5;
+}
+
+.rwp-recommendation-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.rwp-recommendation-actions .button {
+    font-size: 13px;
+    padding: 6px 12px;
+    height: auto;
+}
+
+/* Achievements */
+.rwp-achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.rwp-achievement {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.rwp-achievement:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.rwp-achievement-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    display: block;
+}
+
+.rwp-achievement-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 5px;
+}
+
+.rwp-achievement-level {
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+.rwp-achievement-description {
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.rwp-achievement-progress {
+    margin-top: 15px;
+}
+
+.rwp-progress-bar {
+    background: #e5e7eb;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.rwp-progress-fill {
+    background: linear-gradient(90deg, #10b981, #34d399);
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.rwp-progress-text {
+    font-size: 12px;
+    color: #6b7280;
+    display: flex;
+    justify-content: space-between;
+}
+
+.rwp-achievement.completed {
+    background: linear-gradient(135deg, #f0f9ff 0%, #dbeafe 100%);
+    border: 2px solid #3b82f6;
+}
+
+.rwp-achievement.completed::before {
+    content: '';
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 24px;
+    height: 24px;
+    background: #10b981;
+    border-radius: 50%;
+}
+
+.rwp-achievement.completed::after {
+    content: '✓';
+    position: absolute;
+    top: 19px;
+    right: 21px;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Notifications Page */
+.rwp-notifications-container {
+    max-width: 1000px;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+}
+
+.rwp-notification-preferences,
+.rwp-notification-stats {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.rwp-preferences-form {
+    margin-top: 20px;
+}
+
+.rwp-preference-group {
+    margin-bottom: 30px;
+}
+
+.rwp-preference-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    padding: 15px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rwp-preference-item:hover {
+    border-color: #3b82f6;
+    background: #f8fafc;
+}
+
+.rwp-preference-item input[type="checkbox"] {
+    margin-top: 2px;
+}
+
+.rwp-preference-content strong {
+    display: block;
+    color: #1f2937;
+    margin-bottom: 5px;
+}
+
+.rwp-preference-content p {
+    color: #6b7280;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.rwp-preference-settings {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.rwp-preference-settings h3 {
+    color: #1f2937;
+    margin-bottom: 10px;
+}
+
+.rwp-preference-settings label {
+    display: block;
+    margin-bottom: 10px;
+    color: #374151;
+}
+
+.rwp-preference-settings select {
+    width: 100%;
+    max-width: 200px;
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background: white;
+}
+
+.rwp-form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Activity Feed */
+.rwp-activity-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.rwp-activity-item:last-child {
+    border-bottom: none;
+}
+
+.rwp-activity-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+}
+
+.rwp-activity-content {
+    flex: 1;
+}
+
+.rwp-activity-text {
+    color: #374151;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.rwp-activity-time {
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+/* Loading States */
+.rwp-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    color: #6b7280;
+}
+
+.rwp-loading p {
+    margin: 0;
+}
+
+/* Error States */
+.rwp-error {
+    background: #fef2f2;
+    color: #dc2626;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #fecaca;
+    text-align: center;
+}
+
+/* Success States */
+.rwp-success {
+    background: #f0fdf4;
+    color: #16a34a;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #bbf7d0;
+    text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .rwp-insights-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .rwp-insights-actions {
+        justify-content: flex-end;
+    }
+    
+    .rwp-tab-nav {
+        flex-wrap: wrap;
+    }
+    
+    .rwp-tab-button {
+        min-width: 0;
+        flex: 1;
+        text-align: center;
+    }
+    
+    .rwp-insights-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .rwp-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .rwp-notifications-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .rwp-consent-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .rwp-achievements-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .rwp-tab-content {
+        padding: 20px 15px;
+    }
+    
+    .rwp-stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .rwp-consent-card {
+        padding: 20px;
+    }
+    
+    .rwp-form-actions {
+        flex-direction: column;
+    }
+}

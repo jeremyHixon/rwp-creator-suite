@@ -150,9 +150,24 @@ class RWP_Creator_Suite_Registration_API {
      */
     public function handle_registration( $request ) {
         try {
-            // Verify nonce for security
-            $nonce = $request->get_param( 'nonce' );
-            if ( $nonce && ! wp_verify_nonce( $nonce, 'rwp_creator_suite_registration' ) ) {
+            // Verify nonce for security - MANDATORY for CSRF protection
+            $nonce = $request->get_header( 'X-WP-Nonce' );
+            if ( ! $nonce ) {
+                RWP_Creator_Suite_Error_Logger::log_security_event(
+                    'Missing nonce in registration request',
+                    array( 
+                        'email' => $request->get_param( 'email' ),
+                        'user_agent' => $request->get_header( 'User-Agent' )
+                    )
+                );
+                return new WP_Error(
+                    'missing_nonce',
+                    'Security token is required. Please refresh the page and try again.',
+                    array( 'status' => 403 )
+                );
+            }
+            
+            if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
                 RWP_Creator_Suite_Error_Logger::log_security_event(
                     'Invalid nonce in registration request',
                     array( 
@@ -219,9 +234,24 @@ class RWP_Creator_Suite_Registration_API {
      */
     public function handle_login( $request ) {
         try {
-            // Verify nonce for security
-            $nonce = $request->get_param( 'nonce' );
-            if ( $nonce && ! wp_verify_nonce( $nonce, 'rwp_creator_suite_login' ) ) {
+            // Verify nonce for security - MANDATORY for CSRF protection
+            $nonce = $request->get_header( 'X-WP-Nonce' );
+            if ( ! $nonce ) {
+                RWP_Creator_Suite_Error_Logger::log_security_event(
+                    'Missing nonce in login request',
+                    array( 
+                        'email' => $request->get_param( 'email' ),
+                        'user_agent' => $request->get_header( 'User-Agent' )
+                    )
+                );
+                return new WP_Error(
+                    'missing_nonce',
+                    'Security token is required. Please refresh the page and try again.',
+                    array( 'status' => 403 )
+                );
+            }
+            
+            if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
                 RWP_Creator_Suite_Error_Logger::log_security_event(
                     'Invalid nonce in login request',
                     array( 

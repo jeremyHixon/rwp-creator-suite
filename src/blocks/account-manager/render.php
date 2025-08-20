@@ -23,7 +23,7 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
 ) );
 
 ?>
-<div <?php echo $wrapper_attributes; ?>>
+<div <?php echo wp_kses_post( $wrapper_attributes ); ?>>
     <div class="rwp-account-manager-container">
         <?php if ( ! is_user_logged_in() ) : ?>
             <?php if ( $block_attributes['allowGuestView'] ) : ?>

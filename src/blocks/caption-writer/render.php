@@ -35,7 +35,7 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
 ) );
 ?>
 
-<div <?php echo $wrapper_attributes; ?>>
+<div <?php echo wp_kses_post( $wrapper_attributes ); ?>>
     <div class="caption-writer-app">
         <div class="caption-writer-header">
             <div class="platform-selection">
@@ -104,7 +104,7 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                                     $selected = selected( $tone, $role['value'], false );
                                     $title = isset( $role['description'] ) ? ' title="' . esc_attr( $role['description'] ) . '"' : '';
                                 ?>
-                                    <option value="<?php echo esc_attr( $role['value'] ); ?>"<?php echo $selected; ?><?php echo $title; ?>>
+                                    <option value="<?php echo esc_attr( $role['value'] ); ?>"<?php echo wp_kses_post( $selected ); ?><?php echo wp_kses_post( $title ); ?>>
                                         <?php echo esc_html( $role['label'] ); ?>
                                     </option>
                                 <?php endforeach; ?>

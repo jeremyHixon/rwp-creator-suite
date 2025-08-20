@@ -57,20 +57,20 @@ class RWP_Creator_Suite_Registration_Consent_Handler {
             #registerform > p {
                 margin: 10px 0 !important;
             }
-            #<?php echo $checkbox_id; ?>-wrapper {
+            #<?php echo esc_attr( $checkbox_id ); ?>-wrapper {
                 background: #F0F9FF;
                 border: 1px solid #3B82F6;
                 padding: 12px 16px;
                 border-radius: 4px;
             }
         </style>
-        <p id="<?php echo $checkbox_id; ?>-wrapper">
+        <p id="<?php echo esc_attr( $checkbox_id ); ?>-wrapper">
             <label for="<?php echo esc_attr( $checkbox_id ); ?>">
                 <input name="<?php echo esc_attr( $checkbox_id ); ?>" 
                        type="checkbox" 
                        id="<?php echo esc_attr( $checkbox_id ); ?>" 
                        value="1" 
-                       <?php echo $checked; ?>
+                       <?php echo esc_attr( $checked ); ?>
                        style="width: auto; margin-right: 8px;" />
                 <?php esc_html_e( 'Yes, I would like to enable advanced analytics features to get more personalized reports and insights', 'rwp-creator-suite' ); ?>
             </label>

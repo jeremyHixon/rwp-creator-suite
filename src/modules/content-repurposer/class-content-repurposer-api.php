@@ -471,12 +471,20 @@ class RWP_Creator_Suite_Content_Repurposer_API {
             );
         }
         
-        // Verify nonce for security
-        $nonce = $request->get_param( 'nonce' );
-        if ( ! empty( $nonce ) && ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+        // Verify nonce for security - MANDATORY for CSRF protection
+        $nonce = $request->get_header( 'X-WP-Nonce' );
+        if ( ! $nonce ) {
             return new WP_Error( 
-                'rest_forbidden', 
-                __( 'Invalid security token.', 'rwp-creator-suite' ), 
+                'missing_nonce', 
+                __( 'Security token is required.', 'rwp-creator-suite' ), 
+                array( 'status' => 403 ) 
+            );
+        }
+        
+        if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+            return new WP_Error( 
+                'invalid_nonce', 
+                __( 'Security token is invalid.', 'rwp-creator-suite' ), 
                 array( 'status' => 403 ) 
             );
         }
@@ -488,18 +496,25 @@ class RWP_Creator_Suite_Content_Repurposer_API {
      * Check if user has permission to use the API.
      */
     public function check_permissions( $request ) {
-        // For logged-in users, verify nonce for security
-        if ( is_user_logged_in() ) {
-            $nonce = $request->get_param( 'nonce' );
-            if ( ! empty( $nonce ) && ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-                return new WP_Error( 
-                    'rest_forbidden', 
-                    __( 'Invalid security token.', 'rwp-creator-suite' ), 
-                    array( 'status' => 403 ) 
-                );
-            }
-            return true;
+        // Verify nonce for security - MANDATORY for all users for CSRF protection
+        $nonce = $request->get_header( 'X-WP-Nonce' );
+        if ( ! $nonce ) {
+            return new WP_Error( 
+                'missing_nonce', 
+                __( 'Security token is required.', 'rwp-creator-suite' ), 
+                array( 'status' => 403 ) 
+            );
         }
+        
+        if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+            return new WP_Error( 
+                'invalid_nonce', 
+                __( 'Security token is invalid.', 'rwp-creator-suite' ), 
+                array( 'status' => 403 ) 
+            );
+        }
+        
+        return true;
         
         // For guests, check if guest access is enabled
         $allow_guest_access = get_option( 'rwp_creator_suite_allow_guest_repurpose', false );

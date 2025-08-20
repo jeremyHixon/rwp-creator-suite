@@ -440,7 +440,7 @@ class RWP_Creator_Suite_Anonymous_Analytics {
         dbDelta( $sql );
 
         // Log table creation
-        if ( $wpdb->get_var( "SHOW TABLES LIKE '{$this->table_name}'" ) === $this->table_name ) {
+        if ( $wpdb->get_var( $wpdb->prepare( "SHOW TABLES LIKE %s", $this->table_name ) ) === $this->table_name ) {
             RWP_Creator_Suite_Error_Logger::log(
                 'Analytics table created successfully',
                 RWP_Creator_Suite_Error_Logger::LOG_LEVEL_INFO

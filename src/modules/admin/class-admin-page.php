@@ -154,7 +154,7 @@ class RWP_Creator_Suite_Admin_Page {
                             ?>
                             <div class="rwp-status-item">
                                 <span class="rwp-status-label"><?php esc_html_e( 'AI Service:', 'rwp-creator-suite' ); ?></span>
-                                <span class="rwp-status-value <?php echo $is_ai_configured ? 'status-active' : 'status-warning'; ?>">
+                                <span class="rwp-status-value <?php echo esc_attr( $is_ai_configured ? 'status-active' : 'status-warning' ); ?>">
                                     <?php 
                                     if ( $is_ai_configured ) {
                                         echo esc_html( ucfirst( $ai_provider ) );

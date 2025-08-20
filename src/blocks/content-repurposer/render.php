@@ -88,7 +88,7 @@ $block_id = uniqid( 'rwp-content-repurposer-' );
                         $selected = selected( $tone, $role['value'], false );
                         $title = isset( $role['description'] ) ? ' title="' . esc_attr( $role['description'] ) . '"' : '';
                     ?>
-                        <option value="<?php echo esc_attr( $role['value'] ); ?>"<?php echo $selected; ?><?php echo $title; ?>>
+                        <option value="<?php echo esc_attr( $role['value'] ); ?>"<?php echo wp_kses_post( $selected ); ?><?php echo wp_kses_post( $title ); ?>>
                             <?php echo esc_html( $role['label'] ); ?>
                         </option>
                     <?php endforeach; ?>
@@ -148,7 +148,7 @@ $block_id = uniqid( 'rwp-content-repurposer-' );
                         $selected = selected( $tone, $role['value'], false );
                         $title = isset( $role['description'] ) ? ' title="' . esc_attr( $role['description'] ) . '"' : '';
                     ?>
-                        <option value="<?php echo esc_attr( $role['value'] ); ?>"<?php echo $selected; ?><?php echo $title; ?>>
+                        <option value="<?php echo esc_attr( $role['value'] ); ?>"<?php echo wp_kses_post( $selected ); ?><?php echo wp_kses_post( $title ); ?>>
                             <?php echo esc_html( $role['label'] ); ?>
                         </option>
                     <?php endforeach; ?>

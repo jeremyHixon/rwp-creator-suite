@@ -380,11 +380,15 @@ class RWP_Creator_Suite_Analytics_Dashboard {
         try {
             // Try to get consent stats from user meta
             global $wpdb;
-            $total_users = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->users}" );
+            $total_users = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->users}" ) );
             $consented_users = $wpdb->get_var( 
-                "SELECT COUNT(*) FROM {$wpdb->usermeta} 
-                 WHERE meta_key LIKE '%consent%' 
-                 AND meta_value = '1'"
+                $wpdb->prepare(
+                    "SELECT COUNT(*) FROM {$wpdb->usermeta} 
+                     WHERE meta_key LIKE %s 
+                     AND meta_value = %s",
+                    '%consent%',
+                    '1'
+                )
             );
             
             $consent_rate = $total_users > 0 ? round( ( $consented_users / $total_users ) * 100, 1 ) : 0;

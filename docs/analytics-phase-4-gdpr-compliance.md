@@ -2,7 +2,7 @@
 
 ## Overview
 
-Phase 4 ensures full compliance with the General Data Protection Regulation (GDPR) and other privacy laws. This phase is critical for legal operation in the EU and builds trust with users worldwide through comprehensive privacy protections and transparent data handling practices.
+Phase 4 ensures full compliance with the General Data Protection Regulation (GDPR) and other privacy laws. This phase is critical for legal operation in the EU and builds trust with users worldwide through comprehensive privacy protections and transparent data handling practices. The plugin has an existing consent module (src/modules/analytics/class-consent-manager.php) being referenced and used throughout the plugin. Refer to that as your doing the work.
 
 ## GDPR Compliance Framework
 

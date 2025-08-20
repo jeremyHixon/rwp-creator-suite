@@ -51,6 +51,7 @@ class RWP_Creator_Suite {
     private $consent_manager;
     private $hashtag_tracker;
     private $analytics_api;
+    private $analytics_dashboard;
     private $account_manager;
 
     /**
@@ -115,6 +116,7 @@ class RWP_Creator_Suite {
         $this->consent_manager = RWP_Creator_Suite_Consent_Manager::get_instance();
         $this->hashtag_tracker = new RWP_Creator_Suite_Hashtag_Tracker();
         $this->analytics_api = new RWP_Creator_Suite_Analytics_API();
+        $this->analytics_dashboard = new RWP_Creator_Suite_Analytics_Dashboard();
         $this->account_manager = new RWP_Creator_Suite_Account_Manager();
 
         // Initialize all components
@@ -134,6 +136,7 @@ class RWP_Creator_Suite {
         $this->consent_manager->init();
         $this->hashtag_tracker->init();
         $this->analytics_api->init();
+        $this->analytics_dashboard->init();
         $this->account_manager->init();
 
         // Additional hooks
@@ -209,11 +212,12 @@ class RWP_Creator_Suite {
         // Admin Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/admin/class-admin-page.php';
 
-        // Analytics Module - Phase 1 Data Collection
+        // Analytics Module - Phase 1 Data Collection & Phase 2 Dashboard
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-anonymous-analytics.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-consent-manager.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-hashtag-tracker.php';
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-analytics-api.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/analytics/class-analytics-dashboard.php';
 
         // Account Manager Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/account-manager/class-account-manager.php';

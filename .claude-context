@@ -1,5 +1,5 @@
 # Task
-Analyze the codebase and determine if the foundations are in place to begin collecting the analytics data while still respecting GDPR and CCPA.
+Analyze the analytics admin module (src/modules/analytics) and diagnose the source of a massive number of console errors that are sapping the browser's resources.
 
 # Project Context
 

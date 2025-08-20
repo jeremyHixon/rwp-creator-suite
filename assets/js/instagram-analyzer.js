@@ -1151,6 +1151,35 @@ class InstagramAnalyzer {
 		const whitelist = this.stateManager.getWhitelist();
 
 		try {
+			// Try REST API first
+			const response = await fetch( '/wp-json/rwp-creator-suite/v1/instagram/whitelist', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-WP-Nonce': this.config.nonce,
+				},
+				body: JSON.stringify( {
+					whitelist: whitelist,
+				} ),
+			} );
+
+			const result = await response.json();
+			if ( ! result.success ) {
+				console.error( 'Failed to sync whitelist:', result.data || result.message );
+				// Fallback to AJAX if REST API fails
+				return this.syncWhitelistWithServerAjax();
+			}
+		} catch ( error ) {
+			console.error( 'Network error syncing whitelist:', error );
+			// Fallback to AJAX if REST API fails
+			return this.syncWhitelistWithServerAjax();
+		}
+	}
+
+	async syncWhitelistWithServerAjax() {
+		const whitelist = this.stateManager.getWhitelist();
+
+		try {
 			const response = await fetch( this.config.ajaxUrl, {
 				method: 'POST',
 				headers: {
@@ -1165,10 +1194,10 @@ class InstagramAnalyzer {
 
 			const result = await response.json();
 			if ( ! result.success ) {
-				console.error( 'Failed to sync whitelist:', result.data );
+				console.error( 'Failed to sync whitelist (AJAX fallback):', result.data );
 			}
 		} catch ( error ) {
-			console.error( 'Network error syncing whitelist:', error );
+			console.error( 'Network error syncing whitelist (AJAX fallback):', error );
 		}
 	}
 
@@ -1245,7 +1274,33 @@ class InstagramAnalyzer {
 		}
 
 		try {
-			// Load whitelist from server
+			// Try REST API first
+			const response = await fetch( '/wp-json/rwp-creator-suite/v1/instagram/whitelist', {
+				method: 'GET',
+				headers: {
+					'X-WP-Nonce': this.config.nonce,
+				},
+			} );
+
+			const result = await response.json();
+			if ( result.success ) {
+				this.state.whitelist = result.data || [];
+				// Also save to local storage for consistency
+				this.stateManager.saveWhitelist( this.state.whitelist );
+			} else {
+				// Fallback to AJAX if REST API fails
+				return this.loadServerDataAjax();
+			}
+		} catch ( error ) {
+			console.error( 'Failed to load server data:', error );
+			// Fallback to AJAX if REST API fails
+			return this.loadServerDataAjax();
+		}
+	}
+
+	async loadServerDataAjax() {
+		try {
+			// Load whitelist from server using AJAX
 			const response = await fetch( this.config.ajaxUrl, {
 				method: 'POST',
 				headers: {
@@ -1264,7 +1319,7 @@ class InstagramAnalyzer {
 				this.stateManager.saveWhitelist( this.state.whitelist );
 			}
 		} catch ( error ) {
-			console.error( 'Failed to load server data:', error );
+			console.error( 'Failed to load server data (AJAX fallback):', error );
 		}
 	}
 

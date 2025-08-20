@@ -7,7 +7,14 @@
 
 defined( 'ABSPATH' ) || exit;
 
+require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/traits/trait-api-response.php';
+require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/traits/trait-api-permissions.php';
+require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/traits/trait-api-validation.php';
+
 class RWP_Creator_Suite_Content_Repurposer_API {
+    use RWP_Creator_Suite_API_Response_Trait;
+    use RWP_Creator_Suite_API_Permissions_Trait;
+    use RWP_Creator_Suite_API_Validation_Trait;
     
     private $ai_service;
     private $advanced_cache_manager;
@@ -35,7 +42,7 @@ class RWP_Creator_Suite_Content_Repurposer_API {
         register_rest_route( 'rwp-creator-suite/v1', '/repurpose-content', array(
             'methods'             => 'POST',
             'callback'            => array( $this, 'repurpose_content' ),
-            'permission_callback' => array( $this, 'check_permissions' ),
+            'permission_callback' => array( $this, 'check_guest_or_logged_in' ),
             'args'                => array(
                 'content' => array(
                     'required'          => true,
@@ -74,13 +81,13 @@ class RWP_Creator_Suite_Content_Repurposer_API {
         register_rest_route( 'rwp-creator-suite/v1', '/repurpose-usage', array(
             'methods'             => 'GET',
             'callback'            => array( $this, 'get_usage_stats' ),
-            'permission_callback' => array( $this, 'check_permissions' ),
+            'permission_callback' => array( $this, 'check_guest_or_logged_in' ),
         ) );
         
         register_rest_route( 'rwp-creator-suite/v1', '/recover-guest-content', array(
             'methods'             => 'POST',
             'callback'            => array( $this, 'recover_guest_content' ),
-            'permission_callback' => array( $this, 'check_logged_in_permissions' ),
+            'permission_callback' => array( $this, 'check_user_logged_in' ),
             'args'                => array(
                 'content_key' => array(
                     'required'          => false,
@@ -530,86 +537,7 @@ class RWP_Creator_Suite_Content_Repurposer_API {
         );
     }
     
-    /**
-     * Validate content parameter.
-     */
-    public function validate_content( $content, $request, $param ) {
-        if ( empty( trim( $content ) ) ) {
-            return new WP_Error(
-                'invalid_content',
-                __( 'Content cannot be empty.', 'rwp-creator-suite' )
-            );
-        }
-        
-        if ( mb_strlen( $content ) > 10000 ) {
-            return new WP_Error(
-                'content_too_long',
-                __( 'Content is too long. Maximum 10,000 characters allowed.', 'rwp-creator-suite' )
-            );
-        }
-        
-        return true;
-    }
     
-    /**
-     * Validate platforms parameter.
-     */
-    public function validate_platforms( $platforms, $request, $param ) {
-        // Get allowed platforms from configuration (same as Caption Writer)
-        $platforms_config = RWP_Creator_Suite_Caption_Admin_Settings::get_platforms_config();
-        $allowed_platforms = array();
-        foreach ( $platforms_config as $platform ) {
-            if ( isset( $platform['key'] ) ) {
-                $allowed_platforms[] = $platform['key'];
-            }
-        }
-        
-        // Fallback to default platforms if config is empty
-        if ( empty( $allowed_platforms ) ) {
-            $allowed_platforms = array( 'instagram', 'tiktok', 'twitter', 'linkedin', 'facebook' );
-        }
-        
-        // Handle case where platforms might be a JSON string
-        if ( is_string( $platforms ) ) {
-            $decoded = json_decode( $platforms, true );
-            if ( json_last_error() === JSON_ERROR_NONE && is_array( $decoded ) ) {
-                $platforms = $decoded;
-            }
-        }
-        
-        // Ensure platforms is an array
-        if ( ! is_array( $platforms ) ) {
-            return new WP_Error(
-                'invalid_platforms',
-                __( 'Platforms must be an array.', 'rwp-creator-suite' )
-            );
-        }
-        
-        if ( empty( $platforms ) ) {
-            return new WP_Error(
-                'invalid_platforms',
-                __( 'At least one platform must be selected.', 'rwp-creator-suite' )
-            );
-        }
-        
-        foreach ( $platforms as $platform ) {
-            if ( ! in_array( $platform, $allowed_platforms, true ) ) {
-                return new WP_Error(
-                    'invalid_platform',
-                    sprintf( __( 'Invalid platform: %s', 'rwp-creator-suite' ), $platform )
-                );
-            }
-        }
-        
-        if ( count( $platforms ) > 4 ) {
-            return new WP_Error(
-                'too_many_platforms',
-                __( 'Maximum 4 platforms allowed per request.', 'rwp-creator-suite' )
-            );
-        }
-        
-        return true;
-    }
     
     /**
      * Validate tone parameter.

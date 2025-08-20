@@ -12,7 +12,12 @@
 
 defined( 'ABSPATH' ) || exit;
 
+require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/traits/trait-api-response.php';
+require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/traits/trait-api-permissions.php';
+
 class RWP_Creator_Suite_Analytics_API {
+    use RWP_Creator_Suite_API_Response_Trait;
+    use RWP_Creator_Suite_API_Permissions_Trait;
 
     /**
      * API namespace.
@@ -204,14 +209,16 @@ class RWP_Creator_Suite_Analytics_API {
         // Process and aggregate the data
         $processed_summary = $this->process_analytics_summary( $summary, $start_date, $end_date );
 
-        return new WP_REST_Response( array(
-            'success' => true,
-            'data' => $processed_summary,
-            'period' => array(
-                'start_date' => $start_date,
-                'end_date' => $end_date,
-            ),
-        ), 200 );
+        return $this->success_response(
+            $processed_summary,
+            __( 'Analytics summary retrieved successfully', 'rwp-creator-suite' ),
+            array(
+                'period' => array(
+                    'start_date' => $start_date,
+                    'end_date' => $end_date,
+                ),
+            )
+        );
     }
 
     /**

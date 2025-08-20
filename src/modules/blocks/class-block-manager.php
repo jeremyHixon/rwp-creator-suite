@@ -13,6 +13,11 @@ class RWP_Creator_Suite_Block_Manager {
      * Instagram Analyzer API instance.
      */
     private $instagram_api;
+
+    /**
+     * Instagram Analyzer REST API instance.
+     */
+    private $instagram_rest_api;
     
     /**
      * Track which assets have been enqueued to prevent duplicates.
@@ -29,9 +34,13 @@ class RWP_Creator_Suite_Block_Manager {
         // Phase 1 Optimization: Asset caching and performance enhancements
         add_action( 'init', array( $this, 'init_asset_optimizations' ) );
         
-        // Initialize Instagram Analyzer API
+        // Initialize Instagram Analyzer APIs (both AJAX and REST)
         $this->instagram_api = new RWP_Creator_Suite_Instagram_Analyzer_API();
         $this->instagram_api->init();
+        
+        // Initialize new REST API for Instagram Analyzer
+        $this->instagram_rest_api = new RWP_Creator_Suite_Instagram_Analyzer_REST_API();
+        $this->instagram_rest_api->init();
     }
 
     /**

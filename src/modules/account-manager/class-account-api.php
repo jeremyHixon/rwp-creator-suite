@@ -9,7 +9,12 @@
 
 defined( 'ABSPATH' ) || exit;
 
+require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/traits/trait-api-response.php';
+require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/traits/trait-api-permissions.php';
+
 class RWP_Creator_Suite_Account_API {
+    use RWP_Creator_Suite_API_Response_Trait;
+    use RWP_Creator_Suite_API_Permissions_Trait;
 
     /**
      * The API namespace.
@@ -116,7 +121,7 @@ class RWP_Creator_Suite_Account_API {
             array(
                 'methods'             => 'GET',
                 'callback'            => array( $this, 'get_consent_statistics' ),
-                'permission_callback' => array( $this, 'check_admin_permissions' ),
+                'permission_callback' => array( $this, 'check_admin_permission' ),
             )
         );
     }
@@ -341,23 +346,6 @@ class RWP_Creator_Suite_Account_API {
         return $this->success_response( $statistics );
     }
 
-    /**
-     * Check if user is logged in.
-     *
-     * @return bool
-     */
-    public function check_user_logged_in() {
-        return is_user_logged_in();
-    }
-
-    /**
-     * Check if user has admin permissions.
-     *
-     * @return bool
-     */
-    public function check_admin_permissions() {
-        return current_user_can( 'manage_options' );
-    }
 
     /**
      * Validate email address.
@@ -379,47 +367,4 @@ class RWP_Creator_Suite_Account_API {
         return true;
     }
 
-    /**
-     * Return a successful response.
-     *
-     * @param mixed  $data Response data.
-     * @param string $message Optional message.
-     * @param array  $meta Optional metadata.
-     * @return WP_REST_Response
-     */
-    private function success_response( $data, $message = '', $meta = array() ) {
-        $response = array(
-            'success' => true,
-            'data'    => $data,
-        );
-        
-        if ( $message ) {
-            $response['message'] = $message;
-        }
-        
-        if ( ! empty( $meta ) ) {
-            $response['meta'] = $meta;
-        }
-        
-        return rest_ensure_response( $response );
-    }
-
-    /**
-     * Return an error response.
-     *
-     * @param string $code Error code.
-     * @param string $message Error message.
-     * @param int    $status HTTP status code.
-     * @param mixed  $data Additional error data.
-     * @return WP_Error
-     */
-    private function error_response( $code, $message, $status = 400, $data = null ) {
-        $error_data = array( 'status' => $status );
-        
-        if ( $data ) {
-            $error_data['data'] = $data;
-        }
-        
-        return new WP_Error( $code, $message, $error_data );
-    }
 }

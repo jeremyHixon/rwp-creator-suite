@@ -221,6 +221,7 @@ class RWP_Creator_Suite {
 
         // Instagram Analyzer Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/instagram-analyzer/class-instagram-analyzer-api.php';
+        require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/instagram-analyzer/class-instagram-analyzer-rest-api.php';
         
         // Caption Writer Module
         require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/caption-writer/class-key-manager.php';

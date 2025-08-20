@@ -10,50 +10,6 @@ defined( 'ABSPATH' ) || exit;
 
 trait RWP_Creator_Suite_API_Validation_Trait {
 
-    /**
-     * Verify nonce permission for API requests.
-     *
-     * @param WP_REST_Request $request Request object.
-     * @return bool|WP_Error
-     */
-    public function verify_nonce_permission( $request ) {
-        $nonce = $request->get_header( 'X-WP-Nonce' );
-        
-        if ( empty( $nonce ) ) {
-            return new WP_Error(
-                'missing_nonce',
-                __( 'Missing security token.', 'rwp-creator-suite' ),
-                array( 'status' => 401 )
-            );
-        }
-
-        if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-            return new WP_Error(
-                'invalid_nonce',
-                __( 'Invalid security token.', 'rwp-creator-suite' ),
-                array( 'status' => 401 )
-            );
-        }
-
-        return true;
-    }
-
-    /**
-     * Check if user is logged in.
-     *
-     * @return bool|WP_Error
-     */
-    public function check_user_logged_in() {
-        if ( ! is_user_logged_in() ) {
-            return new WP_Error(
-                'not_logged_in',
-                __( 'You must be logged in to access this resource.', 'rwp-creator-suite' ),
-                array( 'status' => 401 )
-            );
-        }
-
-        return true;
-    }
 
     /**
      * Validate and sanitize description input.
@@ -288,49 +244,6 @@ trait RWP_Creator_Suite_API_Validation_Trait {
         return true;
     }
 
-    /**
-     * Create standardized success response.
-     *
-     * @param mixed  $data Response data.
-     * @param string $message Optional success message.
-     * @param array  $meta Optional metadata.
-     * @return WP_REST_Response
-     */
-    public function success_response( $data, $message = '', $meta = array() ) {
-        $response = array(
-            'success' => true,
-            'data' => $data,
-        );
-
-        if ( ! empty( $message ) ) {
-            $response['message'] = $message;
-        }
-
-        if ( ! empty( $meta ) ) {
-            $response['meta'] = $meta;
-        }
-
-        return rest_ensure_response( $response );
-    }
-
-    /**
-     * Create standardized error response.
-     *
-     * @param string $code Error code.
-     * @param string $message Error message.
-     * @param mixed  $data Optional error data.
-     * @param int    $status HTTP status code.
-     * @return WP_Error
-     */
-    public function error_response( $code, $message, $data = null, $status = 400 ) {
-        $error_data = array( 'status' => $status );
-        
-        if ( null !== $data ) {
-            $error_data['details'] = $data;
-        }
-
-        return new WP_Error( $code, $message, $error_data );
-    }
 
     /**
      * Validate API request size limits.

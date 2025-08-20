@@ -7,7 +7,14 @@
 
 defined( 'ABSPATH' ) || exit;
 
+require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/traits/trait-api-response.php';
+require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/traits/trait-api-permissions.php';
+require_once RWP_CREATOR_SUITE_PLUGIN_DIR . 'src/modules/common/traits/trait-api-validation.php';
+
 class RWP_Creator_Suite_Caption_API {
+    use RWP_Creator_Suite_API_Response_Trait;
+    use RWP_Creator_Suite_API_Permissions_Trait;
+    use RWP_Creator_Suite_API_Validation_Trait;
 
     private $namespace = 'rwp-creator-suite/v1';
     private $cache_manager;
@@ -37,7 +44,7 @@ class RWP_Creator_Suite_Caption_API {
         register_rest_route( $this->namespace, '/captions/generate', array(
             'methods'             => 'POST',
             'callback'            => array( $this, 'generate_captions' ),
-            'permission_callback' => array( $this, 'verify_nonce_permission' ),
+            'permission_callback' => array( $this, 'check_guest_or_logged_in' ),
             'args'                => array(
                 'description' => array(
                     'required' => true,
@@ -109,7 +116,7 @@ class RWP_Creator_Suite_Caption_API {
         register_rest_route( $this->namespace, '/quota', array(
             'methods'             => 'GET',
             'callback'            => array( $this, 'get_quota_status' ),
-            'permission_callback' => array( $this, 'verify_nonce_permission' ),
+            'permission_callback' => array( $this, 'check_guest_or_logged_in' ),
         ) );
         
         // User preferences
@@ -233,18 +240,18 @@ class RWP_Creator_Suite_Caption_API {
             );
         }
         
-        return rest_ensure_response( array(
-            'success' => true,
-            'data'    => $cached_result['captions'],
-            'meta'    => array(
+        return $this->success_response(
+            $cached_result['captions'],
+            __( 'Captions generated successfully', 'rwp-creator-suite' ),
+            array(
                 'platform_limits' => $this->get_platform_limits( $platforms ),
                 'platforms' => $platforms,
                 'generated_at'   => $cached_result['generated_at'],
                 'cached'         => $cached_result['cached'],
                 'remaining_quota' => $ai_service->get_usage_stats()['remaining'],
                 'cache_key_hash' => substr( $cache_key, -8 ), // For debugging
-            ),
-        ) );
+            )
+        );
     }
     
     

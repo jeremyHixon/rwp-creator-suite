@@ -1,0 +1,40 @@
+/* Base Tailwind imports for all blocks */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS Isolation Reset Pattern - Applied to all block containers */
+.wp-block-rwp-creator-suite-instagram-analyzer,
+.wp-block-rwp-creator-suite-instagram-banner,
+.wp-block-rwp-creator-suite-caption-writer,
+.wp-block-rwp-creator-suite-content-repurposer,
+.wp-block-rwp-creator-suite-account-manager {
+  /* Reset any theme inheritance */
+  all: initial;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  
+  /* Re-enable inheritance for children */
+  * {
+    all: unset;
+    display: revert;
+    box-sizing: border-box;
+  }
+  
+  /* Ensure block boundary */
+  container-type: inline-size;
+  isolation: isolate;
+}
+
+/* Light Theme Variables for DaisyUI */
+.wp-block-rwp-creator-suite-instagram-analyzer,
+.wp-block-rwp-creator-suite-instagram-banner,
+.wp-block-rwp-creator-suite-caption-writer,
+.wp-block-rwp-creator-suite-content-repurposer,
+.wp-block-rwp-creator-suite-account-manager {
+  --blk-primary: #3b82f6;      /* Clean blue */
+  --blk-secondary: #64748b;    /* Muted gray */
+  --blk-accent: #10b981;       /* Subtle green */
+  --blk-neutral: #f8fafc;      /* Light background */
+  --blk-base-100: #ffffff;     /* Pure white */
+  --blk-base-content: #1f2937; /* Dark text */
+}

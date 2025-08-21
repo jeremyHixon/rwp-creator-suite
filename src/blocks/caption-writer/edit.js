@@ -9,10 +9,7 @@ export default function Edit() {
 		<div { ...blockProps }>
 			<Placeholder
 				icon={ <Icon icon="edit" /> }
-				label={ __(
-					'Caption Writer',
-					'rwp-creator-suite'
-				) }
+				label={ __( 'Caption Writer', 'rwp-creator-suite' ) }
 				instructions={ __(
 					'This block will display an AI-powered caption generation interface on the frontend.',
 					'rwp-creator-suite'

@@ -1,6 +1,6 @@
 /**
  * Loading States Component
- * 
+ *
  * Reusable React component for displaying various loading states.
  * Provides consistent loading UI across all blocks.
  */
@@ -9,392 +9,441 @@ import { __ } from '@wordpress/i18n';
 import { useState, useEffect } from '@wordpress/element';
 import { Spinner } from '@wordpress/components';
 
-const LoadingStates = ({
-    isLoading = false,
-    loadingType = 'default', // 'default', 'generating', 'processing', 'analyzing', 'uploading'
-    loadingMessage = null,
-    progress = null, // 0-100 for progress bar
-    estimatedTime = null, // in seconds
-    showProgress = false,
-    showCancel = false,
-    onCancel = null,
-    className = ''
-}) => {
-    const [elapsed, setElapsed] = useState(0);
-    const [dots, setDots] = useState('');
+const LoadingStates = ( {
+	isLoading = false,
+	loadingType = 'default', // 'default', 'generating', 'processing', 'analyzing', 'uploading'
+	loadingMessage = null,
+	progress = null, // 0-100 for progress bar
+	estimatedTime = null, // in seconds
+	showProgress = false,
+	showCancel = false,
+	onCancel = null,
+	className = '',
+} ) => {
+	const [ elapsed, setElapsed ] = useState( 0 );
+	const [ dots, setDots ] = useState( '' );
 
-    // Timer for elapsed time
-    useEffect(() => {
-        if (!isLoading) {
-            setElapsed(0);
-            return;
-        }
+	// Timer for elapsed time
+	useEffect( () => {
+		if ( ! isLoading ) {
+			setElapsed( 0 );
+			return;
+		}
 
-        const timer = setInterval(() => {
-            setElapsed(prev => prev + 1);
-        }, 1000);
+		const timer = setInterval( () => {
+			setElapsed( ( prev ) => prev + 1 );
+		}, 1000 );
 
-        return () => clearInterval(timer);
-    }, [isLoading]);
+		return () => clearInterval( timer );
+	}, [ isLoading ] );
 
-    // Animated dots
-    useEffect(() => {
-        if (!isLoading) {
-            setDots('');
-            return;
-        }
+	// Animated dots
+	useEffect( () => {
+		if ( ! isLoading ) {
+			setDots( '' );
+			return;
+		}
 
-        const dotTimer = setInterval(() => {
-            setDots(prev => {
-                if (prev === '...') return '';
-                return prev + '.';
-            });
-        }, 500);
+		const dotTimer = setInterval( () => {
+			setDots( ( prev ) => {
+				if ( prev === '...' ) {
+					return '';
+				}
+				return prev + '.';
+			} );
+		}, 500 );
 
-        return () => clearInterval(dotTimer);
-    }, [isLoading]);
+		return () => clearInterval( dotTimer );
+	}, [ isLoading ] );
 
-    const getLoadingMessages = () => {
-        const messages = {
-            default: {
-                title: __('Loading', 'rwp-creator-suite'),
-                subtitle: __('Please wait...', 'rwp-creator-suite'),
-                icon: '⏳'
-            },
-            generating: {
-                title: __('Generating Content', 'rwp-creator-suite'),
-                subtitle: __('AI is creating your content...', 'rwp-creator-suite'),
-                icon: '🤖'
-            },
-            processing: {
-                title: __('Processing', 'rwp-creator-suite'),
-                subtitle: __('Analyzing and optimizing...', 'rwp-creator-suite'),
-                icon: '⚙️'
-            },
-            analyzing: {
-                title: __('Analyzing', 'rwp-creator-suite'),
-                subtitle: __('Examining content and gathering insights...', 'rwp-creator-suite'),
-                icon: '📊'
-            },
-            uploading: {
-                title: __('Uploading', 'rwp-creator-suite'),
-                subtitle: __('Transferring your content...', 'rwp-creator-suite'),
-                icon: '📤'
-            }
-        };
+	const getLoadingMessages = () => {
+		const messages = {
+			default: {
+				title: __( 'Loading', 'rwp-creator-suite' ),
+				subtitle: __( 'Please wait…', 'rwp-creator-suite' ),
+				icon: '⏳',
+			},
+			generating: {
+				title: __( 'Generating Content', 'rwp-creator-suite' ),
+				subtitle: __(
+					'AI is creating your content…',
+					'rwp-creator-suite'
+				),
+				icon: '🤖',
+			},
+			processing: {
+				title: __( 'Processing', 'rwp-creator-suite' ),
+				subtitle: __(
+					'Analyzing and optimizing…',
+					'rwp-creator-suite'
+				),
+				icon: '⚙️',
+			},
+			analyzing: {
+				title: __( 'Analyzing', 'rwp-creator-suite' ),
+				subtitle: __(
+					'Examining content and gathering insights…',
+					'rwp-creator-suite'
+				),
+				icon: '📊',
+			},
+			uploading: {
+				title: __( 'Uploading', 'rwp-creator-suite' ),
+				subtitle: __(
+					'Transferring your content…',
+					'rwp-creator-suite'
+				),
+				icon: '📤',
+			},
+		};
 
-        return messages[loadingType] || messages.default;
-    };
+		return messages[ loadingType ] || messages.default;
+	};
 
-    const formatTime = (seconds) => {
-        if (seconds < 60) {
-            return sprintf(__('%d seconds', 'rwp-creator-suite'), seconds);
-        }
-        const minutes = Math.floor(seconds / 60);
-        const remainingSeconds = seconds % 60;
-        return sprintf(__('%d:%02d', 'rwp-creator-suite'), minutes, remainingSeconds);
-    };
+	const formatTime = ( seconds ) => {
+		if ( seconds < 60 ) {
+			return sprintf( __( '%d seconds', 'rwp-creator-suite' ), seconds );
+		}
+		const minutes = Math.floor( seconds / 60 );
+		const remainingSeconds = seconds % 60;
+		return sprintf(
+			__( '%d:%02d', 'rwp-creator-suite' ),
+			minutes,
+			remainingSeconds
+		);
+	};
 
-    const getEstimatedRemaining = () => {
-        if (!estimatedTime || !progress) return null;
-        
-        const progressDecimal = progress / 100;
-        if (progressDecimal === 0) return estimatedTime;
-        
-        const totalEstimated = elapsed / progressDecimal;
-        const remaining = Math.max(0, totalEstimated - elapsed);
-        return Math.round(remaining);
-    };
+	const getEstimatedRemaining = () => {
+		if ( ! estimatedTime || ! progress ) {
+			return null;
+		}
 
-    if (!isLoading) return null;
+		const progressDecimal = progress / 100;
+		if ( progressDecimal === 0 ) {
+			return estimatedTime;
+		}
 
-    const loadingConfig = getLoadingMessages();
-    const displayMessage = loadingMessage || loadingConfig.subtitle;
-    const remaining = getEstimatedRemaining();
+		const totalEstimated = elapsed / progressDecimal;
+		const remaining = Math.max( 0, totalEstimated - elapsed );
+		return Math.round( remaining );
+	};
 
-    return (
-        <div className={`rwp-loading-states ${className}`}>
-            <div className="loading-container">
-                {/* Loading Icon and Spinner */}
-                <div className="loading-icon">
-                    <div className="icon-wrapper">
-                        <span className="loading-emoji">{loadingConfig.icon}</span>
-                        <Spinner />
-                    </div>
-                </div>
+	if ( ! isLoading ) {
+		return null;
+	}
 
-                {/* Loading Content */}
-                <div className="loading-content">
-                    <h3 className="loading-title">
-                        {loadingConfig.title}{dots}
-                    </h3>
-                    
-                    <p className="loading-message">
-                        {displayMessage}
-                    </p>
+	const loadingConfig = getLoadingMessages();
+	const displayMessage = loadingMessage || loadingConfig.subtitle;
+	const remaining = getEstimatedRemaining();
 
-                    {/* Progress Bar */}
-                    {showProgress && progress !== null && (
-                        <div className="progress-container">
-                            <div className="progress-bar">
-                                <div 
-                                    className="progress-fill"
-                                    style={{ width: `${Math.min(progress, 100)}%` }}
-                                />
-                            </div>
-                            <div className="progress-text">
-                                {Math.round(progress)}%
-                            </div>
-                        </div>
-                    )}
+	return (
+		<div className={ `rwp-loading-states ${ className }` }>
+			<div className="loading-container">
+				{ /* Loading Icon and Spinner */ }
+				<div className="loading-icon">
+					<div className="icon-wrapper">
+						<span className="loading-emoji">
+							{ loadingConfig.icon }
+						</span>
+						<Spinner />
+					</div>
+				</div>
 
-                    {/* Time Information */}
-                    <div className="time-info">
-                        {elapsed > 0 && (
-                            <div className="elapsed-time">
-                                {sprintf(__('Elapsed: %s', 'rwp-creator-suite'), formatTime(elapsed))}
-                            </div>
-                        )}
-                        
-                        {remaining !== null && remaining > 0 && (
-                            <div className="estimated-remaining">
-                                {sprintf(__('Estimated remaining: %s', 'rwp-creator-suite'), formatTime(remaining))}
-                            </div>
-                        )}
-                        
-                        {estimatedTime && !progress && (
-                            <div className="estimated-total">
-                                {sprintf(__('Estimated time: %s', 'rwp-creator-suite'), formatTime(estimatedTime))}
-                            </div>
-                        )}
-                    </div>
+				{ /* Loading Content */ }
+				<div className="loading-content">
+					<h3 className="loading-title">
+						{ loadingConfig.title }
+						{ dots }
+					</h3>
 
-                    {/* Cancel Button */}
-                    {showCancel && onCancel && (
-                        <div className="loading-actions">
-                            <button 
-                                className="cancel-button"
-                                onClick={onCancel}
-                                type="button"
-                            >
-                                {__('Cancel', 'rwp-creator-suite')}
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
+					<p className="loading-message">{ displayMessage }</p>
 
-            <style jsx>{`
-                .rwp-loading-states {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    min-height: 200px;
-                    padding: 24px;
-                    background: rgba(255, 255, 255, 0.95);
-                    border: 1px solid #e0e0e0;
-                    border-radius: 8px;
-                    backdrop-filter: blur(2px);
-                }
+					{ /* Progress Bar */ }
+					{ showProgress && progress !== null && (
+						<div className="progress-container">
+							<div className="progress-bar">
+								<div
+									className="progress-fill"
+									style={ {
+										width: `${ Math.min(
+											progress,
+											100
+										) }%`,
+									} }
+								/>
+							</div>
+							<div className="progress-text">
+								{ Math.round( progress ) }%
+							</div>
+						</div>
+					) }
 
-                .loading-container {
-                    text-align: center;
-                    max-width: 400px;
-                    width: 100%;
-                }
+					{ /* Time Information */ }
+					<div className="time-info">
+						{ elapsed > 0 && (
+							<div className="elapsed-time">
+								{ sprintf(
+									__( 'Elapsed: %s', 'rwp-creator-suite' ),
+									formatTime( elapsed )
+								) }
+							</div>
+						) }
 
-                .loading-icon {
-                    margin-bottom: 20px;
-                }
+						{ remaining !== null && remaining > 0 && (
+							<div className="estimated-remaining">
+								{ sprintf(
+									__(
+										'Estimated remaining: %s',
+										'rwp-creator-suite'
+									),
+									formatTime( remaining )
+								) }
+							</div>
+						) }
 
-                .icon-wrapper {
-                    position: relative;
-                    display: inline-block;
-                }
+						{ estimatedTime && ! progress && (
+							<div className="estimated-total">
+								{ sprintf(
+									__(
+										'Estimated time: %s',
+										'rwp-creator-suite'
+									),
+									formatTime( estimatedTime )
+								) }
+							</div>
+						) }
+					</div>
 
-                .loading-emoji {
-                    font-size: 48px;
-                    line-height: 1;
-                    display: block;
-                    margin-bottom: 12px;
-                    animation: bounce 2s infinite;
-                }
+					{ /* Cancel Button */ }
+					{ showCancel && onCancel && (
+						<div className="loading-actions">
+							<button
+								className="cancel-button"
+								onClick={ onCancel }
+								type="button"
+							>
+								{ __( 'Cancel', 'rwp-creator-suite' ) }
+							</button>
+						</div>
+					) }
+				</div>
+			</div>
 
-                .loading-content {
-                    color: #1e1e1e;
-                }
+			<style jsx>{ `
+				.rwp-loading-states {
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					min-height: 200px;
+					padding: 24px;
+					background: rgba( 255, 255, 255, 0.95 );
+					border: 1px solid #e0e0e0;
+					border-radius: 8px;
+					backdrop-filter: blur( 2px );
+				}
 
-                .loading-title {
-                    margin: 0 0 8px 0;
-                    font-size: 24px;
-                    font-weight: 600;
-                    color: #1e1e1e;
-                }
+				.loading-container {
+					text-align: center;
+					max-width: 400px;
+					width: 100%;
+				}
 
-                .loading-message {
-                    margin: 0 0 20px 0;
-                    font-size: 16px;
-                    color: #666;
-                    line-height: 1.4;
-                }
+				.loading-icon {
+					margin-bottom: 20px;
+				}
 
-                .progress-container {
-                    margin: 20px 0;
-                }
+				.icon-wrapper {
+					position: relative;
+					display: inline-block;
+				}
 
-                .progress-bar {
-                    width: 100%;
-                    height: 8px;
-                    background: #e9ecef;
-                    border-radius: 4px;
-                    overflow: hidden;
-                    margin-bottom: 8px;
-                }
+				.loading-emoji {
+					font-size: 48px;
+					line-height: 1;
+					display: block;
+					margin-bottom: 12px;
+					animation: bounce 2s infinite;
+				}
 
-                .progress-fill {
-                    height: 100%;
-                    background: linear-gradient(90deg, #007cba, #005a87);
-                    border-radius: 4px;
-                    transition: width 0.3s ease;
-                    animation: shimmer 2s infinite;
-                }
+				.loading-content {
+					color: #1e1e1e;
+				}
 
-                .progress-text {
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #007cba;
-                }
+				.loading-title {
+					margin: 0 0 8px 0;
+					font-size: 24px;
+					font-weight: 600;
+					color: #1e1e1e;
+				}
 
-                .time-info {
-                    margin: 16px 0;
-                    font-size: 14px;
-                    color: #666;
-                }
+				.loading-message {
+					margin: 0 0 20px 0;
+					font-size: 16px;
+					color: #666;
+					line-height: 1.4;
+				}
 
-                .elapsed-time,
-                .estimated-remaining,
-                .estimated-total {
-                    margin: 4px 0;
-                }
+				.progress-container {
+					margin: 20px 0;
+				}
 
-                .loading-actions {
-                    margin-top: 20px;
-                }
+				.progress-bar {
+					width: 100%;
+					height: 8px;
+					background: #e9ecef;
+					border-radius: 4px;
+					overflow: hidden;
+					margin-bottom: 8px;
+				}
 
-                .cancel-button {
-                    background: #6c757d;
-                    color: white;
-                    border: none;
-                    padding: 8px 16px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 14px;
-                    transition: background-color 0.2s ease;
-                }
+				.progress-fill {
+					height: 100%;
+					background: linear-gradient( 90deg, #007cba, #005a87 );
+					border-radius: 4px;
+					transition: width 0.3s ease;
+					animation: shimmer 2s infinite;
+				}
 
-                .cancel-button:hover {
-                    background: #5a6268;
-                }
+				.progress-text {
+					font-size: 14px;
+					font-weight: 600;
+					color: #007cba;
+				}
 
-                .cancel-button:focus {
-                    outline: 2px solid #007cba;
-                    outline-offset: 2px;
-                }
+				.time-info {
+					margin: 16px 0;
+					font-size: 14px;
+					color: #666;
+				}
 
-                @keyframes bounce {
-                    0%, 20%, 50%, 80%, 100% {
-                        transform: translateY(0);
-                    }
-                    40% {
-                        transform: translateY(-10px);
-                    }
-                    60% {
-                        transform: translateY(-5px);
-                    }
-                }
+				.elapsed-time,
+				.estimated-remaining,
+				.estimated-total {
+					margin: 4px 0;
+				}
 
-                @keyframes shimmer {
-                    0% {
-                        background-position: -200px 0;
-                    }
-                    100% {
-                        background-position: calc(200px + 100%) 0;
-                    }
-                }
+				.loading-actions {
+					margin-top: 20px;
+				}
 
-                .progress-fill {
-                    background: linear-gradient(
-                        90deg,
-                        #007cba 0%,
-                        #4fc3f7 50%,
-                        #007cba 100%
-                    );
-                    background-size: 200px 100%;
-                    animation: shimmer 2s infinite;
-                }
+				.cancel-button {
+					background: #6c757d;
+					color: white;
+					border: none;
+					padding: 8px 16px;
+					border-radius: 4px;
+					cursor: pointer;
+					font-size: 14px;
+					transition: background-color 0.2s ease;
+				}
 
-                /* Responsive adjustments */
-                @media (max-width: 480px) {
-                    .rwp-loading-states {
-                        min-height: 150px;
-                        padding: 16px;
-                    }
-                    
-                    .loading-emoji {
-                        font-size: 36px;
-                        margin-bottom: 8px;
-                    }
-                    
-                    .loading-title {
-                        font-size: 20px;
-                    }
-                    
-                    .loading-message {
-                        font-size: 14px;
-                    }
-                }
-            `}</style>
-        </div>
-    );
+				.cancel-button:hover {
+					background: #5a6268;
+				}
+
+				.cancel-button:focus {
+					outline: 2px solid #007cba;
+					outline-offset: 2px;
+				}
+
+				@keyframes bounce {
+					0%,
+					20%,
+					50%,
+					80%,
+					100% {
+						transform: translateY( 0 );
+					}
+					40% {
+						transform: translateY( -10px );
+					}
+					60% {
+						transform: translateY( -5px );
+					}
+				}
+
+				@keyframes shimmer {
+					0% {
+						background-position: -200px 0;
+					}
+					100% {
+						background-position: calc( 200px + 100% ) 0;
+					}
+				}
+
+				.progress-fill {
+					background: linear-gradient(
+						90deg,
+						#007cba 0%,
+						#4fc3f7 50%,
+						#007cba 100%
+					);
+					background-size: 200px 100%;
+					animation: shimmer 2s infinite;
+				}
+
+				/* Responsive adjustments */
+				@media ( max-width: 480px ) {
+					.rwp-loading-states {
+						min-height: 150px;
+						padding: 16px;
+					}
+
+					.loading-emoji {
+						font-size: 36px;
+						margin-bottom: 8px;
+					}
+
+					.loading-title {
+						font-size: 20px;
+					}
+
+					.loading-message {
+						font-size: 14px;
+					}
+				}
+			` }</style>
+		</div>
+	);
 };
 
 // Preset loading configurations for common use cases
 export const LoadingPresets = {
-    AIGeneration: (props) => (
-        <LoadingStates
-            loadingType="generating"
-            estimatedTime={15}
-            showProgress={true}
-            showCancel={true}
-            {...props}
-        />
-    ),
-    
-    ContentAnalysis: (props) => (
-        <LoadingStates
-            loadingType="analyzing"
-            estimatedTime={8}
-            showProgress={true}
-            {...props}
-        />
-    ),
-    
-    FileUpload: (props) => (
-        <LoadingStates
-            loadingType="uploading"
-            showProgress={true}
-            showCancel={true}
-            {...props}
-        />
-    ),
-    
-    DataProcessing: (props) => (
-        <LoadingStates
-            loadingType="processing"
-            estimatedTime={5}
-            {...props}
-        />
-    )
+	AIGeneration: ( props ) => (
+		<LoadingStates
+			loadingType="generating"
+			estimatedTime={ 15 }
+			showProgress={ true }
+			showCancel={ true }
+			{ ...props }
+		/>
+	),
+
+	ContentAnalysis: ( props ) => (
+		<LoadingStates
+			loadingType="analyzing"
+			estimatedTime={ 8 }
+			showProgress={ true }
+			{ ...props }
+		/>
+	),
+
+	FileUpload: ( props ) => (
+		<LoadingStates
+			loadingType="uploading"
+			showProgress={ true }
+			showCancel={ true }
+			{ ...props }
+		/>
+	),
+
+	DataProcessing: ( props ) => (
+		<LoadingStates
+			loadingType="processing"
+			estimatedTime={ 5 }
+			{ ...props }
+		/>
+	),
 };
 
 export default LoadingStates;

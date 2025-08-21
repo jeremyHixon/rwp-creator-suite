@@ -4,17 +4,23 @@
 	"description": "A suite of tools for content creators including Instagram follower analysis.",
 	"scripts": {
 		"build": "wp-scripts build",
+		"build:production": "NODE_ENV=production npm run build && npm run optimize",
 		"start": "wp-scripts start",
+		"optimize": "npm run analyze && npm run compress",
+		"analyze": "npx webpack-bundle-analyzer build/static/js/*.js",
+		"compress": "npx gzip-size-cli build/**/*.js",
 		"lint:css": "wp-scripts lint-style",
 		"lint:js": "wp-scripts lint-js",
+		"lint:fix": "wp-scripts lint-js --fix && wp-scripts lint-style --fix",
 		"format": "wp-scripts format",
 		"packages-update": "wp-scripts packages-update",
+		"test": "npm run test:php && npm run test:js",
+		"test:php": "phpunit",
 		"test:js": "wp-scripts test-unit-js",
 		"test:js:watch": "wp-scripts test-unit-js --watch",
+		"test:coverage": "npm run test:php && npm run test:js:coverage",
 		"test:js:coverage": "wp-scripts test-unit-js --coverage",
-		"test:php": "phpunit",
-		"test": "npm run test:php && npm run test:js",
-		"test:coverage": "npm run test:php && npm run test:js:coverage"
+		"package": "npm run build:production && npm run create-zip"
 	},
 	"devDependencies": {
 		"@tailwindcss/container-queries": "^0.1.1",

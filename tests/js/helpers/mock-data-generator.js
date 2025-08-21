@@ -9,7 +9,7 @@ class MockDataGenerator {
 	/**
 	 * Generate mock Instagram analyzer data
 	 * @param {Object} overrides - Optional overrides for default data
-	 * @returns {Object} Mock Instagram analyzer data
+	 * @return {Object} Mock Instagram analyzer data
 	 */
 	static getInstagramData( overrides = {} ) {
 		const defaults = {
@@ -34,7 +34,7 @@ class MockDataGenerator {
 	/**
 	 * Generate mock analytics data
 	 * @param {Object} overrides - Optional overrides for default data
-	 * @returns {Object} Mock analytics data
+	 * @return {Object} Mock analytics data
 	 */
 	static getAnalyticsData( overrides = {} ) {
 		const defaults = {
@@ -59,7 +59,7 @@ class MockDataGenerator {
 	/**
 	 * Generate mock user value data
 	 * @param {Object} overrides - Optional overrides for default data
-	 * @returns {Object} Mock user value data
+	 * @return {Object} Mock user value data
 	 */
 	static getUserValueData( overrides = {} ) {
 		const defaults = {
@@ -89,7 +89,7 @@ class MockDataGenerator {
 	/**
 	 * Generate mock account manager data
 	 * @param {Object} overrides - Optional overrides for default data
-	 * @returns {Object} Mock account manager data
+	 * @return {Object} Mock account manager data
 	 */
 	static getAccountData( overrides = {} ) {
 		const defaults = {
@@ -125,9 +125,9 @@ class MockDataGenerator {
 	/**
 	 * Generate mock API response
 	 * @param {boolean} success - Whether the response indicates success
-	 * @param {Object} data - Optional data to include in response
-	 * @param {string} message - Optional message
-	 * @returns {Object} Mock API response
+	 * @param {Object}  data    - Optional data to include in response
+	 * @param {string}  message - Optional message
+	 * @return {Object} Mock API response
 	 */
 	static getApiResponse( success = true, data = {}, message = '' ) {
 		const response = {
@@ -146,12 +146,16 @@ class MockDataGenerator {
 
 	/**
 	 * Generate mock error response
-	 * @param {string} errorCode - The error code
+	 * @param {string} errorCode    - The error code
 	 * @param {string} errorMessage - The error message
-	 * @param {number} httpCode - The HTTP status code
-	 * @returns {Object} Mock error response
+	 * @param {number} httpCode     - The HTTP status code
+	 * @return {Object} Mock error response
 	 */
-	static getErrorResponse( errorCode = 'generic_error', errorMessage = 'An error occurred', httpCode = 400 ) {
+	static getErrorResponse(
+		errorCode = 'generic_error',
+		errorMessage = 'An error occurred',
+		httpCode = 400
+	) {
 		return {
 			success: false,
 			error: {
@@ -165,7 +169,7 @@ class MockDataGenerator {
 	/**
 	 * Generate mock validation errors
 	 * @param {Object} fields - Fields with validation errors
-	 * @returns {Object} Mock validation error response
+	 * @return {Object} Mock validation error response
 	 */
 	static getValidationErrors( fields = {} ) {
 		const defaultFields = {
@@ -173,7 +177,8 @@ class MockDataGenerator {
 			nonce: 'Invalid security token',
 		};
 
-		const errorFields = Object.keys( fields ).length > 0 ? fields : defaultFields;
+		const errorFields =
+			Object.keys( fields ).length > 0 ? fields : defaultFields;
 
 		return {
 			success: false,
@@ -185,7 +190,7 @@ class MockDataGenerator {
 	/**
 	 * Generate mock rate limit data
 	 * @param {Object} overrides - Optional overrides for default data
-	 * @returns {Object} Mock rate limit data
+	 * @return {Object} Mock rate limit data
 	 */
 	static getRateLimitData( overrides = {} ) {
 		const defaults = {
@@ -204,17 +209,20 @@ class MockDataGenerator {
 	/**
 	 * Generate mock caption writer data
 	 * @param {Object} overrides - Optional overrides for default data
-	 * @returns {Object} Mock caption writer data
+	 * @return {Object} Mock caption writer data
 	 */
 	static getCaptionData( overrides = {} ) {
 		const defaults = {
 			userId: 123,
 			inputDescription: 'A beautiful sunset over the ocean',
 			generatedCaptions: {
-				instagram: 'Chasing sunsets and dreams 🌅 #sunset #ocean #beautiful #nature',
+				instagram:
+					'Chasing sunsets and dreams 🌅 #sunset #ocean #beautiful #nature',
 				twitter: 'Nothing beats a perfect sunset 🌅 #sunset',
-				linkedin: 'Taking a moment to appreciate the natural beauty around us.',
-				facebook: 'What a beautiful way to end the day! There\'s something magical about watching the sun set over the ocean.',
+				linkedin:
+					'Taking a moment to appreciate the natural beauty around us.',
+				facebook:
+					"What a beautiful way to end the day! There's something magical about watching the sun set over the ocean.",
 			},
 			characterCounts: {
 				instagram: 67,
@@ -232,19 +240,29 @@ class MockDataGenerator {
 	/**
 	 * Generate mock content repurposer data
 	 * @param {Object} overrides - Optional overrides for default data
-	 * @returns {Object} Mock content repurposer data
+	 * @return {Object} Mock content repurposer data
 	 */
 	static getRepurposerData( overrides = {} ) {
 		const defaults = {
 			userId: 123,
-			originalContent: 'This is a long-form blog post about social media marketing strategies and best practices for content creators...',
+			originalContent:
+				'This is a long-form blog post about social media marketing strategies and best practices for content creators...',
 			repurposedContent: {
-				twitter: 'Essential social media marketing tips for content creators 📱 #SocialMedia #Marketing',
-				linkedin: 'Sharing key insights on social media marketing strategies that every content creator should know...',
-				facebook: 'Want to level up your social media game? Here are proven strategies that work!',
-				instagram: 'Social media marketing made simple ✨ Swipe for tips! #ContentCreator #MarketingTips',
+				twitter:
+					'Essential social media marketing tips for content creators 📱 #SocialMedia #Marketing',
+				linkedin:
+					'Sharing key insights on social media marketing strategies that every content creator should know...',
+				facebook:
+					'Want to level up your social media game? Here are proven strategies that work!',
+				instagram:
+					'Social media marketing made simple ✨ Swipe for tips! #ContentCreator #MarketingTips',
 			},
-			platformsSelected: [ 'twitter', 'linkedin', 'facebook', 'instagram' ],
+			platformsSelected: [
+				'twitter',
+				'linkedin',
+				'facebook',
+				'instagram',
+			],
 			contentAnalysis: {
 				originalWordCount: 500,
 				readingTime: '2 min',
@@ -259,23 +277,23 @@ class MockDataGenerator {
 
 	/**
 	 * Generate mock local storage data
-	 * @param {string} key - Storage key
-	 * @param {Object} data - Data to store
+	 * @param {string} key       - Storage key
+	 * @param {Object} data      - Data to store
 	 * @param {number} timestamp - Optional timestamp
-	 * @returns {string} Stringified storage data
+	 * @return {string} Stringified storage data
 	 */
 	static getStorageData( key, data, timestamp = Date.now() ) {
-		return JSON.stringify({
+		return JSON.stringify( {
 			data,
 			timestamp,
 			key,
-		});
+		} );
 	}
 
 	/**
 	 * Generate mock WordPress globals for testing
 	 * @param {Object} overrides - Optional overrides for default globals
-	 * @returns {Object} Mock WordPress globals
+	 * @return {Object} Mock WordPress globals
 	 */
 	static getWordPressGlobals( overrides = {} ) {
 		const defaults = {
@@ -325,17 +343,17 @@ class MockDataGenerator {
 
 	/**
 	 * Generate mock DOM elements for testing
-	 * @param {string} type - Element type
+	 * @param {string} type       - Element type
 	 * @param {Object} attributes - Element attributes
-	 * @param {string} content - Element content
-	 * @returns {HTMLElement} Mock DOM element
+	 * @param {string} content    - Element content
+	 * @return {HTMLElement} Mock DOM element
 	 */
 	static getDOMElement( type = 'div', attributes = {}, content = '' ) {
 		const element = document.createElement( type );
-		
-		Object.keys( attributes ).forEach( key => {
+
+		Object.keys( attributes ).forEach( ( key ) => {
 			element.setAttribute( key, attributes[ key ] );
-		});
+		} );
 
 		if ( content ) {
 			element.textContent = content;
@@ -346,10 +364,10 @@ class MockDataGenerator {
 
 	/**
 	 * Generate mock fetch response
-	 * @param {Object} data - Response data
-	 * @param {number} status - HTTP status code
-	 * @param {boolean} ok - Whether response is ok
-	 * @returns {Object} Mock fetch response
+	 * @param {Object}  data   - Response data
+	 * @param {number}  status - HTTP status code
+	 * @param {boolean} ok     - Whether response is ok
+	 * @return {Object} Mock fetch response
 	 */
 	static getFetchResponse( data = {}, status = 200, ok = true ) {
 		return {

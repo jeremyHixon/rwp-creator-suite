@@ -29,7 +29,7 @@ class InstagramAnalyzer {
 			uploadProgress: 0,
 			analysisData: null,
 			whitelist: [],
-			viewedAccounts: []
+			viewedAccounts: [],
 		};
 
 		// Initialize state manager
@@ -120,7 +120,10 @@ class InstagramAnalyzer {
 		// Upload zone click (excluding the browse button to avoid double-firing)
 		uploadZone.addEventListener( 'click', ( e ) => {
 			// Don't trigger if the browse button was clicked
-			if ( e.target !== browseBtnContainer && ! browseBtnContainer.contains( e.target ) ) {
+			if (
+				e.target !== browseBtnContainer &&
+				! browseBtnContainer.contains( e.target )
+			) {
 				fileInput.click();
 			}
 		} );
@@ -511,7 +514,7 @@ class InstagramAnalyzer {
 		return {
 			followers: uniqueFollowers,
 			following: uniqueFollowing,
-			notFollowingBack: notFollowingBack,
+			notFollowingBack,
 			stats: {
 				totalFollowers: uniqueFollowers.length,
 				totalFollowing: uniqueFollowing.length,
@@ -683,12 +686,14 @@ class InstagramAnalyzer {
 		return `
             <div class="blk-account-item ${
 				isWhitelisted ? 'blk-account-item--whitelisted' : ''
-			} ${
-				isViewed ? 'blk-account-item--viewed' : ''
-			}" data-username="${ account.username }">
+			} ${ isViewed ? 'blk-account-item--viewed' : '' }" data-username="${
+				account.username
+			}">
                 <div class="blk-account-avatar">
                     ${
-						isViewed ? '<div class="blk-viewed-indicator">👁</div>' : ''
+						isViewed
+							? '<div class="blk-viewed-indicator">👁</div>'
+							: ''
 					}
                 </div>
                 <div class="blk-account-info">
@@ -696,8 +701,8 @@ class InstagramAnalyzer {
                         <a href="${
 							account.profileUrl
 						}" target="_blank" rel="noopener noreferrer" class="blk-profile-link" data-username="${
-			account.username
-		}">
+							account.username
+						}">
                             ${ account.username }
                         </a>
                         ${
@@ -742,8 +747,8 @@ class InstagramAnalyzer {
                     <a href="${
 						account.profileUrl
 					}" target="_blank" class="blk-button blk-button--small blk-button--secondary blk-view-profile-btn" data-username="${
-			account.username
-		}">
+						account.username
+					}">
                         View Profile
                     </a>
                 </div>
@@ -882,7 +887,8 @@ class InstagramAnalyzer {
 			if ( storedData ) {
 				this.state.analysisData = storedData;
 				this.state.whitelist = this.stateManager.getWhitelist();
-				this.state.viewedAccounts = this.stateManager.getViewedAccounts();
+				this.state.viewedAccounts =
+					this.stateManager.getViewedAccounts();
 				await this.displayResults( storedData );
 				return true;
 			}
@@ -985,7 +991,8 @@ class InstagramAnalyzer {
 		}
 
 		// Profile link clicks (username links)
-		const profileLinks = this.container.querySelectorAll( '.blk-profile-link' );
+		const profileLinks =
+			this.container.querySelectorAll( '.blk-profile-link' );
 		profileLinks.forEach( ( link ) => {
 			link.addEventListener( 'click', ( e ) => {
 				this.markAccountAsViewed( e.target.dataset.username );
@@ -993,7 +1000,9 @@ class InstagramAnalyzer {
 		} );
 
 		// View profile button clicks
-		const viewProfileBtns = this.container.querySelectorAll( '.blk-view-profile-btn' );
+		const viewProfileBtns = this.container.querySelectorAll(
+			'.blk-view-profile-btn'
+		);
 		viewProfileBtns.forEach( ( btn ) => {
 			btn.addEventListener( 'click', ( e ) => {
 				this.markAccountAsViewed( e.target.dataset.username );
@@ -1011,7 +1020,9 @@ class InstagramAnalyzer {
 			const username = item.dataset.username.toLowerCase();
 			const isVisible = username.includes( normalizedSearch );
 			item.style.display = isVisible ? 'flex' : 'none';
-			if ( isVisible ) visibleCount++;
+			if ( isVisible ) {
+				visibleCount++;
+			}
 		} );
 
 		// Update results count
@@ -1105,7 +1116,7 @@ class InstagramAnalyzer {
 	}
 
 	toggleWhitelist( username ) {
-		let whitelist = this.stateManager.getWhitelist();
+		const whitelist = this.stateManager.getWhitelist();
 		const index = whitelist.indexOf( username );
 
 		if ( index > -1 ) {
@@ -1152,20 +1163,26 @@ class InstagramAnalyzer {
 
 		try {
 			// Try REST API first
-			const response = await fetch( '/wp-json/rwp-creator-suite/v1/instagram/whitelist', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-WP-Nonce': this.config.nonce,
-				},
-				body: JSON.stringify( {
-					whitelist: whitelist,
-				} ),
-			} );
+			const response = await fetch(
+				'/wp-json/rwp-creator-suite/v1/instagram/whitelist',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-WP-Nonce': this.config.nonce,
+					},
+					body: JSON.stringify( {
+						whitelist,
+					} ),
+				}
+			);
 
 			const result = await response.json();
 			if ( ! result.success ) {
-				console.error( 'Failed to sync whitelist:', result.data || result.message );
+				console.error(
+					'Failed to sync whitelist:',
+					result.data || result.message
+				);
 				// Fallback to AJAX if REST API fails
 				return this.syncWhitelistWithServerAjax();
 			}
@@ -1194,10 +1211,16 @@ class InstagramAnalyzer {
 
 			const result = await response.json();
 			if ( ! result.success ) {
-				console.error( 'Failed to sync whitelist (AJAX fallback):', result.data );
+				console.error(
+					'Failed to sync whitelist (AJAX fallback):',
+					result.data
+				);
 			}
 		} catch ( error ) {
-			console.error( 'Network error syncing whitelist (AJAX fallback):', error );
+			console.error(
+				'Network error syncing whitelist (AJAX fallback):',
+				error
+			);
 		}
 	}
 
@@ -1221,7 +1244,9 @@ class InstagramAnalyzer {
 	}
 
 	applySorting( sortOrder ) {
-		if ( ! this.state.analysisData ) return;
+		if ( ! this.state.analysisData ) {
+			return;
+		}
 
 		const sortedData = { ...this.state.analysisData };
 
@@ -1275,12 +1300,15 @@ class InstagramAnalyzer {
 
 		try {
 			// Try REST API first
-			const response = await fetch( '/wp-json/rwp-creator-suite/v1/instagram/whitelist', {
-				method: 'GET',
-				headers: {
-					'X-WP-Nonce': this.config.nonce,
-				},
-			} );
+			const response = await fetch(
+				'/wp-json/rwp-creator-suite/v1/instagram/whitelist',
+				{
+					method: 'GET',
+					headers: {
+						'X-WP-Nonce': this.config.nonce,
+					},
+				}
+			);
 
 			const result = await response.json();
 			if ( result.success ) {
@@ -1319,7 +1347,10 @@ class InstagramAnalyzer {
 				this.stateManager.saveWhitelist( this.state.whitelist );
 			}
 		} catch ( error ) {
-			console.error( 'Failed to load server data (AJAX fallback):', error );
+			console.error(
+				'Failed to load server data (AJAX fallback):',
+				error
+			);
 		}
 	}
 
@@ -1362,13 +1393,17 @@ class InstagramAnalyzer {
 			'.blk-upload-container'
 		);
 
-		if ( resultsContainer ) resultsContainer.style.display = 'none';
+		if ( resultsContainer ) {
+			resultsContainer.style.display = 'none';
+		}
 		if ( uploadContainer ) {
 			uploadContainer.style.display = 'block';
 
 			// Reset file input
 			const fileInput = this.container.querySelector( '#file-input' );
-			if ( fileInput ) fileInput.value = '';
+			if ( fileInput ) {
+				fileInput.value = '';
+			}
 		}
 
 		this.hideError();

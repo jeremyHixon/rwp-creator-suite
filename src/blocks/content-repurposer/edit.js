@@ -9,10 +9,7 @@ export default function Edit() {
 		<div { ...blockProps }>
 			<Placeholder
 				icon={ <Icon icon="admin-post" /> }
-				label={ __(
-					'Content Repurposer',
-					'rwp-creator-suite'
-				) }
+				label={ __( 'Content Repurposer', 'rwp-creator-suite' ) }
 				instructions={ __(
 					'This block will display an AI-powered content repurposing interface on the frontend.',
 					'rwp-creator-suite'

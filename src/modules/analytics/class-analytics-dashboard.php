@@ -517,13 +517,23 @@ class RWP_Creator_Suite_Analytics_Dashboard {
     }
 
     /**
-     * Get community statistics.
+     * Get community statistics with caching optimization.
      *
      * @param string $start_date Start date.
      * @param string $end_date End date.
      * @return array
      */
     private function get_community_stats( $start_date, $end_date ) {
+        // Calculate cache parameters
+        $period_days = round( ( strtotime( $end_date ) - strtotime( $start_date ) ) / DAY_IN_SECONDS );
+        $cache_key = "rwp_analytics_stats_{$period_days}d_" . md5( serialize( array( $start_date, $end_date ) ) );
+        
+        // Try to get cached result first
+        $cached_result = wp_cache_get( $cache_key, 'rwp_analytics' );
+        if ( false !== $cached_result ) {
+            return $cached_result;
+        }
+
         global $wpdb;
         $table_name = $wpdb->prefix . 'rwp_anonymous_analytics';
         
@@ -539,54 +549,72 @@ class RWP_Creator_Suite_Analytics_Dashboard {
             );
         }
 
-        // Active creators (unique sessions in 30 days)
-        $active_creators = $wpdb->get_var( $wpdb->prepare(
-            "SELECT COUNT(DISTINCT anonymous_session_hash) 
+        // Optimized single query for multiple aggregated stats
+        $results = $wpdb->get_results( $wpdb->prepare(
+            "SELECT 
+                DATE(timestamp) as date,
+                COUNT(*) as total_events,
+                COUNT(DISTINCT anonymous_session_hash) as unique_sessions,
+                event_type,
+                platform,
+                JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.tone')) as tone
              FROM {$table_name} 
-             WHERE timestamp >= %s AND timestamp <= %s",
+             WHERE timestamp >= %s AND timestamp <= %s
+             GROUP BY DATE(timestamp), event_type, platform, tone
+             ORDER BY date DESC",
             $start_date . ' 00:00:00',
             $end_date . ' 23:59:59'
-        ) );
+        ), ARRAY_A );
 
-        // Content generated in last 24 hours
-        $content_generated_24h = $wpdb->get_var( $wpdb->prepare(
-            "SELECT COUNT(*) 
-             FROM {$table_name} 
-             WHERE event_type = %s 
-             AND timestamp >= %s",
-            RWP_Creator_Suite_Anonymous_Analytics::EVENT_CONTENT_GENERATED,
-            date( 'Y-m-d H:i:s', strtotime( '-24 hours' ) )
-        ) );
+        // Process results to calculate statistics
+        $active_creators = 0;
+        $content_generated_24h = 0;
+        $platform_counts = array();
+        $tone_counts = array();
+        $unique_sessions = array();
+        $cutoff_24h = strtotime( '-24 hours' );
 
-        // Top platform
-        $top_platform = $wpdb->get_var(
-            "SELECT platform 
-             FROM {$table_name} 
-             WHERE platform != '' 
-             AND timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-             GROUP BY platform 
-             ORDER BY COUNT(*) DESC 
-             LIMIT 1"
+        foreach ( $results as $row ) {
+            $date_timestamp = strtotime( $row['date'] );
+            
+            // Count unique sessions for active creators
+            if ( ! empty( $row['unique_sessions'] ) ) {
+                $unique_sessions = array_merge( $unique_sessions, array_fill( 0, (int) $row['unique_sessions'], true ) );
+            }
+            
+            // Count content generated in last 24 hours
+            if ( $date_timestamp >= $cutoff_24h && 
+                 $row['event_type'] === RWP_Creator_Suite_Anonymous_Analytics::EVENT_CONTENT_GENERATED ) {
+                $content_generated_24h += (int) $row['total_events'];
+            }
+            
+            // Count platform usage
+            if ( ! empty( $row['platform'] ) ) {
+                $platform_counts[ $row['platform'] ] = ( $platform_counts[ $row['platform'] ] ?? 0 ) + (int) $row['total_events'];
+            }
+            
+            // Count tone usage
+            if ( ! empty( $row['tone'] ) && $row['tone'] !== 'null' ) {
+                $tone_counts[ $row['tone'] ] = ( $tone_counts[ $row['tone'] ] ?? 0 ) + (int) $row['total_events'];
+            }
+        }
+
+        // Calculate final statistics
+        $active_creators = count( $unique_sessions );
+        $top_platform = ! empty( $platform_counts ) ? array_key_first( array_slice( arsort( $platform_counts ) ? $platform_counts : $platform_counts, 0, 1, true ) ) : 'N/A';
+        $most_used_tone = ! empty( $tone_counts ) ? array_key_first( array_slice( arsort( $tone_counts ) ? $tone_counts : $tone_counts, 0, 1, true ) ) : 'N/A';
+
+        $community_stats = array(
+            'active_creators' => $active_creators,
+            'content_generated_24h' => $content_generated_24h,
+            'top_platform' => $top_platform,
+            'most_used_tone' => $most_used_tone,
         );
 
-        // Most used tone
-        $most_used_tone = $wpdb->get_var(
-            "SELECT JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.tone')) as tone
-             FROM {$table_name} 
-             WHERE JSON_EXTRACT(event_data, '$.tone') IS NOT NULL
-             AND JSON_EXTRACT(event_data, '$.tone') != ''
-             AND timestamp >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-             GROUP BY tone 
-             ORDER BY COUNT(*) DESC 
-             LIMIT 1"
-        );
-
-        return array(
-            'active_creators' => (int) $active_creators,
-            'content_generated_24h' => (int) $content_generated_24h,
-            'top_platform' => $top_platform ?: 'N/A',
-            'most_used_tone' => $most_used_tone ?: 'N/A',
-        );
+        // Cache result for 1 hour
+        wp_cache_set( $cache_key, $community_stats, 'rwp_analytics', HOUR_IN_SECONDS );
+        
+        return $community_stats;
     }
 
     /**
@@ -632,52 +660,53 @@ class RWP_Creator_Suite_Analytics_Dashboard {
     }
 
     /**
-     * Get AI performance statistics.
+     * Get AI performance statistics with caching optimization.
      *
      * @return array
      */
     private function get_ai_performance_stats() {
+        $cache_key = 'rwp_ai_performance_stats_7d';
+        $cached_result = wp_cache_get( $cache_key, 'rwp_analytics' );
+        
+        if ( false !== $cached_result ) {
+            return $cached_result;
+        }
+
         global $wpdb;
         $table_name = $wpdb->prefix . 'rwp_anonymous_analytics';
 
-        // Average response time from content generation events
-        $avg_response_time = $wpdb->get_var( $wpdb->prepare(
-            "SELECT AVG(CAST(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.processing_time_ms')) AS UNSIGNED)) / 1000
+        // Optimized single query for AI performance metrics
+        $results = $wpdb->get_results( $wpdb->prepare(
+            "SELECT 
+                COUNT(*) as total_generations,
+                SUM(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.success')) = 'true' THEN 1 ELSE 0 END) as successful_generations,
+                AVG(CAST(JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.processing_time_ms')) AS UNSIGNED)) / 1000 as avg_response_time
              FROM {$table_name} 
              WHERE event_type = %s
-             AND JSON_EXTRACT(event_data, '$.processing_time_ms') IS NOT NULL
              AND timestamp >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
             RWP_Creator_Suite_Anonymous_Analytics::EVENT_CONTENT_GENERATED
-        ) );
+        ), ARRAY_A );
 
-        // Success rate
-        $total_generations = $wpdb->get_var( $wpdb->prepare(
-            "SELECT COUNT(*) 
-             FROM {$table_name} 
-             WHERE event_type = %s
-             AND timestamp >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
-            RWP_Creator_Suite_Anonymous_Analytics::EVENT_CONTENT_GENERATED
-        ) );
-
-        $successful_generations = $wpdb->get_var( $wpdb->prepare(
-            "SELECT COUNT(*) 
-             FROM {$table_name} 
-             WHERE event_type = %s
-             AND JSON_UNQUOTE(JSON_EXTRACT(event_data, '$.success')) = 'true'
-             AND timestamp >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
-            RWP_Creator_Suite_Anonymous_Analytics::EVENT_CONTENT_GENERATED
-        ) );
+        $stats = $results[0] ?? array();
+        $total_generations = (int) ( $stats['total_generations'] ?? 0 );
+        $successful_generations = (int) ( $stats['successful_generations'] ?? 0 );
+        $avg_response_time = (float) ( $stats['avg_response_time'] ?? 0 );
 
         $success_rate = $total_generations > 0 ? ( $successful_generations / $total_generations ) * 100 : 0;
 
         // Cache hit rate (estimated based on response times)
         $cache_hit_rate = 34; // Placeholder - would need cache implementation
 
-        return array(
-            'avg_response_time' => round( (float) $avg_response_time, 1 ),
+        $ai_stats = array(
+            'avg_response_time' => round( $avg_response_time, 1 ),
             'success_rate' => round( $success_rate, 1 ),
             'cache_hit_rate' => $cache_hit_rate,
         );
+
+        // Cache result for 30 minutes
+        wp_cache_set( $cache_key, $ai_stats, 'rwp_analytics', 30 * MINUTE_IN_SECONDS );
+
+        return $ai_stats;
     }
 
     /**

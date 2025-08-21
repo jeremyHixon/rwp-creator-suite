@@ -1,6 +1,6 @@
 /**
  * Platform Selector Component
- * 
+ *
  * Reusable React component for selecting social media platforms.
  * Provides consistent UI and behavior across all blocks.
  */
@@ -9,369 +9,440 @@ import { __ } from '@wordpress/i18n';
 import { useState, useEffect } from '@wordpress/element';
 import { CheckboxControl, PanelBody, Notice } from '@wordpress/components';
 
-const PlatformSelector = ({
-    selectedPlatforms = [],
-    onPlatformsChange,
-    allowedPlatforms = null,
-    maxSelections = null,
-    isGuest = false,
-    guestLimit = 3,
-    showDescriptions = true,
-    layout = 'grid' // 'grid' or 'list'
-}) => {
-    const [platforms, setPlatforms] = useState([]);
-    const [errors, setErrors] = useState([]);
+const PlatformSelector = ( {
+	selectedPlatforms = [],
+	onPlatformsChange,
+	allowedPlatforms = null,
+	maxSelections = null,
+	isGuest = false,
+	guestLimit = 3,
+	showDescriptions = true,
+	layout = 'grid', // 'grid' or 'list'
+} ) => {
+	const [ platforms, setPlatforms ] = useState( [] );
+	const [ errors, setErrors ] = useState( [] );
 
-    // Default platform configurations
-    const defaultPlatforms = {
-        instagram: {
-            label: __('Instagram', 'rwp-creator-suite'),
-            description: __('Square format, engaging visuals, hashtags', 'rwp-creator-suite'),
-            icon: '📸',
-            characteristics: ['visual', 'hashtags', 'stories'],
-            maxLength: 2200
-        },
-        twitter: {
-            label: __('Twitter/X', 'rwp-creator-suite'),
-            description: __('Concise, engaging, trending topics', 'rwp-creator-suite'),
-            icon: '🐦',
-            characteristics: ['concise', 'trending', 'threads'],
-            maxLength: 280
-        },
-        facebook: {
-            label: __('Facebook', 'rwp-creator-suite'),
-            description: __('Detailed posts, community engagement', 'rwp-creator-suite'),
-            icon: '👥',
-            characteristics: ['detailed', 'community', 'links'],
-            maxLength: 63206
-        },
-        linkedin: {
-            label: __('LinkedIn', 'rwp-creator-suite'),
-            description: __('Professional tone, industry insights', 'rwp-creator-suite'),
-            icon: '💼',
-            characteristics: ['professional', 'industry', 'networking'],
-            maxLength: 3000
-        },
-        tiktok: {
-            label: __('TikTok', 'rwp-creator-suite'),
-            description: __('Creative, trend-focused, viral content', 'rwp-creator-suite'),
-            icon: '🎵',
-            characteristics: ['creative', 'trends', 'viral'],
-            maxLength: 2200
-        },
-        youtube: {
-            label: __('YouTube', 'rwp-creator-suite'),
-            description: __('Video descriptions, SEO optimized', 'rwp-creator-suite'),
-            icon: '🎥',
-            characteristics: ['video', 'seo', 'educational'],
-            maxLength: 5000
-        },
-        pinterest: {
-            label: __('Pinterest', 'rwp-creator-suite'),
-            description: __('Visual discovery, SEO keywords', 'rwp-creator-suite'),
-            icon: '📌',
-            characteristics: ['visual', 'discovery', 'keywords'],
-            maxLength: 500
-        }
-    };
+	// Default platform configurations
+	const defaultPlatforms = {
+		instagram: {
+			label: __( 'Instagram', 'rwp-creator-suite' ),
+			description: __(
+				'Square format, engaging visuals, hashtags',
+				'rwp-creator-suite'
+			),
+			icon: '📸',
+			characteristics: [ 'visual', 'hashtags', 'stories' ],
+			maxLength: 2200,
+		},
+		twitter: {
+			label: __( 'Twitter/X', 'rwp-creator-suite' ),
+			description: __(
+				'Concise, engaging, trending topics',
+				'rwp-creator-suite'
+			),
+			icon: '🐦',
+			characteristics: [ 'concise', 'trending', 'threads' ],
+			maxLength: 280,
+		},
+		facebook: {
+			label: __( 'Facebook', 'rwp-creator-suite' ),
+			description: __(
+				'Detailed posts, community engagement',
+				'rwp-creator-suite'
+			),
+			icon: '👥',
+			characteristics: [ 'detailed', 'community', 'links' ],
+			maxLength: 63206,
+		},
+		linkedin: {
+			label: __( 'LinkedIn', 'rwp-creator-suite' ),
+			description: __(
+				'Professional tone, industry insights',
+				'rwp-creator-suite'
+			),
+			icon: '💼',
+			characteristics: [ 'professional', 'industry', 'networking' ],
+			maxLength: 3000,
+		},
+		tiktok: {
+			label: __( 'TikTok', 'rwp-creator-suite' ),
+			description: __(
+				'Creative, trend-focused, viral content',
+				'rwp-creator-suite'
+			),
+			icon: '🎵',
+			characteristics: [ 'creative', 'trends', 'viral' ],
+			maxLength: 2200,
+		},
+		youtube: {
+			label: __( 'YouTube', 'rwp-creator-suite' ),
+			description: __(
+				'Video descriptions, SEO optimized',
+				'rwp-creator-suite'
+			),
+			icon: '🎥',
+			characteristics: [ 'video', 'seo', 'educational' ],
+			maxLength: 5000,
+		},
+		pinterest: {
+			label: __( 'Pinterest', 'rwp-creator-suite' ),
+			description: __(
+				'Visual discovery, SEO keywords',
+				'rwp-creator-suite'
+			),
+			icon: '📌',
+			characteristics: [ 'visual', 'discovery', 'keywords' ],
+			maxLength: 500,
+		},
+	};
 
-    useEffect(() => {
-        // Initialize platforms based on allowed platforms or use all
-        const availablePlatforms = allowedPlatforms || Object.keys(defaultPlatforms);
-        
-        const platformList = availablePlatforms.map(key => ({
-            value: key,
-            ...defaultPlatforms[key]
-        }));
+	useEffect( () => {
+		// Initialize platforms based on allowed platforms or use all
+		const availablePlatforms =
+			allowedPlatforms || Object.keys( defaultPlatforms );
 
-        setPlatforms(platformList);
-    }, [allowedPlatforms]);
+		const platformList = availablePlatforms.map( ( key ) => ( {
+			value: key,
+			...defaultPlatforms[ key ],
+		} ) );
 
-    const handlePlatformChange = (platformValue, isChecked) => {
-        let newSelectedPlatforms;
+		setPlatforms( platformList );
+	}, [ allowedPlatforms ] );
 
-        if (isChecked) {
-            // Add platform
-            newSelectedPlatforms = [...selectedPlatforms, platformValue];
+	const handlePlatformChange = ( platformValue, isChecked ) => {
+		let newSelectedPlatforms;
 
-            // Check limits
-            const effectiveMaxSelections = isGuest ? guestLimit : maxSelections;
-            if (effectiveMaxSelections && newSelectedPlatforms.length > effectiveMaxSelections) {
-                const limitType = isGuest ? __('guest users', 'rwp-creator-suite') : __('this feature', 'rwp-creator-suite');
-                setErrors([
-                    sprintf(
-                        __('Maximum %d platforms allowed for %s', 'rwp-creator-suite'),
-                        effectiveMaxSelections,
-                        limitType
-                    )
-                ]);
-                return;
-            }
-        } else {
-            // Remove platform
-            newSelectedPlatforms = selectedPlatforms.filter(p => p !== platformValue);
-        }
+		if ( isChecked ) {
+			// Add platform
+			newSelectedPlatforms = [ ...selectedPlatforms, platformValue ];
 
-        setErrors([]); // Clear errors on successful change
-        onPlatformsChange(newSelectedPlatforms);
-    };
+			// Check limits
+			const effectiveMaxSelections = isGuest ? guestLimit : maxSelections;
+			if (
+				effectiveMaxSelections &&
+				newSelectedPlatforms.length > effectiveMaxSelections
+			) {
+				const limitType = isGuest
+					? __( 'guest users', 'rwp-creator-suite' )
+					: __( 'this feature', 'rwp-creator-suite' );
+				setErrors( [
+					sprintf(
+						__(
+							'Maximum %d platforms allowed for %s',
+							'rwp-creator-suite'
+						),
+						effectiveMaxSelections,
+						limitType
+					),
+				] );
+				return;
+			}
+		} else {
+			// Remove platform
+			newSelectedPlatforms = selectedPlatforms.filter(
+				( p ) => p !== platformValue
+			);
+		}
 
-    const renderPlatformItem = (platform) => {
-        const isSelected = selectedPlatforms.includes(platform.value);
-        const effectiveMaxSelections = isGuest ? guestLimit : maxSelections;
-        const isDisabled = !isSelected && effectiveMaxSelections && 
-                          selectedPlatforms.length >= effectiveMaxSelections;
+		setErrors( [] ); // Clear errors on successful change
+		onPlatformsChange( newSelectedPlatforms );
+	};
 
-        return (
-            <div 
-                key={platform.value}
-                className={`rwp-platform-item ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`}
-            >
-                <CheckboxControl
-                    label={
-                        <div className="rwp-platform-label">
-                            <span className="platform-icon">{platform.icon}</span>
-                            <span className="platform-name">{platform.label}</span>
-                            {showDescriptions && (
-                                <span className="platform-description">{platform.description}</span>
-                            )}
-                        </div>
-                    }
-                    checked={isSelected}
-                    onChange={(checked) => handlePlatformChange(platform.value, checked)}
-                    disabled={isDisabled}
-                />
-                
-                {isSelected && (
-                    <div className="platform-details">
-                        <div className="platform-characteristics">
-                            {platform.characteristics.map(char => (
-                                <span key={char} className="characteristic-tag">
-                                    {char}
-                                </span>
-                            ))}
-                        </div>
-                        <div className="platform-limits">
-                            {sprintf(
-                                __('Max length: %d characters', 'rwp-creator-suite'),
-                                platform.maxLength
-                            )}
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-    };
+	const renderPlatformItem = ( platform ) => {
+		const isSelected = selectedPlatforms.includes( platform.value );
+		const effectiveMaxSelections = isGuest ? guestLimit : maxSelections;
+		const isDisabled =
+			! isSelected &&
+			effectiveMaxSelections &&
+			selectedPlatforms.length >= effectiveMaxSelections;
 
-    const getSelectionSummary = () => {
-        const count = selectedPlatforms.length;
-        const effectiveMaxSelections = isGuest ? guestLimit : maxSelections;
+		return (
+			<div
+				key={ platform.value }
+				className={ `rwp-platform-item ${
+					isSelected ? 'selected' : ''
+				} ${ isDisabled ? 'disabled' : '' }` }
+			>
+				<CheckboxControl
+					label={
+						<div className="rwp-platform-label">
+							<span className="platform-icon">
+								{ platform.icon }
+							</span>
+							<span className="platform-name">
+								{ platform.label }
+							</span>
+							{ showDescriptions && (
+								<span className="platform-description">
+									{ platform.description }
+								</span>
+							) }
+						</div>
+					}
+					checked={ isSelected }
+					onChange={ ( checked ) =>
+						handlePlatformChange( platform.value, checked )
+					}
+					disabled={ isDisabled }
+				/>
 
-        if (count === 0) {
-            return __('No platforms selected', 'rwp-creator-suite');
-        }
+				{ isSelected && (
+					<div className="platform-details">
+						<div className="platform-characteristics">
+							{ platform.characteristics.map( ( char ) => (
+								<span
+									key={ char }
+									className="characteristic-tag"
+								>
+									{ char }
+								</span>
+							) ) }
+						</div>
+						<div className="platform-limits">
+							{ sprintf(
+								__(
+									'Max length: %d characters',
+									'rwp-creator-suite'
+								),
+								platform.maxLength
+							) }
+						</div>
+					</div>
+				) }
+			</div>
+		);
+	};
 
-        let summary = sprintf(
-            _n('%d platform selected', '%d platforms selected', count, 'rwp-creator-suite'),
-            count
-        );
+	const getSelectionSummary = () => {
+		const count = selectedPlatforms.length;
+		const effectiveMaxSelections = isGuest ? guestLimit : maxSelections;
 
-        if (effectiveMaxSelections) {
-            summary += sprintf(
-                __(' (max %d)', 'rwp-creator-suite'),
-                effectiveMaxSelections
-            );
-        }
+		if ( count === 0 ) {
+			return __( 'No platforms selected', 'rwp-creator-suite' );
+		}
 
-        return summary;
-    };
+		let summary = sprintf(
+			_n(
+				'%d platform selected',
+				'%d platforms selected',
+				count,
+				'rwp-creator-suite'
+			),
+			count
+		);
 
-    return (
-        <div className={`rwp-platform-selector layout-${layout}`}>
-            <div className="platform-selector-header">
-                <h4>{__('Select Platforms', 'rwp-creator-suite')}</h4>
-                <div className="selection-summary">
-                    {getSelectionSummary()}
-                </div>
-            </div>
+		if ( effectiveMaxSelections ) {
+			summary += sprintf(
+				__( ' (max %d)', 'rwp-creator-suite' ),
+				effectiveMaxSelections
+			);
+		}
 
-            {errors.length > 0 && (
-                <Notice status="error" isDismissible={false}>
-                    <ul>
-                        {errors.map((error, index) => (
-                            <li key={index}>{error}</li>
-                        ))}
-                    </ul>
-                </Notice>
-            )}
+		return summary;
+	};
 
-            {isGuest && (
-                <Notice status="info" isDismissible={false}>
-                    {sprintf(
-                        __('Guest users can select up to %d platforms. Sign up for higher limits!', 'rwp-creator-suite'),
-                        guestLimit
-                    )}
-                </Notice>
-            )}
+	return (
+		<div className={ `rwp-platform-selector layout-${ layout }` }>
+			<div className="platform-selector-header">
+				<h4>{ __( 'Select Platforms', 'rwp-creator-suite' ) }</h4>
+				<div className="selection-summary">
+					{ getSelectionSummary() }
+				</div>
+			</div>
 
-            <div className="platforms-grid">
-                {platforms.map(renderPlatformItem)}
-            </div>
+			{ errors.length > 0 && (
+				<Notice status="error" isDismissible={ false }>
+					<ul>
+						{ errors.map( ( error, index ) => (
+							<li key={ index }>{ error }</li>
+						) ) }
+					</ul>
+				</Notice>
+			) }
 
-            {selectedPlatforms.length > 0 && (
-                <div className="selected-platforms-summary">
-                    <h5>{__('Content will be optimized for:', 'rwp-creator-suite')}</h5>
-                    <div className="selected-list">
-                        {selectedPlatforms.map(platformValue => {
-                            const platform = platforms.find(p => p.value === platformValue);
-                            return platform ? (
-                                <span key={platformValue} className="selected-platform-tag">
-                                    {platform.icon} {platform.label}
-                                </span>
-                            ) : null;
-                        })}
-                    </div>
-                </div>
-            )}
+			{ isGuest && (
+				<Notice status="info" isDismissible={ false }>
+					{ sprintf(
+						__(
+							'Guest users can select up to %d platforms. Sign up for higher limits!',
+							'rwp-creator-suite'
+						),
+						guestLimit
+					) }
+				</Notice>
+			) }
 
-            <style jsx>{`
-                .rwp-platform-selector {
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                    padding: 16px;
-                    margin: 16px 0;
-                }
+			<div className="platforms-grid">
+				{ platforms.map( renderPlatformItem ) }
+			</div>
 
-                .platform-selector-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 16px;
-                    border-bottom: 1px solid #eee;
-                    padding-bottom: 8px;
-                }
+			{ selectedPlatforms.length > 0 && (
+				<div className="selected-platforms-summary">
+					<h5>
+						{ __(
+							'Content will be optimized for:',
+							'rwp-creator-suite'
+						) }
+					</h5>
+					<div className="selected-list">
+						{ selectedPlatforms.map( ( platformValue ) => {
+							const platform = platforms.find(
+								( p ) => p.value === platformValue
+							);
+							return platform ? (
+								<span
+									key={ platformValue }
+									className="selected-platform-tag"
+								>
+									{ platform.icon } { platform.label }
+								</span>
+							) : null;
+						} ) }
+					</div>
+				</div>
+			) }
 
-                .platform-selector-header h4 {
-                    margin: 0;
-                }
+			<style jsx>{ `
+				.rwp-platform-selector {
+					border: 1px solid #ddd;
+					border-radius: 4px;
+					padding: 16px;
+					margin: 16px 0;
+				}
 
-                .selection-summary {
-                    font-size: 14px;
-                    color: #666;
-                }
+				.platform-selector-header {
+					display: flex;
+					justify-content: space-between;
+					align-items: center;
+					margin-bottom: 16px;
+					border-bottom: 1px solid #eee;
+					padding-bottom: 8px;
+				}
 
-                .platforms-grid {
-                    display: grid;
-                    gap: 12px;
-                }
+				.platform-selector-header h4 {
+					margin: 0;
+				}
 
-                .layout-grid .platforms-grid {
-                    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-                }
+				.selection-summary {
+					font-size: 14px;
+					color: #666;
+				}
 
-                .layout-list .platforms-grid {
-                    grid-template-columns: 1fr;
-                }
+				.platforms-grid {
+					display: grid;
+					gap: 12px;
+				}
 
-                .rwp-platform-item {
-                    border: 1px solid #e0e0e0;
-                    border-radius: 6px;
-                    padding: 12px;
-                    transition: all 0.2s ease;
-                }
+				.layout-grid .platforms-grid {
+					grid-template-columns: repeat(
+						auto-fit,
+						minmax( 300px, 1fr )
+					);
+				}
 
-                .rwp-platform-item:hover {
-                    border-color: #007cba;
-                    background-color: #f8f9fa;
-                }
+				.layout-list .platforms-grid {
+					grid-template-columns: 1fr;
+				}
 
-                .rwp-platform-item.selected {
-                    border-color: #007cba;
-                    background-color: #e7f3ff;
-                }
+				.rwp-platform-item {
+					border: 1px solid #e0e0e0;
+					border-radius: 6px;
+					padding: 12px;
+					transition: all 0.2s ease;
+				}
 
-                .rwp-platform-item.disabled {
-                    opacity: 0.6;
-                    cursor: not-allowed;
-                }
+				.rwp-platform-item:hover {
+					border-color: #007cba;
+					background-color: #f8f9fa;
+				}
 
-                .rwp-platform-label {
-                    display: flex;
-                    align-items: flex-start;
-                    gap: 8px;
-                }
+				.rwp-platform-item.selected {
+					border-color: #007cba;
+					background-color: #e7f3ff;
+				}
 
-                .platform-icon {
-                    font-size: 18px;
-                    line-height: 1;
-                }
+				.rwp-platform-item.disabled {
+					opacity: 0.6;
+					cursor: not-allowed;
+				}
 
-                .platform-name {
-                    font-weight: 600;
-                    color: #1e1e1e;
-                }
+				.rwp-platform-label {
+					display: flex;
+					align-items: flex-start;
+					gap: 8px;
+				}
 
-                .platform-description {
-                    font-size: 13px;
-                    color: #666;
-                    margin-left: auto;
-                    text-align: right;
-                    max-width: 200px;
-                }
+				.platform-icon {
+					font-size: 18px;
+					line-height: 1;
+				}
 
-                .platform-details {
-                    margin-top: 8px;
-                    padding-top: 8px;
-                    border-top: 1px solid #e0e0e0;
-                }
+				.platform-name {
+					font-weight: 600;
+					color: #1e1e1e;
+				}
 
-                .platform-characteristics {
-                    margin-bottom: 4px;
-                }
+				.platform-description {
+					font-size: 13px;
+					color: #666;
+					margin-left: auto;
+					text-align: right;
+					max-width: 200px;
+				}
 
-                .characteristic-tag {
-                    display: inline-block;
-                    background: #007cba;
-                    color: white;
-                    font-size: 11px;
-                    padding: 2px 6px;
-                    border-radius: 3px;
-                    margin-right: 4px;
-                }
+				.platform-details {
+					margin-top: 8px;
+					padding-top: 8px;
+					border-top: 1px solid #e0e0e0;
+				}
 
-                .platform-limits {
-                    font-size: 12px;
-                    color: #666;
-                }
+				.platform-characteristics {
+					margin-bottom: 4px;
+				}
 
-                .selected-platforms-summary {
-                    margin-top: 16px;
-                    padding-top: 16px;
-                    border-top: 1px solid #eee;
-                }
+				.characteristic-tag {
+					display: inline-block;
+					background: #007cba;
+					color: white;
+					font-size: 11px;
+					padding: 2px 6px;
+					border-radius: 3px;
+					margin-right: 4px;
+				}
 
-                .selected-platforms-summary h5 {
-                    margin: 0 0 8px 0;
-                    font-size: 14px;
-                }
+				.platform-limits {
+					font-size: 12px;
+					color: #666;
+				}
 
-                .selected-list {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 6px;
-                }
+				.selected-platforms-summary {
+					margin-top: 16px;
+					padding-top: 16px;
+					border-top: 1px solid #eee;
+				}
 
-                .selected-platform-tag {
-                    background: #28a745;
-                    color: white;
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: 500;
-                }
-            `}</style>
-        </div>
-    );
+				.selected-platforms-summary h5 {
+					margin: 0 0 8px 0;
+					font-size: 14px;
+				}
+
+				.selected-list {
+					display: flex;
+					flex-wrap: wrap;
+					gap: 6px;
+				}
+
+				.selected-platform-tag {
+					background: #28a745;
+					color: white;
+					padding: 4px 8px;
+					border-radius: 4px;
+					font-size: 12px;
+					font-weight: 500;
+				}
+			` }</style>
+		</div>
+	);
 };
 
 export default PlatformSelector;

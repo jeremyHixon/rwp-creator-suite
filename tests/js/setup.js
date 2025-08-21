@@ -4,7 +4,7 @@
  * This file is run before each test file is executed.
  */
 
-require('@testing-library/jest-dom');
+require( '@testing-library/jest-dom' );
 
 // Mock WordPress globals
 global.wp = {
@@ -15,15 +15,15 @@ global.wp = {
 		},
 	},
 	element: {
-		createElement: ( type, props, ...children ) => ({
+		createElement: ( type, props, ...children ) => ( {
 			type,
 			props: { ...props, children },
-		}),
-		Fragment: ({ children }) => children,
+		} ),
+		Fragment: ( { children } ) => children,
 	},
 	data: {
-		useSelect: jest.fn( () => ({}) ),
-		useDispatch: jest.fn( () => ({}) ),
+		useSelect: jest.fn( () => ( {} ) ),
+		useDispatch: jest.fn( () => ( {} ) ),
 	},
 	blocks: {
 		registerBlockType: jest.fn(),
@@ -38,7 +38,7 @@ global.wp = {
 		PanelRow: 'div',
 	},
 	blockEditor: {
-		useBlockProps: jest.fn( () => ({}) ),
+		useBlockProps: jest.fn( () => ( {} ) ),
 		BlockControls: 'div',
 		InspectorControls: 'div',
 	},
@@ -138,19 +138,19 @@ const sessionStorageMock = {
 global.sessionStorage = sessionStorageMock;
 
 // Mock File and FileReader for file upload tests
-global.File = jest.fn( ( parts, filename, properties ) => ({
+global.File = jest.fn( ( parts, filename, properties ) => ( {
 	name: filename,
 	size: parts.reduce( ( acc, part ) => acc + part.length, 0 ),
 	type: properties?.type || 'application/octet-stream',
-}));
+} ) );
 
-global.FileReader = jest.fn( () => ({
+global.FileReader = jest.fn( () => ( {
 	readAsArrayBuffer: jest.fn(),
 	readAsText: jest.fn(),
 	result: null,
 	onload: null,
 	onerror: null,
-}));
+} ) );
 
 // Mock URL.createObjectURL for image handling
 global.URL = {
@@ -170,21 +170,21 @@ global.console = {
 afterEach( () => {
 	// Clear all mocks
 	jest.clearAllMocks();
-	
+
 	// Reset fetch mock
 	global.fetch.mockClear();
-	
+
 	// Clear localStorage and sessionStorage
 	localStorageMock.getItem.mockClear();
 	localStorageMock.setItem.mockClear();
 	localStorageMock.removeItem.mockClear();
 	localStorageMock.clear.mockClear();
-	
+
 	sessionStorageMock.getItem.mockClear();
 	sessionStorageMock.setItem.mockClear();
 	sessionStorageMock.removeItem.mockClear();
 	sessionStorageMock.clear.mockClear();
-	
+
 	// Reset WordPress globals
 	global.rwpInstagramAnalyzer.isLoggedIn = false;
 	global.rwpInstagramAnalyzer.currentUserId = 0;
@@ -192,4 +192,4 @@ afterEach( () => {
 	global.rwpCaptionWriter.currentUserId = 0;
 	global.rwpContentRepurposer.isLoggedIn = false;
 	global.rwpContentRepurposer.currentUserId = 0;
-});
+} );

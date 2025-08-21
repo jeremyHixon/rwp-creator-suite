@@ -38,8 +38,11 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
 <div <?php echo wp_kses_post( $wrapper_attributes ); ?>>
     <div class="caption-writer-app">
         <div class="caption-writer-header">
-            <div class="platform-selection">
-                <span class="platform-label"><strong><?php esc_html_e( 'Target Platforms:', 'rwp-creator-suite' ); ?></strong> (<?php esc_html_e( 'Helps keep track of the character count limits', 'rwp-creator-suite' ); ?>)</span>
+            <div class="platform-selection" role="group" aria-labelledby="platform-selection-heading">
+                <h3 id="platform-selection-heading" class="platform-label">
+                    <strong><?php esc_html_e( 'Target Platforms:', 'rwp-creator-suite' ); ?></strong> 
+                    <span class="platform-description">(<?php esc_html_e( 'Helps keep track of the character count limits', 'rwp-creator-suite' ); ?>)</span>
+                </h3>
                 <div class="platform-checkboxes">
                     <?php
                     $available_platforms = RWP_Creator_Suite_Caption_Admin_Settings::get_platforms_config();
@@ -48,6 +51,7 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                         $platform_label = $platform_config['label'];
                         $icon_class = isset( $platform_config['icon_class'] ) ? $platform_config['icon_class'] : $platform_key;
                         $checked = in_array( $platform_key, $platforms );
+                        $character_limit = $platform_config['character_limit'] ?? 0;
                     ?>
                         <label class="platform-checkbox">
                             <input 
@@ -55,11 +59,18 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                                 value="<?php echo esc_attr( $platform_key ); ?>"
                                 <?php checked( $checked ); ?>
                                 data-platform-checkbox="<?php echo esc_attr( $platform_key ); ?>"
+                                aria-describedby="platform-<?php echo esc_attr( $platform_key ); ?>-desc"
                             >
                             <div class="platform-icon-label">
                                 <span class="platform-icon <?php echo esc_attr( $icon_class ); ?>" aria-hidden="true"></span>
-                                <span class="platform-name-sr"><?php echo esc_html( $platform_label ); ?></span>
+                                <span class="platform-name"><?php echo esc_html( $platform_label ); ?></span>
                             </div>
+                            <span id="platform-<?php echo esc_attr( $platform_key ); ?>-desc" class="sr-only">
+                                <?php printf(
+                                    esc_html__( 'Character limit: %d characters', 'rwp-creator-suite' ),
+                                    $character_limit
+                                ); ?>
+                            </span>
                         </label>
                     <?php endforeach; ?>
                 </div>

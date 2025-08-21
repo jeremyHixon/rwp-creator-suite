@@ -7,8 +7,8 @@ import './style';
 
 const { name } = metadata;
 
-registerBlockType(name, {
-    ...metadata,
-    edit: Edit,
-    save,
-});
+registerBlockType( name, {
+	...metadata,
+	edit: Edit,
+	save,
+} );

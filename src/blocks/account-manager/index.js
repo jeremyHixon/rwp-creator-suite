@@ -5,7 +5,7 @@ import save from './save';
 import blockJson from './block.json';
 
 registerBlockType( blockJson.name, {
-    ...blockJson,
-    edit,
-    save,
+	...blockJson,
+	edit,
+	save,
 } );

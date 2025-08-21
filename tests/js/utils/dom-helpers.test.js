@@ -6,12 +6,12 @@ describe( 'DOM Helper Utilities', () => {
 	beforeEach( () => {
 		// Clear DOM before each test
 		document.body.innerHTML = '';
-	});
+	} );
 
 	afterEach( () => {
 		// Clean up after each test
 		document.body.innerHTML = '';
-	});
+	} );
 
 	describe( 'Element Selection and Manipulation', () => {
 		test( 'should find elements by data attributes', () => {
@@ -21,22 +21,30 @@ describe( 'DOM Helper Utilities', () => {
 				<div data-final-caption>Caption area</div>
 			`;
 
-			const testElement = document.querySelector( '[data-testid="test-element"]' );
-			const instagramCheckbox = document.querySelector( '[data-platform-checkbox="instagram"]' );
-			const captionArea = document.querySelector( '[data-final-caption]' );
+			const testElement = document.querySelector(
+				'[data-testid="test-element"]'
+			);
+			const instagramCheckbox = document.querySelector(
+				'[data-platform-checkbox="instagram"]'
+			);
+			const captionArea = document.querySelector(
+				'[data-final-caption]'
+			);
 
 			expect( testElement ).toBeDefined();
 			expect( testElement.textContent ).toBe( 'Test Content' );
 			expect( instagramCheckbox ).toBeDefined();
 			expect( captionArea ).toBeDefined();
-		});
+		} );
 
 		test( 'should handle missing elements gracefully', () => {
 			document.body.innerHTML = '<div>No special elements</div>';
 
-			const missingElement = document.querySelector( '[data-missing-element]' );
+			const missingElement = document.querySelector(
+				'[data-missing-element]'
+			);
 			expect( missingElement ).toBeNull();
-		});
+		} );
 
 		test( 'should manipulate element visibility', () => {
 			document.body.innerHTML = `
@@ -44,7 +52,7 @@ describe( 'DOM Helper Utilities', () => {
 			`;
 
 			const element = document.getElementById( 'test-element' );
-			
+
 			// Hide element
 			element.style.display = 'none';
 			expect( element.style.display ).toBe( 'none' );
@@ -52,8 +60,8 @@ describe( 'DOM Helper Utilities', () => {
 			// Show element
 			element.style.display = 'block';
 			expect( element.style.display ).toBe( 'block' );
-		});
-	});
+		} );
+	} );
 
 	describe( 'Form Element Interactions', () => {
 		test( 'should handle checkbox state changes', () => {
@@ -63,7 +71,7 @@ describe( 'DOM Helper Utilities', () => {
 			`;
 
 			const checkbox = document.getElementById( 'test-checkbox' );
-			
+
 			// Initial state
 			expect( checkbox.checked ).toBe( false );
 
@@ -74,7 +82,7 @@ describe( 'DOM Helper Utilities', () => {
 			// Uncheck the checkbox
 			checkbox.checked = false;
 			expect( checkbox.checked ).toBe( false );
-		});
+		} );
 
 		test( 'should handle text input changes', () => {
 			document.body.innerHTML = `
@@ -83,7 +91,8 @@ describe( 'DOM Helper Utilities', () => {
 			`;
 
 			const descriptionInput = document.getElementById( 'description' );
-			const finalCaptionInput = document.getElementById( 'final-caption' );
+			const finalCaptionInput =
+				document.getElementById( 'final-caption' );
 
 			// Set values
 			descriptionInput.value = 'Test description content';
@@ -91,7 +100,7 @@ describe( 'DOM Helper Utilities', () => {
 
 			expect( descriptionInput.value ).toBe( 'Test description content' );
 			expect( finalCaptionInput.value ).toBe( 'Final caption text' );
-		});
+		} );
 
 		test( 'should handle select element changes', () => {
 			document.body.innerHTML = `
@@ -103,32 +112,34 @@ describe( 'DOM Helper Utilities', () => {
 			`;
 
 			const select = document.getElementById( 'tone-selector' );
-			
+
 			// Change selection
 			select.value = 'professional';
 			expect( select.value ).toBe( 'professional' );
 
 			select.value = 'witty';
 			expect( select.value ).toBe( 'witty' );
-		});
-	});
+		} );
+	} );
 
 	describe( 'Dynamic Content Creation', () => {
 		test( 'should create and append new elements', () => {
 			document.body.innerHTML = '<div id="container"></div>';
-			
+
 			const container = document.getElementById( 'container' );
-			
+
 			// Create new element
 			const newElement = document.createElement( 'div' );
 			newElement.className = 'generated-caption';
 			newElement.textContent = 'Generated caption text';
-			
+
 			container.appendChild( newElement );
-			
+
 			expect( container.children.length ).toBe( 1 );
-			expect( container.querySelector( '.generated-caption' ).textContent ).toBe( 'Generated caption text' );
-		});
+			expect(
+				container.querySelector( '.generated-caption' ).textContent
+			).toBe( 'Generated caption text' );
+		} );
 
 		test( 'should remove elements', () => {
 			document.body.innerHTML = `
@@ -140,15 +151,17 @@ describe( 'DOM Helper Utilities', () => {
 
 			const container = document.getElementById( 'container' );
 			const firstItem = container.querySelector( '.removable-item' );
-			
+
 			expect( container.children.length ).toBe( 2 );
-			
+
 			firstItem.remove();
-			
+
 			expect( container.children.length ).toBe( 1 );
-			expect( container.querySelector( '.removable-item' ).textContent ).toBe( 'Item 2' );
-		});
-	});
+			expect(
+				container.querySelector( '.removable-item' ).textContent
+			).toBe( 'Item 2' );
+		} );
+	} );
 
 	describe( 'Event Handling', () => {
 		test( 'should handle button clicks', () => {
@@ -159,20 +172,20 @@ describe( 'DOM Helper Utilities', () => {
 
 			const button = document.getElementById( 'test-button' );
 			const result = document.getElementById( 'result' );
-			
+
 			let clickHandled = false;
 
 			button.addEventListener( 'click', () => {
 				clickHandled = true;
 				result.style.display = 'block';
-			});
+			} );
 
 			// Simulate click
 			button.click();
 
 			expect( clickHandled ).toBe( true );
 			expect( result.style.display ).toBe( 'block' );
-		});
+		} );
 
 		test( 'should handle input events', () => {
 			document.body.innerHTML = `
@@ -182,17 +195,17 @@ describe( 'DOM Helper Utilities', () => {
 
 			const textInput = document.getElementById( 'text-input' );
 			const charCount = document.getElementById( 'char-count' );
-			
+
 			textInput.addEventListener( 'input', ( event ) => {
 				charCount.textContent = event.target.value.length;
-			});
+			} );
 
 			// Simulate input
 			textInput.value = 'Hello world';
 			textInput.dispatchEvent( new Event( 'input', { bubbles: true } ) );
 
 			expect( charCount.textContent ).toBe( '11' );
-		});
+		} );
 
 		test( 'should handle form submissions', () => {
 			document.body.innerHTML = `
@@ -211,15 +224,15 @@ describe( 'DOM Helper Utilities', () => {
 				formSubmitted = true;
 				const formData = new FormData( form );
 				submittedData = formData.get( 'username' );
-			});
+			} );
 
 			// Simulate form submission
 			form.dispatchEvent( new Event( 'submit', { bubbles: true } ) );
 
 			expect( formSubmitted ).toBe( true );
 			expect( submittedData ).toBe( 'testuser' );
-		});
-	});
+		} );
+	} );
 
 	describe( 'Character Counting and Limits', () => {
 		test( 'should count characters correctly', () => {
@@ -232,8 +245,8 @@ describe( 'DOM Helper Utilities', () => {
 
 			testStrings.forEach( ( { text, expected } ) => {
 				expect( text.length ).toBe( expected );
-			});
-		});
+			} );
+		} );
 
 		test( 'should check platform character limits', () => {
 			const platformLimits = {
@@ -246,17 +259,19 @@ describe( 'DOM Helper Utilities', () => {
 
 			const testText = 'A'.repeat( 300 );
 
-			Object.entries( platformLimits ).forEach( ( [ platform, limit ] ) => {
-				const isOverLimit = testText.length > limit;
-				
-				if ( platform === 'twitter' ) {
-					expect( isOverLimit ).toBe( true );
-				} else {
-					expect( isOverLimit ).toBe( false );
+			Object.entries( platformLimits ).forEach(
+				( [ platform, limit ] ) => {
+					const isOverLimit = testText.length > limit;
+
+					if ( platform === 'twitter' ) {
+						expect( isOverLimit ).toBe( true );
+					} else {
+						expect( isOverLimit ).toBe( false );
+					}
 				}
-			});
-		});
-	});
+			);
+		} );
+	} );
 
 	describe( 'Loading States and UI Feedback', () => {
 		test( 'should show and hide loading states', () => {
@@ -287,7 +302,7 @@ describe( 'DOM Helper Utilities', () => {
 			expect( button.disabled ).toBe( false );
 			expect( loading.style.display ).toBe( 'none' );
 			expect( content.style.display ).toBe( 'block' );
-		});
+		} );
 
 		test( 'should display error messages', () => {
 			document.body.innerHTML = `
@@ -304,7 +319,9 @@ describe( 'DOM Helper Utilities', () => {
 
 			expect( errorContainer.textContent ).toBe( errorMessage );
 			expect( errorContainer.style.display ).toBe( 'block' );
-			expect( errorContainer.classList.contains( 'error-message' ) ).toBe( true );
-		});
-	});
-});
+			expect( errorContainer.classList.contains( 'error-message' ) ).toBe(
+				true
+			);
+		} );
+	} );
+} );

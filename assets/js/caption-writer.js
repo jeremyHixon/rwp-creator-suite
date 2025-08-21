@@ -1,1167 +1,1461 @@
 /**
  * Caption Writer Frontend Application
- * 
+ *
  * Handles AI caption generation, template management, and user interactions
  * for the Caption Writer block.
  */
 
-(function() {
-    'use strict';
+( function () {
+	'use strict';
 
-    class CaptionWriterApp {
-        constructor(container, config = {}) {
-            this.container = container;
-            this.config = config;
-            
-            // Check for required dependencies with graceful fallback
-            if (typeof RWPStateManager === 'undefined') {
-                console.warn('CaptionWriter: RWPStateManager dependency not loaded, using fallback');
-                this.initializeFallbackMode();
-                return;
-            }
-            
-            // Initialize state with guest persistence support
-            const initialState = this.getInitialStateWithPersistence(config);
-            
-            this.state = new RWPStateManager('caption_writer', initialState);
-            
-            this.elements = {};
-            // Detect user state and adapt UI accordingly
-            this.isLoggedIn = this.detectUserLoginState();
-            
-            this.init();
-        }
-        
-        getInitialStateWithPersistence(config) {
-            const baseState = {
-                description: '',
-                platforms: config.platforms || ['instagram'],
-                tone: config.tone || 'casual',
-                generatedCaptions: [],
-                templates: [],
-                favorites: [],
-                finalCaption: config.finalCaption || '',
-                isGenerating: false,
-                activeTab: 'generator',
-                characterCount: 0,
-                platformLimits: this.getPlatformLimits(config.platforms || ['instagram'])
-            };
-            
-            // For guest users, try to load from localStorage
-            // Check login state client-side for cache compatibility
-            const isLoggedIn = this.detectUserLoginState();
-            if (!isLoggedIn) {
-                const persistedState = this.loadGuestState();
-                if (persistedState) {
-                    // Merge persisted state with base state, prioritizing block attributes
-                    return {
-                        ...baseState,
-                        ...persistedState,
-                        // Always prioritize block attributes over localStorage
-                        platforms: config.platforms || persistedState.platforms || baseState.platforms,
-                        tone: config.tone || persistedState.tone || baseState.tone,
-                        finalCaption: config.finalCaption || persistedState.finalCaption || baseState.finalCaption,
-                    };
-                }
-            }
-            
-            return baseState;
-        }
-        
-        loadGuestState() {
-            try {
-                const key = this.getGuestStorageKey();
-                const stored = localStorage.getItem(key);
-                if (stored) {
-                    const parsed = JSON.parse(stored);
-                    // Only return if data is recent (within 7 days)
-                    const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-                    if (parsed.timestamp && parsed.timestamp > sevenDaysAgo) {
-                        return parsed.state;
-                    } else {
-                        // Clean up old data
-                        localStorage.removeItem(key);
-                    }
-                }
-            } catch (error) {
-                console.warn('Failed to load guest state from localStorage:', error);
-            }
-            return null;
-        }
-        
-        saveGuestState() {
-            // Only save for guest users
-            if (this.detectUserLoginState()) {
-                return;
-            }
-            
-            try {
-                const key = this.getGuestStorageKey();
-                const currentState = this.state.getState();
-                
-                // Only save non-personal preference data for guests
-                const stateToSave = {
-                    finalCaption: currentState.finalCaption,
-                    platforms: currentState.platforms,
-                    tone: currentState.tone,
-                    // Note: description is saved for convenience but contains no personal data
-                    description: currentState.description
-                };
-                
-                const dataToStore = {
-                    state: stateToSave,
-                    timestamp: Date.now()
-                };
-                
-                localStorage.setItem(key, JSON.stringify(dataToStore));
-            } catch (error) {
-                console.warn('Failed to save guest state to localStorage:', error);
-            }
-        }
-        
-        getGuestStorageKey() {
-            // Create a unique key based on the current page/post
-            const pageId = document.body.classList.contains('single') ? 
-                (document.querySelector('article')?.id || 'unknown') : 
-                window.location.pathname;
-            return `rwp_caption_writer_guest_${btoa(pageId).slice(0, 10)}`;
-        }
-        
-        init() {
-            this.cacheElements();
-            this.setupEventListeners();
-            this.loadBuiltInTemplates();
-            
-            // Sync UI with persisted state
-            this.syncUIWithState();
-            
-            // Initialize platform-based character counter display
-            const currentPlatforms = this.state.getState().platforms;
-            this.updateCharacterCountDisplay(currentPlatforms);
-            this.updateCharacterCount();
-            
-            // Adapt UI based on user login state (detected client-side)
-            if (this.isLoggedIn) {
-                this.setupLoggedInExperience();
-            } else {
-                this.setupGuestExperience();
-            }
-            
-            // Update character limit when platform changes
-            this.updateCharacterLimit();
-            
-            // Add ARIA labels for better accessibility
-            this.enhanceAccessibility();
-        }
-        
-        syncUIWithState() {
-            const currentState = this.state.getState();
-            
-            // Sync platform checkboxes
-            this.elements.platformCheckboxes.forEach(checkbox => {
-                const platform = checkbox.value;
-                checkbox.checked = currentState.platforms.includes(platform);
-            });
-            
-            // Update platform limits based on current state
-            this.updatePlatformLimits(currentState.platforms);
-        }
-        
-        cacheElements() {
-            const container = this.container;
-            
-            this.elements = {
-                // Tabs
-                tabButtons: container.querySelectorAll('.tab-button'),
-                tabContents: container.querySelectorAll('.tab-content'),
-                
-                // Platform Selection
-                platformCheckboxes: container.querySelectorAll('[data-platform-checkbox]'),
-                
-                // AI Generator
-                descriptionInput: container.querySelector('[data-description]'),
-                toneSelect: container.querySelector('[data-tone]'),
-                generateBtn: container.querySelector('[data-generate]'),
-                captionsContainer: container.querySelector('[data-captions]'),
-                captionsList: container.querySelector('.captions-list'),
-                
-                // Templates
-                templateCategory: container.querySelector('[data-template-category]'),
-                templatesGrid: container.querySelector('[data-templates-grid]'),
-                
-                // Favorites
-                favoritesList: container.querySelector('[data-favorites]'),
-                
-                // Output
-                finalCaptionTextarea: container.querySelector('[data-final-caption]'),
-                charCount: container.querySelector('[data-char-count]'),
-                charLimit: container.querySelector('[data-char-limit]'),
-                
-                // Actions
-                copyBtn: container.querySelector('[data-copy]'),
-                saveFavoriteBtn: container.querySelector('[data-save-favorite]'),
-                
-                // Loading/Error
-                loadingDiv: container.querySelector('[data-loading]'),
-                errorDiv: container.querySelector('[data-error]'),
-                
-                // Quota display
-                quotaDisplay: container.querySelector('[data-quota-display]'),
-                quotaText: container.querySelector('.quota-text')
-            };
-        }
-        
-        setupEventListeners() {
-            // Platform selection
-            this.elements.platformCheckboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', (e) => {
-                    this.handlePlatformChange(e.target.value, e.target.checked);
-                });
-            });
-            
-            // Tab switching with keyboard navigation
-            this.elements.tabButtons.forEach((button, index) => {
-                button.addEventListener('click', (e) => {
-                    this.switchTab(e.target.dataset.tab);
-                });
-                
-                // Keyboard navigation for tabs
-                button.addEventListener('keydown', (e) => {
-                    let nextIndex = index;
-                    
-                    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        nextIndex = (index + 1) % this.elements.tabButtons.length;
-                    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        nextIndex = (index - 1 + this.elements.tabButtons.length) % this.elements.tabButtons.length;
-                    } else if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        this.switchTab(e.target.dataset.tab);
-                        return;
-                    }
-                    
-                    if (nextIndex !== index) {
-                        this.elements.tabButtons[nextIndex].focus();
-                        this.switchTab(this.elements.tabButtons[nextIndex].dataset.tab);
-                    }
-                });
-            });
-            
-            // AI Generator (setup for all users, functionality based on login state)
-            if (this.elements.generateBtn) {
-                this.elements.generateBtn.addEventListener('click', () => {
-                    if (this.isLoggedIn) {
-                        this.generateCaptions();
-                    } else {
-                        // Show login prompt for guests
-                        this.showError('Please log in to use the AI generator');
-                    }
-                });
-            }
-            
-            // Set up input listeners (for logged-in users and guests)
-            if (this.elements.descriptionInput) {
-                this.elements.descriptionInput.addEventListener('input', (e) => {
-                    const value = e.target.value;
-                    this.state.setState({ description: value });
-                    
-                    // Save to localStorage for guests
-                    if (!rwpCaptionWriter.isLoggedIn) {
-                        this.saveGuestState();
-                    }
-                    
-                    // Real-time validation feedback (only for logged-in users)
-                    if (this.isLoggedIn) {
-                        this.validateDescription(value);
-                        this.updateGenerateButtonState();
-                    }
-                });
-                
-                // Set initial description value from state
-                const initialDescription = this.state.getState().description;
-                if (initialDescription) {
-                    this.elements.descriptionInput.value = initialDescription;
-                }
-                
-                // Enhanced accessibility - announce character count for screen readers
-                if (this.isLoggedIn) {
-                    this.elements.descriptionInput.addEventListener('blur', (e) => {
-                        if (e.target.value.length > 0) {
-                            this.announceToScreenReader(`Description entered: ${e.target.value.length} characters`);
-                        }
-                    });
-                }
-            }
-            
-            if (this.elements.toneSelect) {
-                this.elements.toneSelect.addEventListener('change', (e) => {
-                    this.state.setState({ tone: e.target.value });
-                    
-                    // Save preferences based on user status
-                    if (this.isLoggedIn) {
-                        this.saveUserPreferences();
-                    } else {
-                        this.saveGuestState();
-                    }
-                });
-                
-                // Set initial tone value from state
-                const initialTone = this.state.getState().tone;
-                if (initialTone && this.elements.toneSelect.value !== initialTone) {
-                    this.elements.toneSelect.value = initialTone;
-                }
-            }
-            
-            // Template filtering
-            if (this.elements.templateCategory) {
-                this.elements.templateCategory.addEventListener('change', (e) => {
-                    this.filterTemplates(e.target.value);
-                });
-            }
-            
-            // Final caption
-            if (this.elements.finalCaptionTextarea) {
-                this.elements.finalCaptionTextarea.addEventListener('input', (e) => {
-                    this.state.setState({ finalCaption: e.target.value });
-                    this.updateCharacterCount();
-                    
-                    // Save to localStorage for guests
-                    this.saveGuestState();
-                });
-                
-                // Set initial value from state (which includes localStorage for guests)
-                const initialCaption = this.state.getState().finalCaption;
-                if (initialCaption) {
-                    this.elements.finalCaptionTextarea.value = initialCaption;
-                }
-            }
-            
-            // Action buttons
-            if (this.elements.copyBtn) {
-                this.elements.copyBtn.addEventListener('click', () => {
-                    this.copyToClipboard();
-                });
-            }
-            
-            if (this.elements.saveFavoriteBtn) {
-                this.elements.saveFavoriteBtn.addEventListener('click', () => {
-                    this.saveToFavorites();
-                });
-            }
-            
-        }
-        
-        handlePlatformChange(platform, checked) {
-            const currentPlatforms = this.state.getState().platforms;
-            let updatedPlatforms;
-            
-            if (checked) {
-                // Add platform if not already included
-                updatedPlatforms = currentPlatforms.includes(platform) 
-                    ? currentPlatforms 
-                    : [...currentPlatforms, platform];
-            } else {
-                // Remove platform, but ensure at least one remains
-                updatedPlatforms = currentPlatforms.filter(p => p !== platform);
-                if (updatedPlatforms.length === 0) {
-                    // Don't allow removing all platforms - recheck the checkbox
-                    const checkbox = this.container.querySelector(`[data-platform-checkbox="${platform}"]`);
-                    if (checkbox) {
-                        checkbox.checked = true;
-                    }
-                    this.showError('At least one platform must be selected');
-                    return;
-                }
-            }
-            
-            // Update state
-            this.state.setState({ platforms: updatedPlatforms });
-            
-            // Save preferences based on user status
-            if (this.isLoggedIn) {
-                this.saveUserPreferences();
-            } else {
-                this.saveGuestState();
-            }
-            
-            // Update character count limits and display
-            this.updatePlatformLimits(updatedPlatforms);
-            this.updateCharacterCount();
-        }
-        
-        updatePlatformLimits(platforms) {
-            const limits = {};
-            platforms.forEach(platform => {
-                limits[platform] = this.getCharacterLimit(platform);
-            });
-            this.state.setState({ platformLimits: limits });
-            
-            // Update the character counter display
-            this.updateCharacterCountDisplay(platforms);
-        }
-        
-        updateCharacterCountDisplay(platforms) {
-            const counterContainer = this.container.querySelector('[data-multi-platform-counter]');
-            if (!counterContainer) return;
-            
-            // Clear existing platform counters
-            counterContainer.innerHTML = '';
-            
-            // Create current count display
-            const currentCountDiv = document.createElement('div');
-            currentCountDiv.className = 'current-count';
-            currentCountDiv.setAttribute('data-current-count', '');
-            currentCountDiv.textContent = '0';
-            counterContainer.appendChild(currentCountDiv);
-            
-            // Create platform limits container
-            const platformLimitsDiv = document.createElement('div');
-            platformLimitsDiv.className = 'platform-limits';
-            
-            // Create new counters for selected platforms
-            platforms.forEach(platform => {
-                const limit = this.getCharacterLimit(platform);
-                const platformCounter = document.createElement('div');
-                platformCounter.className = 'platform-limit-item';
-                platformCounter.setAttribute('data-platform', platform);
-                platformCounter.setAttribute('data-limit', limit);
-                
-                platformCounter.innerHTML = `
-                    <span class="platform-icon ${platform}" aria-hidden="true"></span>
-                    <span class="platform-name-sr">${platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
-                    <span class="character-limit">${limit}</span>
+	class CaptionWriterApp {
+		constructor( container, config = {} ) {
+			this.container = container;
+			this.config = config;
+
+			// Check for required dependencies with graceful fallback
+			if ( typeof RWPStateManager === 'undefined' ) {
+				console.warn(
+					'CaptionWriter: RWPStateManager dependency not loaded, using fallback'
+				);
+				this.initializeFallbackMode();
+				return;
+			}
+
+			// Initialize state with guest persistence support
+			const initialState = this.getInitialStateWithPersistence( config );
+
+			this.state = new RWPStateManager( 'caption_writer', initialState );
+
+			this.elements = {};
+			// Detect user state and adapt UI accordingly
+			this.isLoggedIn = this.detectUserLoginState();
+
+			this.init();
+		}
+
+		getInitialStateWithPersistence( config ) {
+			const baseState = {
+				description: '',
+				platforms: config.platforms || [ 'instagram' ],
+				tone: config.tone || 'casual',
+				generatedCaptions: [],
+				templates: [],
+				favorites: [],
+				finalCaption: config.finalCaption || '',
+				isGenerating: false,
+				activeTab: 'generator',
+				characterCount: 0,
+				platformLimits: this.getPlatformLimits(
+					config.platforms || [ 'instagram' ]
+				),
+			};
+
+			// For guest users, try to load from localStorage
+			// Check login state client-side for cache compatibility
+			const isLoggedIn = this.detectUserLoginState();
+			if ( ! isLoggedIn ) {
+				const persistedState = this.loadGuestState();
+				if ( persistedState ) {
+					// Merge persisted state with base state, prioritizing block attributes
+					return {
+						...baseState,
+						...persistedState,
+						// Always prioritize block attributes over localStorage
+						platforms:
+							config.platforms ||
+							persistedState.platforms ||
+							baseState.platforms,
+						tone:
+							config.tone ||
+							persistedState.tone ||
+							baseState.tone,
+						finalCaption:
+							config.finalCaption ||
+							persistedState.finalCaption ||
+							baseState.finalCaption,
+					};
+				}
+			}
+
+			return baseState;
+		}
+
+		loadGuestState() {
+			try {
+				const key = this.getGuestStorageKey();
+				const stored = localStorage.getItem( key );
+				if ( stored ) {
+					const parsed = JSON.parse( stored );
+					// Only return if data is recent (within 7 days)
+					const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+					if ( parsed.timestamp && parsed.timestamp > sevenDaysAgo ) {
+						return parsed.state;
+					}
+					// Clean up old data
+					localStorage.removeItem( key );
+				}
+			} catch ( error ) {
+				console.warn(
+					'Failed to load guest state from localStorage:',
+					error
+				);
+			}
+			return null;
+		}
+
+		saveGuestState() {
+			// Only save for guest users
+			if ( this.detectUserLoginState() ) {
+				return;
+			}
+
+			try {
+				const key = this.getGuestStorageKey();
+				const currentState = this.state.getState();
+
+				// Only save non-personal preference data for guests
+				const stateToSave = {
+					finalCaption: currentState.finalCaption,
+					platforms: currentState.platforms,
+					tone: currentState.tone,
+					// Note: description is saved for convenience but contains no personal data
+					description: currentState.description,
+				};
+
+				const dataToStore = {
+					state: stateToSave,
+					timestamp: Date.now(),
+				};
+
+				localStorage.setItem( key, JSON.stringify( dataToStore ) );
+			} catch ( error ) {
+				console.warn(
+					'Failed to save guest state to localStorage:',
+					error
+				);
+			}
+		}
+
+		getGuestStorageKey() {
+			// Create a unique key based on the current page/post
+			const pageId = document.body.classList.contains( 'single' )
+				? document.querySelector( 'article' )?.id || 'unknown'
+				: window.location.pathname;
+			return `rwp_caption_writer_guest_${ btoa( pageId ).slice(
+				0,
+				10
+			) }`;
+		}
+
+		init() {
+			this.cacheElements();
+			this.setupEventListeners();
+			this.loadBuiltInTemplates();
+
+			// Sync UI with persisted state
+			this.syncUIWithState();
+
+			// Initialize platform-based character counter display
+			const currentPlatforms = this.state.getState().platforms;
+			this.updateCharacterCountDisplay( currentPlatforms );
+			this.updateCharacterCount();
+
+			// Adapt UI based on user login state (detected client-side)
+			if ( this.isLoggedIn ) {
+				this.setupLoggedInExperience();
+			} else {
+				this.setupGuestExperience();
+			}
+
+			// Update character limit when platform changes
+			this.updateCharacterLimit();
+
+			// Add ARIA labels for better accessibility
+			this.enhanceAccessibility();
+		}
+
+		syncUIWithState() {
+			const currentState = this.state.getState();
+
+			// Sync platform checkboxes
+			this.elements.platformCheckboxes.forEach( ( checkbox ) => {
+				const platform = checkbox.value;
+				checkbox.checked = currentState.platforms.includes( platform );
+			} );
+
+			// Update platform limits based on current state
+			this.updatePlatformLimits( currentState.platforms );
+		}
+
+		cacheElements() {
+			const container = this.container;
+
+			this.elements = {
+				// Tabs
+				tabButtons: container.querySelectorAll( '.tab-button' ),
+				tabContents: container.querySelectorAll( '.tab-content' ),
+
+				// Platform Selection
+				platformCheckboxes: container.querySelectorAll(
+					'[data-platform-checkbox]'
+				),
+
+				// AI Generator
+				descriptionInput:
+					container.querySelector( '[data-description]' ),
+				toneSelect: container.querySelector( '[data-tone]' ),
+				generateBtn: container.querySelector( '[data-generate]' ),
+				captionsContainer: container.querySelector( '[data-captions]' ),
+				captionsList: container.querySelector( '.captions-list' ),
+
+				// Templates
+				templateCategory: container.querySelector(
+					'[data-template-category]'
+				),
+				templatesGrid: container.querySelector(
+					'[data-templates-grid]'
+				),
+
+				// Favorites
+				favoritesList: container.querySelector( '[data-favorites]' ),
+
+				// Output
+				finalCaptionTextarea: container.querySelector(
+					'[data-final-caption]'
+				),
+				charCount: container.querySelector( '[data-char-count]' ),
+				charLimit: container.querySelector( '[data-char-limit]' ),
+
+				// Actions
+				copyBtn: container.querySelector( '[data-copy]' ),
+				saveFavoriteBtn: container.querySelector(
+					'[data-save-favorite]'
+				),
+
+				// Loading/Error
+				loadingDiv: container.querySelector( '[data-loading]' ),
+				errorDiv: container.querySelector( '[data-error]' ),
+
+				// Quota display
+				quotaDisplay: container.querySelector( '[data-quota-display]' ),
+				quotaText: container.querySelector( '.quota-text' ),
+			};
+		}
+
+		setupEventListeners() {
+			// Platform selection
+			this.elements.platformCheckboxes.forEach( ( checkbox ) => {
+				checkbox.addEventListener( 'change', ( e ) => {
+					this.handlePlatformChange(
+						e.target.value,
+						e.target.checked
+					);
+				} );
+			} );
+
+			// Tab switching with keyboard navigation
+			this.elements.tabButtons.forEach( ( button, index ) => {
+				button.addEventListener( 'click', ( e ) => {
+					this.switchTab( e.target.dataset.tab );
+				} );
+
+				// Keyboard navigation for tabs
+				button.addEventListener( 'keydown', ( e ) => {
+					let nextIndex = index;
+
+					if ( e.key === 'ArrowRight' || e.key === 'ArrowDown' ) {
+						e.preventDefault();
+						nextIndex =
+							( index + 1 ) % this.elements.tabButtons.length;
+					} else if ( e.key === 'ArrowLeft' || e.key === 'ArrowUp' ) {
+						e.preventDefault();
+						nextIndex =
+							( index - 1 + this.elements.tabButtons.length ) %
+							this.elements.tabButtons.length;
+					} else if ( e.key === 'Enter' || e.key === ' ' ) {
+						e.preventDefault();
+						this.switchTab( e.target.dataset.tab );
+						return;
+					}
+
+					if ( nextIndex !== index ) {
+						this.elements.tabButtons[ nextIndex ].focus();
+						this.switchTab(
+							this.elements.tabButtons[ nextIndex ].dataset.tab
+						);
+					}
+				} );
+			} );
+
+			// AI Generator (setup for all users, functionality based on login state)
+			if ( this.elements.generateBtn ) {
+				this.elements.generateBtn.addEventListener( 'click', () => {
+					if ( this.isLoggedIn ) {
+						this.generateCaptions();
+					} else {
+						// Show login prompt for guests
+						this.showError(
+							'Please log in to use the AI generator'
+						);
+					}
+				} );
+			}
+
+			// Set up input listeners (for logged-in users and guests)
+			if ( this.elements.descriptionInput ) {
+				this.elements.descriptionInput.addEventListener(
+					'input',
+					( e ) => {
+						const value = e.target.value;
+						this.state.setState( { description: value } );
+
+						// Save to localStorage for guests
+						if ( ! rwpCaptionWriter.isLoggedIn ) {
+							this.saveGuestState();
+						}
+
+						// Real-time validation feedback (only for logged-in users)
+						if ( this.isLoggedIn ) {
+							this.validateDescription( value );
+							this.updateGenerateButtonState();
+						}
+					}
+				);
+
+				// Set initial description value from state
+				const initialDescription = this.state.getState().description;
+				if ( initialDescription ) {
+					this.elements.descriptionInput.value = initialDescription;
+				}
+
+				// Enhanced accessibility - announce character count for screen readers
+				if ( this.isLoggedIn ) {
+					this.elements.descriptionInput.addEventListener(
+						'blur',
+						( e ) => {
+							if ( e.target.value.length > 0 ) {
+								this.announceToScreenReader(
+									`Description entered: ${ e.target.value.length } characters`
+								);
+							}
+						}
+					);
+				}
+			}
+
+			if ( this.elements.toneSelect ) {
+				this.elements.toneSelect.addEventListener( 'change', ( e ) => {
+					this.state.setState( { tone: e.target.value } );
+
+					// Save preferences based on user status
+					if ( this.isLoggedIn ) {
+						this.saveUserPreferences();
+					} else {
+						this.saveGuestState();
+					}
+				} );
+
+				// Set initial tone value from state
+				const initialTone = this.state.getState().tone;
+				if (
+					initialTone &&
+					this.elements.toneSelect.value !== initialTone
+				) {
+					this.elements.toneSelect.value = initialTone;
+				}
+			}
+
+			// Template filtering
+			if ( this.elements.templateCategory ) {
+				this.elements.templateCategory.addEventListener(
+					'change',
+					( e ) => {
+						this.filterTemplates( e.target.value );
+					}
+				);
+			}
+
+			// Final caption
+			if ( this.elements.finalCaptionTextarea ) {
+				this.elements.finalCaptionTextarea.addEventListener(
+					'input',
+					( e ) => {
+						this.state.setState( { finalCaption: e.target.value } );
+						this.updateCharacterCount();
+
+						// Save to localStorage for guests
+						this.saveGuestState();
+					}
+				);
+
+				// Set initial value from state (which includes localStorage for guests)
+				const initialCaption = this.state.getState().finalCaption;
+				if ( initialCaption ) {
+					this.elements.finalCaptionTextarea.value = initialCaption;
+				}
+			}
+
+			// Action buttons
+			if ( this.elements.copyBtn ) {
+				this.elements.copyBtn.addEventListener( 'click', () => {
+					this.copyToClipboard();
+				} );
+			}
+
+			if ( this.elements.saveFavoriteBtn ) {
+				this.elements.saveFavoriteBtn.addEventListener( 'click', () => {
+					this.saveToFavorites();
+				} );
+			}
+		}
+
+		handlePlatformChange( platform, checked ) {
+			const currentPlatforms = this.state.getState().platforms;
+			let updatedPlatforms;
+
+			if ( checked ) {
+				// Add platform if not already included
+				updatedPlatforms = currentPlatforms.includes( platform )
+					? currentPlatforms
+					: [ ...currentPlatforms, platform ];
+			} else {
+				// Remove platform, but ensure at least one remains
+				updatedPlatforms = currentPlatforms.filter(
+					( p ) => p !== platform
+				);
+				if ( updatedPlatforms.length === 0 ) {
+					// Don't allow removing all platforms - recheck the checkbox
+					const checkbox = this.container.querySelector(
+						`[data-platform-checkbox="${ platform }"]`
+					);
+					if ( checkbox ) {
+						checkbox.checked = true;
+					}
+					this.showError( 'At least one platform must be selected' );
+					return;
+				}
+			}
+
+			// Update state
+			this.state.setState( { platforms: updatedPlatforms } );
+
+			// Save preferences based on user status
+			if ( this.isLoggedIn ) {
+				this.saveUserPreferences();
+			} else {
+				this.saveGuestState();
+			}
+
+			// Update character count limits and display
+			this.updatePlatformLimits( updatedPlatforms );
+			this.updateCharacterCount();
+		}
+
+		updatePlatformLimits( platforms ) {
+			const limits = {};
+			platforms.forEach( ( platform ) => {
+				limits[ platform ] = this.getCharacterLimit( platform );
+			} );
+			this.state.setState( { platformLimits: limits } );
+
+			// Update the character counter display
+			this.updateCharacterCountDisplay( platforms );
+		}
+
+		updateCharacterCountDisplay( platforms ) {
+			const counterContainer = this.container.querySelector(
+				'[data-multi-platform-counter]'
+			);
+			if ( ! counterContainer ) {
+				return;
+			}
+
+			// Clear existing platform counters
+			counterContainer.innerHTML = '';
+
+			// Create current count display
+			const currentCountDiv = document.createElement( 'div' );
+			currentCountDiv.className = 'current-count';
+			currentCountDiv.setAttribute( 'data-current-count', '' );
+			currentCountDiv.textContent = '0';
+			counterContainer.appendChild( currentCountDiv );
+
+			// Create platform limits container
+			const platformLimitsDiv = document.createElement( 'div' );
+			platformLimitsDiv.className = 'platform-limits';
+
+			// Create new counters for selected platforms
+			platforms.forEach( ( platform ) => {
+				const limit = this.getCharacterLimit( platform );
+				const platformCounter = document.createElement( 'div' );
+				platformCounter.className = 'platform-limit-item';
+				platformCounter.setAttribute( 'data-platform', platform );
+				platformCounter.setAttribute( 'data-limit', limit );
+
+				platformCounter.innerHTML = `
+                    <span class="platform-icon ${ platform }" aria-hidden="true"></span>
+                    <span class="platform-name-sr">${
+						platform.charAt( 0 ).toUpperCase() + platform.slice( 1 )
+					}</span>
+                    <span class="character-limit">${ limit }</span>
                     <span class="over-limit-badge" style="display: none;">Over limit!</span>
                 `;
-                
-                platformLimitsDiv.appendChild(platformCounter);
-            });
-            
-            counterContainer.appendChild(platformLimitsDiv);
-        }
-        
-        switchTab(tabName) {
-            this.state.setState({ activeTab: tabName });
-            
-            // Update tab buttons
-            this.elements.tabButtons.forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.tab === tabName);
-            });
-            
-            // Update tab contents
-            this.elements.tabContents.forEach(content => {
-                content.classList.toggle('active', content.dataset.content === tabName);
-            });
-            
-            // Load tab-specific data
-            if (tabName === 'templates' && this.state.getState().templates.length === 0) {
-                this.renderTemplates();
-            } else if (tabName === 'favorites' && this.isLoggedIn) {
-                this.loadFavorites();
-            }
-        }
-        
-        async generateCaptions() {
-            const state = this.state.getState();
-            const description = this.elements.descriptionInput?.value?.trim() || state.description;
-            
-            if (!description) {
-                this.showError(rwpCaptionWriter.strings.errorDescription);
-                return;
-            }
-            
-            this.state.setState({ isGenerating: true });
-            this.showLoading(true);
-            this.hideError();
-            
-            // Update generate button
-            if (this.elements.generateBtn) {
-                this.elements.generateBtn.textContent = rwpCaptionWriter.strings.processing;
-                this.elements.generateBtn.disabled = true;
-                this.elements.generateBtn.classList.add('loading');
-            }
-            
-            try {
-                // Make real API call to generate captions
-                const response = await fetch(rwpCaptionWriter.restUrl + 'captions/generate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-WP-Nonce': rwpCaptionWriter.nonce
-                    },
-                    body: JSON.stringify({
-                        description: description,
-                        tone: state.tone,
-                        platforms: state.platforms
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(result.message || 'Failed to generate captions');
-                }
-                
-                if (result.success && result.data) {
-                    this.state.setState({ 
-                        generatedCaptions: result.data,
-                        isGenerating: false 
-                    });
-                    
-                    this.renderGeneratedCaptions(result.data);
-                    
-                    // Show remaining quota if available
-                    if (result.meta && typeof result.meta.remaining_quota !== 'undefined') {
-                        this.showQuotaInfo(result.meta.remaining_quota);
-                    }
-                } else {
-                    throw new Error(result.message || 'Unexpected response format');
-                }
-                
-                this.showLoading(false);
-                
-            } catch (error) {
-                console.error('Error generating captions:', error);
-                
-                // Show specific error message if available
-                let errorMessage = rwpCaptionWriter.strings.errorGeneral;
-                if (error.message) {
-                    errorMessage = error.message;
-                }
-                
-                this.showError(errorMessage);
-                this.state.setState({ isGenerating: false });
-                this.showLoading(false);
-            }
-            
-            // Reset generate button
-            if (this.elements.generateBtn) {
-                this.elements.generateBtn.textContent = 'Generate Captions';
-                this.elements.generateBtn.disabled = false;
-                this.elements.generateBtn.classList.remove('loading');
-            }
-        }
-        
-        // Mock caption generation for Phase 1 - will be replaced with real API in Phase 2
-        generateMockCaptions(description, tone, platform) {
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    const toneVariations = {
-                        casual: [
-                            `Check out this amazing ${description}! ✨ Perfect for your feed. What do you think? {hashtags}`,
-                            `Loving this ${description} moment! 💫 Sometimes the simple things bring the most joy. {hashtags}`,
-                            `${description} vibes hitting different today 🔥 Who else is feeling this energy? {hashtags}`
-                        ],
-                        witty: [
-                            `${description}? More like ${description} goals! 😎 {hashtags}`,
-                            `Plot twist: ${description} was actually the main character all along 📸 {hashtags}`,
-                            `Instructions unclear, ended up with this epic ${description} instead 🤷‍♀️ {hashtags}`
-                        ],
-                        inspirational: [
-                            `Every ${description} tells a story of possibility ✨ What story will you write today? {hashtags}`,
-                            `In a world full of ordinary, be a ${description} 🌟 Chase your dreams fearlessly. {hashtags}`,
-                            `The beauty in ${description} reminds us that magic exists in everyday moments 💫 {hashtags}`
-                        ],
-                        question: [
-                            `What's your favorite thing about ${description}? 🤔 Drop your thoughts below! {hashtags}`,
-                            `${description}: love it or leave it? 💭 I'm curious to hear your take! {hashtags}`,
-                            `Quick question: does this ${description} spark joy for you too? ✨ {hashtags}`
-                        ],
-                        professional: [
-                            `Presenting: ${description}. Excellence in every detail. What are your thoughts on this approach? {hashtags}`,
-                            `Today's focus: ${description}. Quality and innovation driving results. {hashtags}`,
-                            `Strategic insight: ${description} represents the future of our industry. {hashtags}`
-                        ]
-                    };
-                    
-                    const captions = toneVariations[tone] || toneVariations.casual;
-                    const result = captions.map(text => ({
-                        text: text,
-                        character_count: text.length
-                    }));
-                    
-                    resolve(result);
-                }, 1500);
-            });
-        }
-        
-        renderGeneratedCaptions(captions) {
-            if (!this.elements.captionsList) return;
-            
-            this.elements.captionsList.innerHTML = '';
-            
-            captions.forEach((caption, index) => {
-                const captionElement = document.createElement('div');
-                captionElement.className = 'caption-option';
-                captionElement.innerHTML = `
-                    <div class="caption-text">${this.escapeHtml(caption.text)}</div>
+
+				platformLimitsDiv.appendChild( platformCounter );
+			} );
+
+			counterContainer.appendChild( platformLimitsDiv );
+		}
+
+		switchTab( tabName ) {
+			this.state.setState( { activeTab: tabName } );
+
+			// Update tab buttons
+			this.elements.tabButtons.forEach( ( btn ) => {
+				btn.classList.toggle( 'active', btn.dataset.tab === tabName );
+			} );
+
+			// Update tab contents
+			this.elements.tabContents.forEach( ( content ) => {
+				content.classList.toggle(
+					'active',
+					content.dataset.content === tabName
+				);
+			} );
+
+			// Load tab-specific data
+			if (
+				tabName === 'templates' &&
+				this.state.getState().templates.length === 0
+			) {
+				this.renderTemplates();
+			} else if ( tabName === 'favorites' && this.isLoggedIn ) {
+				this.loadFavorites();
+			}
+		}
+
+		async generateCaptions() {
+			const state = this.state.getState();
+			const description =
+				this.elements.descriptionInput?.value?.trim() ||
+				state.description;
+
+			if ( ! description ) {
+				this.showError( rwpCaptionWriter.strings.errorDescription );
+				return;
+			}
+
+			this.state.setState( { isGenerating: true } );
+			this.showLoading( true );
+			this.hideError();
+
+			// Update generate button
+			if ( this.elements.generateBtn ) {
+				this.elements.generateBtn.textContent =
+					rwpCaptionWriter.strings.processing;
+				this.elements.generateBtn.disabled = true;
+				this.elements.generateBtn.classList.add( 'loading' );
+			}
+
+			try {
+				// Make real API call to generate captions
+				const response = await fetch(
+					rwpCaptionWriter.restUrl + 'captions/generate',
+					{
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'X-WP-Nonce': rwpCaptionWriter.nonce,
+						},
+						body: JSON.stringify( {
+							description,
+							tone: state.tone,
+							platforms: state.platforms,
+						} ),
+					}
+				);
+
+				const result = await response.json();
+
+				if ( ! response.ok ) {
+					throw new Error(
+						result.message || 'Failed to generate captions'
+					);
+				}
+
+				if ( result.success && result.data ) {
+					this.state.setState( {
+						generatedCaptions: result.data,
+						isGenerating: false,
+					} );
+
+					this.renderGeneratedCaptions( result.data );
+
+					// Show remaining quota if available
+					if (
+						result.meta &&
+						typeof result.meta.remaining_quota !== 'undefined'
+					) {
+						this.showQuotaInfo( result.meta.remaining_quota );
+					}
+				} else {
+					throw new Error(
+						result.message || 'Unexpected response format'
+					);
+				}
+
+				this.showLoading( false );
+			} catch ( error ) {
+				console.error( 'Error generating captions:', error );
+
+				this.handleError( error, 'caption_generation' );
+				this.state.setState( { isGenerating: false } );
+				this.showLoading( false );
+			}
+
+			// Reset generate button
+			if ( this.elements.generateBtn ) {
+				this.elements.generateBtn.textContent = 'Generate Captions';
+				this.elements.generateBtn.disabled = false;
+				this.elements.generateBtn.classList.remove( 'loading' );
+			}
+		}
+
+		// Mock caption generation for Phase 1 - will be replaced with real API in Phase 2
+		generateMockCaptions( description, tone, platform ) {
+			return new Promise( ( resolve ) => {
+				setTimeout( () => {
+					const toneVariations = {
+						casual: [
+							`Check out this amazing ${ description }! ✨ Perfect for your feed. What do you think? {hashtags}`,
+							`Loving this ${ description } moment! 💫 Sometimes the simple things bring the most joy. {hashtags}`,
+							`${ description } vibes hitting different today 🔥 Who else is feeling this energy? {hashtags}`,
+						],
+						witty: [
+							`${ description }? More like ${ description } goals! 😎 {hashtags}`,
+							`Plot twist: ${ description } was actually the main character all along 📸 {hashtags}`,
+							`Instructions unclear, ended up with this epic ${ description } instead 🤷‍♀️ {hashtags}`,
+						],
+						inspirational: [
+							`Every ${ description } tells a story of possibility ✨ What story will you write today? {hashtags}`,
+							`In a world full of ordinary, be a ${ description } 🌟 Chase your dreams fearlessly. {hashtags}`,
+							`The beauty in ${ description } reminds us that magic exists in everyday moments 💫 {hashtags}`,
+						],
+						question: [
+							`What's your favorite thing about ${ description }? 🤔 Drop your thoughts below! {hashtags}`,
+							`${ description }: love it or leave it? 💭 I'm curious to hear your take! {hashtags}`,
+							`Quick question: does this ${ description } spark joy for you too? ✨ {hashtags}`,
+						],
+						professional: [
+							`Presenting: ${ description }. Excellence in every detail. What are your thoughts on this approach? {hashtags}`,
+							`Today's focus: ${ description }. Quality and innovation driving results. {hashtags}`,
+							`Strategic insight: ${ description } represents the future of our industry. {hashtags}`,
+						],
+					};
+
+					const captions =
+						toneVariations[ tone ] || toneVariations.casual;
+					const result = captions.map( ( text ) => ( {
+						text,
+						character_count: text.length,
+					} ) );
+
+					resolve( result );
+				}, 1500 );
+			} );
+		}
+
+		renderGeneratedCaptions( captions ) {
+			if ( ! this.elements.captionsList ) {
+				return;
+			}
+
+			this.elements.captionsList.innerHTML = '';
+
+			captions.forEach( ( caption, index ) => {
+				const captionElement = document.createElement( 'div' );
+				captionElement.className = 'caption-option';
+				captionElement.innerHTML = `
+                    <div class="caption-text">${ this.escapeHtml(
+						caption.text
+					) }</div>
                     <div class="caption-actions">
-                        <span class="character-count">${caption.character_count} chars</span>
-                        <button class="use-caption-btn" data-caption-index="${index}">
+                        <span class="character-count">${
+							caption.character_count
+						} chars</span>
+                        <button class="use-caption-btn" data-caption-index="${ index }">
                             Use This
                         </button>
                     </div>
                 `;
-                
-                // Add click handler for use button
-                const useBtn = captionElement.querySelector('.use-caption-btn');
-                useBtn.addEventListener('click', () => {
-                    this.selectCaption(caption.text);
-                });
-                
-                this.elements.captionsList.appendChild(captionElement);
-            });
-            
-            // Show the captions container
-            if (this.elements.captionsContainer) {
-                this.elements.captionsContainer.style.display = 'block';
-                
-                // Scroll to the generated captions section
-                setTimeout(() => {
-                    this.scrollToElement(this.elements.captionsContainer);
-                }, 100);
-            }
-        }
-        
-        selectCaption(captionText) {
-            this.state.setState({ finalCaption: captionText });
-            
-            if (this.elements.finalCaptionTextarea) {
-                this.elements.finalCaptionTextarea.value = captionText;
-                this.updateCharacterCount();
-                
-                // Save to localStorage for guests
-                this.saveGuestState();
-                
-                // Scroll to the final caption section
-                setTimeout(() => {
-                    this.scrollToElement(this.elements.finalCaptionTextarea.closest('.caption-output-section'));
-                }, 100);
-            }
-        }
-        
-        loadBuiltInTemplates() {
-            const templates = [
-                {
-                    id: 'product-launch',
-                    name: 'Product Launch',
-                    category: 'business',
-                    template: '🚀 Excited to introduce {product}!\n\n{description}\n\n✨ Key features:\n• {feature1}\n• {feature2}\n• {feature3}\n\nWhat do you think? Drop a 💭 below!\n\n{hashtags}',
-                    variables: ['product', 'description', 'feature1', 'feature2', 'feature3', 'hashtags'],
-                    platforms: ['instagram', 'facebook', 'linkedin']
-                },
-                {
-                    id: 'behind-scenes',
-                    name: 'Behind the Scenes',
-                    category: 'personal',
-                    template: 'Taking you behind the scenes of {activity} 🎬\n\n{insight}\n\nI never expected {surprise}! \n\nWhat\'s something surprising about your work?\n\n{hashtags}',
-                    variables: ['activity', 'insight', 'surprise', 'hashtags'],
-                    platforms: ['instagram', 'tiktok', 'facebook']
-                },
-                {
-                    id: 'question-engage',
-                    name: 'Engagement Question',
-                    category: 'engagement',
-                    template: '{question} 🤔\n\nA) {optionA}\nB) {optionB}\nC) {optionC}\n\nVote in the comments! I\'ll share the results in my stories.\n\n{hashtags}',
-                    variables: ['question', 'optionA', 'optionB', 'optionC', 'hashtags'],
-                    platforms: ['instagram', 'facebook', 'twitter']
-                },
-                {
-                    id: 'motivational-monday',
-                    name: 'Motivational Monday',
-                    category: 'engagement',
-                    template: '✨ Monday Motivation ✨\n\n{inspirational_message}\n\nRemember: {reminder}\n\nWhat\'s motivating you this week? Share below! 👇\n\n{hashtags}',
-                    variables: ['inspirational_message', 'reminder', 'hashtags'],
-                    platforms: ['instagram', 'linkedin', 'facebook']
-                }
-            ];
-            
-            this.state.setState({ templates });
-            this.renderTemplates();
-        }
-        
-        renderTemplates() {
-            if (!this.elements.templatesGrid) return;
-            
-            const state = this.state.getState();
-            const templates = state.templates;
-            
-            this.elements.templatesGrid.innerHTML = '';
-            
-            templates.forEach(template => {
-                const templateElement = document.createElement('div');
-                templateElement.className = 'template-card';
-                templateElement.innerHTML = `
-                    <div class="template-name">${this.escapeHtml(template.name)}</div>
-                    <div class="template-category">${this.escapeHtml(template.category)}</div>
-                    <div class="template-preview">${this.escapeHtml(template.template.substring(0, 100))}...</div>
-                    <button class="use-template-btn" data-template-id="${template.id}">
+
+				// Add click handler for use button
+				const useBtn =
+					captionElement.querySelector( '.use-caption-btn' );
+				useBtn.addEventListener( 'click', () => {
+					this.selectCaption( caption.text );
+				} );
+
+				this.elements.captionsList.appendChild( captionElement );
+			} );
+
+			// Show the captions container
+			if ( this.elements.captionsContainer ) {
+				this.elements.captionsContainer.style.display = 'block';
+
+				// Scroll to the generated captions section
+				setTimeout( () => {
+					this.scrollToElement( this.elements.captionsContainer );
+				}, 100 );
+			}
+		}
+
+		selectCaption( captionText ) {
+			this.state.setState( { finalCaption: captionText } );
+
+			if ( this.elements.finalCaptionTextarea ) {
+				this.elements.finalCaptionTextarea.value = captionText;
+				this.updateCharacterCount();
+
+				// Save to localStorage for guests
+				this.saveGuestState();
+
+				// Scroll to the final caption section
+				setTimeout( () => {
+					this.scrollToElement(
+						this.elements.finalCaptionTextarea.closest(
+							'.caption-output-section'
+						)
+					);
+				}, 100 );
+			}
+		}
+
+		loadBuiltInTemplates() {
+			const templates = [
+				{
+					id: 'product-launch',
+					name: 'Product Launch',
+					category: 'business',
+					template:
+						'🚀 Excited to introduce {product}!\n\n{description}\n\n✨ Key features:\n• {feature1}\n• {feature2}\n• {feature3}\n\nWhat do you think? Drop a 💭 below!\n\n{hashtags}',
+					variables: [
+						'product',
+						'description',
+						'feature1',
+						'feature2',
+						'feature3',
+						'hashtags',
+					],
+					platforms: [ 'instagram', 'facebook', 'linkedin' ],
+				},
+				{
+					id: 'behind-scenes',
+					name: 'Behind the Scenes',
+					category: 'personal',
+					template:
+						"Taking you behind the scenes of {activity} 🎬\n\n{insight}\n\nI never expected {surprise}! \n\nWhat's something surprising about your work?\n\n{hashtags}",
+					variables: [
+						'activity',
+						'insight',
+						'surprise',
+						'hashtags',
+					],
+					platforms: [ 'instagram', 'tiktok', 'facebook' ],
+				},
+				{
+					id: 'question-engage',
+					name: 'Engagement Question',
+					category: 'engagement',
+					template:
+						"{question} 🤔\n\nA) {optionA}\nB) {optionB}\nC) {optionC}\n\nVote in the comments! I'll share the results in my stories.\n\n{hashtags}",
+					variables: [
+						'question',
+						'optionA',
+						'optionB',
+						'optionC',
+						'hashtags',
+					],
+					platforms: [ 'instagram', 'facebook', 'twitter' ],
+				},
+				{
+					id: 'motivational-monday',
+					name: 'Motivational Monday',
+					category: 'engagement',
+					template:
+						"✨ Monday Motivation ✨\n\n{inspirational_message}\n\nRemember: {reminder}\n\nWhat's motivating you this week? Share below! 👇\n\n{hashtags}",
+					variables: [
+						'inspirational_message',
+						'reminder',
+						'hashtags',
+					],
+					platforms: [ 'instagram', 'linkedin', 'facebook' ],
+				},
+			];
+
+			this.state.setState( { templates } );
+			this.renderTemplates();
+		}
+
+		renderTemplates() {
+			if ( ! this.elements.templatesGrid ) {
+				return;
+			}
+
+			const state = this.state.getState();
+			const templates = state.templates;
+
+			this.elements.templatesGrid.innerHTML = '';
+
+			templates.forEach( ( template ) => {
+				const templateElement = document.createElement( 'div' );
+				templateElement.className = 'template-card';
+				templateElement.innerHTML = `
+                    <div class="template-name">${ this.escapeHtml(
+						template.name
+					) }</div>
+                    <div class="template-category">${ this.escapeHtml(
+						template.category
+					) }</div>
+                    <div class="template-preview">${ this.escapeHtml(
+						template.template.substring( 0, 100 )
+					) }...</div>
+                    <button class="use-template-btn" data-template-id="${
+						template.id
+					}">
                         Use Template
                     </button>
                 `;
-                
-                // Add click handler to the entire card
-                templateElement.addEventListener('click', () => {
-                    this.selectTemplate(template);
-                });
-                
-                this.elements.templatesGrid.appendChild(templateElement);
-            });
-        }
-        
-        selectTemplate(template) {
-            this.selectCaption(template.template);
-        }
-        
-        filterTemplates(category) {
-            const state = this.state.getState();
-            const allTemplates = state.templates;
-            
-            if (category === 'all') {
-                this.renderTemplatesFromArray(allTemplates);
-            } else {
-                const filteredTemplates = allTemplates.filter(template => 
-                    template.category === category
-                );
-                this.renderTemplatesFromArray(filteredTemplates);
-            }
-        }
-        
-        renderTemplatesFromArray(templates) {
-            if (!this.elements.templatesGrid) return;
-            
-            this.elements.templatesGrid.innerHTML = '';
-            
-            templates.forEach(template => {
-                const templateElement = document.createElement('div');
-                templateElement.className = 'template-card';
-                templateElement.innerHTML = `
-                    <div class="template-name">${this.escapeHtml(template.name)}</div>
-                    <div class="template-category">${this.escapeHtml(template.category)}</div>
-                    <div class="template-preview">${this.escapeHtml(template.template.substring(0, 100))}...</div>
-                    <button class="use-template-btn" data-template-id="${template.id}">
+
+				// Add click handler to the entire card
+				templateElement.addEventListener( 'click', () => {
+					this.selectTemplate( template );
+				} );
+
+				this.elements.templatesGrid.appendChild( templateElement );
+			} );
+		}
+
+		selectTemplate( template ) {
+			this.selectCaption( template.template );
+		}
+
+		filterTemplates( category ) {
+			const state = this.state.getState();
+			const allTemplates = state.templates;
+
+			if ( category === 'all' ) {
+				this.renderTemplatesFromArray( allTemplates );
+			} else {
+				const filteredTemplates = allTemplates.filter(
+					( template ) => template.category === category
+				);
+				this.renderTemplatesFromArray( filteredTemplates );
+			}
+		}
+
+		renderTemplatesFromArray( templates ) {
+			if ( ! this.elements.templatesGrid ) {
+				return;
+			}
+
+			this.elements.templatesGrid.innerHTML = '';
+
+			templates.forEach( ( template ) => {
+				const templateElement = document.createElement( 'div' );
+				templateElement.className = 'template-card';
+				templateElement.innerHTML = `
+                    <div class="template-name">${ this.escapeHtml(
+						template.name
+					) }</div>
+                    <div class="template-category">${ this.escapeHtml(
+						template.category
+					) }</div>
+                    <div class="template-preview">${ this.escapeHtml(
+						template.template.substring( 0, 100 )
+					) }...</div>
+                    <button class="use-template-btn" data-template-id="${
+						template.id
+					}">
                         Use Template
                     </button>
                 `;
-                
-                // Add click handler to the entire card
-                templateElement.addEventListener('click', () => {
-                    this.selectTemplate(template);
-                });
-                
-                this.elements.templatesGrid.appendChild(templateElement);
-            });
-        }
-        
-        updateCharacterCount() {
-            const state = this.state.getState();
-            const text = this.elements.finalCaptionTextarea?.value || state.finalCaption;
-            const count = text.length;
-            
-            this.state.setState({ characterCount: count });
-            
-            // Update the current count display
-            const currentCountElement = this.container.querySelector('[data-current-count]');
-            if (currentCountElement) {
-                currentCountElement.textContent = count;
-                
-                // Apply color coding based on the most restrictive platform
-                const platformItems = this.container.querySelectorAll('.platform-limit-item');
-                let minLimit = Infinity;
-                let hasOverLimit = false;
-                let hasWarning = false;
-                
-                platformItems.forEach(item => {
-                    const limit = parseInt(item.getAttribute('data-limit'));
-                    minLimit = Math.min(minLimit, limit);
-                    
-                    const overLimitBadge = item.querySelector('.over-limit-badge');
-                    
-                    // Update over-limit badge for each platform
-                    if (count > limit) {
-                        hasOverLimit = true;
-                        item.setAttribute('data-over-limit', 'true');
-                        if (overLimitBadge) overLimitBadge.style.display = 'inline';
-                    } else {
-                        item.removeAttribute('data-over-limit');
-                        if (overLimitBadge) overLimitBadge.style.display = 'none';
-                        
-                        if (count > limit * 0.9) {
-                            hasWarning = true;
-                        }
-                    }
-                });
-                
-                // Apply color to current count based on most restrictive limit
-                if (hasOverLimit) {
-                    currentCountElement.className = 'current-count over-limit';
-                    currentCountElement.style.color = '#ef4444';
-                    currentCountElement.style.backgroundColor = '#fef2f2';
-                    currentCountElement.style.borderColor = '#fecaca';
-                } else if (hasWarning) {
-                    currentCountElement.className = 'current-count warning';
-                    currentCountElement.style.color = '#f59e0b';
-                    currentCountElement.style.backgroundColor = '#fffbeb';
-                    currentCountElement.style.borderColor = '#fed7aa';
-                } else {
-                    currentCountElement.className = 'current-count';
-                    currentCountElement.style.color = '';
-                    currentCountElement.style.backgroundColor = '';
-                    currentCountElement.style.borderColor = '';
-                }
-            }
-            
-            // Announce accessibility updates for character count
-            this.updateCharacterCountAccessibility();
-        }
-        
-        updateCharacterLimit() {
-            const platform = this.config.platform || 'instagram';
-            const limit = this.getCharacterLimit(platform);
-            this.state.setState({ characterLimit: limit });
-            this.updateCharacterCount();
-        }
-        
-        getCharacterLimit(platform) {
-            return rwpCaptionWriter.characterLimits[platform] || 2200;
-        }
-        
-        getPlatformLimits(platforms) {
-            const limits = {};
-            platforms.forEach(platform => {
-                limits[platform] = this.getCharacterLimit(platform);
-            });
-            return limits;
-        }
-        
-        async copyToClipboard() {
-            const text = this.elements.finalCaptionTextarea?.value || this.state.getState().finalCaption;
-            
-            if (!text) {
-                this.showError('No caption to copy');
-                return;
-            }
-            
-            try {
-                // Check if the modern Clipboard API is available
-                if (navigator.clipboard && window.isSecureContext) {
-                    await navigator.clipboard.writeText(text);
-                } else {
-                    // Fallback for older browsers or non-secure contexts
-                    this.fallbackCopyToClipboard(text);
-                }
-                this.showSuccess(rwpCaptionWriter.strings.copySuccess);
-            } catch (error) {
-                console.error('Copy failed:', error);
-                // Try fallback method if modern API fails
-                try {
-                    this.fallbackCopyToClipboard(text);
-                    this.showSuccess(rwpCaptionWriter.strings.copySuccess);
-                } catch (fallbackError) {
-                    console.error('Fallback copy failed:', fallbackError);
-                    this.showError('Failed to copy caption');
-                }
-            }
-        }
-        
-        fallbackCopyToClipboard(text) {
-            // Create a temporary textarea element
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            textArea.style.position = 'fixed';
-            textArea.style.left = '-999999px';
-            textArea.style.top = '-999999px';
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            
-            try {
-                document.execCommand('copy');
-            } finally {
-                document.body.removeChild(textArea);
-            }
-        }
-        
-        async saveToFavorites() {
-            if (!this.isLoggedIn) {
-                this.showError('Please log in to save favorites');
-                return;
-            }
-            
-            const text = this.elements.finalCaptionTextarea?.value || this.state.getState().finalCaption;
-            
-            if (!text) {
-                this.showError('No caption to save');
-                return;
-            }
-            
-            try {
-                const response = await fetch(rwpCaptionWriter.restUrl + 'favorites', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-WP-Nonce': rwpCaptionWriter.nonce
-                    },
-                    body: JSON.stringify({
-                        caption: text
-                    })
-                });
-                
-                const result = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(result.message || 'Failed to save favorite');
-                }
-                
-                if (result.success) {
-                    this.showSuccess(result.message || rwpCaptionWriter.strings.saveSuccess);
-                } else {
-                    throw new Error(result.message || 'Unexpected response');
-                }
-                
-            } catch (error) {
-                console.error('Error saving favorite:', error);
-                this.showError(error.message || 'Failed to save favorite');
-            }
-        }
-        
-        
-        detectUserLoginState() {
-            // Detect user login state client-side for cache compatibility
-            // Check for WordPress admin bar or other login indicators
-            const adminBar = document.getElementById('wpadminbar');
-            const bodyClasses = document.body.classList;
-            
-            // Multiple detection methods for reliability
-            return !!(adminBar || 
-                     bodyClasses.contains('logged-in') ||
-                     document.querySelector('.wp-toolbar') ||
-                     (typeof window.wp !== 'undefined' && window.wp.api));
-        }
-        
-        async loadUserPreferences() {
-            if (!this.isLoggedIn) {
-                return;
-            }
-            
-            try {
-                const response = await fetch(rwpCaptionWriter.restUrl + 'preferences', {
-                    method: 'GET',
-                    headers: {
-                        'X-WP-Nonce': rwpCaptionWriter.nonce
-                    }
-                });
-                
-                if (response.ok) {
-                    const result = await response.json();
-                    if (result.success && result.data) {
-                        // Only load preference data, not personal information
-                        const preferences = {
-                            tone: result.data.preferred_tone || 'casual',
-                            platforms: result.data.preferred_platforms || ['instagram']
-                        };
-                        
-                        // Update state with preferences (not overriding block attributes)
-                        const currentState = this.state.getState();
-                        this.state.setState({
-                            tone: currentState.tone || preferences.tone,
-                            platforms: currentState.platforms.length > 0 ? currentState.platforms : preferences.platforms
-                        });
-                    }
-                }
-            } catch (error) {
-            }
-        }
-        
-        async saveUserPreferences() {
-            if (!this.isLoggedIn) {
-                return;
-            }
-            
-            try {
-                const currentState = this.state.getState();
-                const preferences = {
-                    preferred_tone: currentState.tone,
-                    preferred_platforms: currentState.platforms
-                };
-                
-                await fetch(rwpCaptionWriter.restUrl + 'preferences', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-WP-Nonce': rwpCaptionWriter.nonce
-                    },
-                    body: JSON.stringify(preferences)
-                });
-            } catch (error) {
-            }
-        }
-        
-        async loadUserData() {
-            // Load user favorites and templates (non-personal data)
-            await this.loadUserPreferences();
-        }
-        
-        async loadInitialQuota() {
-            // Load quota for both logged-in users and guests
-            // Guests have rate limits too
-            
-            try {
-                // Use the dedicated quota endpoint
-                const response = await fetch(rwpCaptionWriter.restUrl + 'quota', {
-                    method: 'GET',
-                    headers: {
-                        'X-WP-Nonce': rwpCaptionWriter.nonce
-                    }
-                });
-                
-                const result = await response.json();
-                
-                if (response.ok && result.success && result.data) {
-                    if (typeof result.data.remaining !== 'undefined') {
-                        this.showQuotaInfo(result.data.remaining);
-                    }
-                }
-                
-            } catch (error) {
-                // Silently fail - quota info is nice to have but not critical
-            }
-        }
-        
-        async loadFavorites() {
-            if (!this.elements.favoritesList) return;
-            
-            try {
-                const response = await fetch(rwpCaptionWriter.restUrl + 'favorites', {
-                    method: 'GET',
-                    headers: {
-                        'X-WP-Nonce': rwpCaptionWriter.nonce
-                    }
-                });
-                
-                const result = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(result.message || 'Failed to load favorites');
-                }
-                
-                if (result.success && result.data) {
-                    this.renderFavorites(result.data);
-                } else {
-                    throw new Error('Unexpected response format');
-                }
-                
-            } catch (error) {
-                console.error('Error loading favorites:', error);
-                this.elements.favoritesList.innerHTML = `
+
+				// Add click handler to the entire card
+				templateElement.addEventListener( 'click', () => {
+					this.selectTemplate( template );
+				} );
+
+				this.elements.templatesGrid.appendChild( templateElement );
+			} );
+		}
+
+		updateCharacterCount() {
+			const state = this.state.getState();
+			const text =
+				this.elements.finalCaptionTextarea?.value || state.finalCaption;
+			const count = text.length;
+
+			this.state.setState( { characterCount: count } );
+
+			// Update the current count display
+			const currentCountElement = this.container.querySelector(
+				'[data-current-count]'
+			);
+			if ( currentCountElement ) {
+				currentCountElement.textContent = count;
+
+				// Apply color coding based on the most restrictive platform
+				const platformItems = this.container.querySelectorAll(
+					'.platform-limit-item'
+				);
+				let minLimit = Infinity;
+				let hasOverLimit = false;
+				let hasWarning = false;
+
+				platformItems.forEach( ( item ) => {
+					const limit = parseInt( item.getAttribute( 'data-limit' ) );
+					minLimit = Math.min( minLimit, limit );
+
+					const overLimitBadge =
+						item.querySelector( '.over-limit-badge' );
+
+					// Update over-limit badge for each platform
+					if ( count > limit ) {
+						hasOverLimit = true;
+						item.setAttribute( 'data-over-limit', 'true' );
+						if ( overLimitBadge ) {
+							overLimitBadge.style.display = 'inline';
+						}
+					} else {
+						item.removeAttribute( 'data-over-limit' );
+						if ( overLimitBadge ) {
+							overLimitBadge.style.display = 'none';
+						}
+
+						if ( count > limit * 0.9 ) {
+							hasWarning = true;
+						}
+					}
+				} );
+
+				// Apply color to current count based on most restrictive limit
+				if ( hasOverLimit ) {
+					currentCountElement.className = 'current-count over-limit';
+					currentCountElement.style.color = '#ef4444';
+					currentCountElement.style.backgroundColor = '#fef2f2';
+					currentCountElement.style.borderColor = '#fecaca';
+				} else if ( hasWarning ) {
+					currentCountElement.className = 'current-count warning';
+					currentCountElement.style.color = '#f59e0b';
+					currentCountElement.style.backgroundColor = '#fffbeb';
+					currentCountElement.style.borderColor = '#fed7aa';
+				} else {
+					currentCountElement.className = 'current-count';
+					currentCountElement.style.color = '';
+					currentCountElement.style.backgroundColor = '';
+					currentCountElement.style.borderColor = '';
+				}
+			}
+
+			// Announce accessibility updates for character count
+			this.updateCharacterCountAccessibility();
+		}
+
+		updateCharacterLimit() {
+			const platform = this.config.platform || 'instagram';
+			const limit = this.getCharacterLimit( platform );
+			this.state.setState( { characterLimit: limit } );
+			this.updateCharacterCount();
+		}
+
+		getCharacterLimit( platform ) {
+			return rwpCaptionWriter.characterLimits[ platform ] || 2200;
+		}
+
+		getPlatformLimits( platforms ) {
+			const limits = {};
+			platforms.forEach( ( platform ) => {
+				limits[ platform ] = this.getCharacterLimit( platform );
+			} );
+			return limits;
+		}
+
+		async copyToClipboard() {
+			const text =
+				this.elements.finalCaptionTextarea?.value ||
+				this.state.getState().finalCaption;
+
+			if ( ! text ) {
+				this.showError( 'No caption to copy' );
+				return;
+			}
+
+			try {
+				// Check if the modern Clipboard API is available
+				if ( navigator.clipboard && window.isSecureContext ) {
+					await navigator.clipboard.writeText( text );
+				} else {
+					// Fallback for older browsers or non-secure contexts
+					this.fallbackCopyToClipboard( text );
+				}
+				this.showSuccess( rwpCaptionWriter.strings.copySuccess );
+			} catch ( error ) {
+				console.error( 'Copy failed:', error );
+				// Try fallback method if modern API fails
+				try {
+					this.fallbackCopyToClipboard( text );
+					this.showSuccess( rwpCaptionWriter.strings.copySuccess );
+				} catch ( fallbackError ) {
+					console.error( 'Fallback copy failed:', fallbackError );
+					this.showError( 'Failed to copy caption' );
+				}
+			}
+		}
+
+		fallbackCopyToClipboard( text ) {
+			// Create a temporary textarea element
+			const textArea = document.createElement( 'textarea' );
+			textArea.value = text;
+			textArea.style.position = 'fixed';
+			textArea.style.left = '-999999px';
+			textArea.style.top = '-999999px';
+			document.body.appendChild( textArea );
+			textArea.focus();
+			textArea.select();
+
+			try {
+				document.execCommand( 'copy' );
+			} finally {
+				document.body.removeChild( textArea );
+			}
+		}
+
+		async saveToFavorites() {
+			if ( ! this.isLoggedIn ) {
+				this.showError( 'Please log in to save favorites' );
+				return;
+			}
+
+			const text =
+				this.elements.finalCaptionTextarea?.value ||
+				this.state.getState().finalCaption;
+
+			if ( ! text ) {
+				this.showError( 'No caption to save' );
+				return;
+			}
+
+			try {
+				const response = await fetch(
+					rwpCaptionWriter.restUrl + 'favorites',
+					{
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							'X-WP-Nonce': rwpCaptionWriter.nonce,
+						},
+						body: JSON.stringify( {
+							caption: text,
+						} ),
+					}
+				);
+
+				const result = await response.json();
+
+				if ( ! response.ok ) {
+					throw new Error(
+						result.message || 'Failed to save favorite'
+					);
+				}
+
+				if ( result.success ) {
+					this.showSuccess(
+						result.message || rwpCaptionWriter.strings.saveSuccess
+					);
+				} else {
+					throw new Error( result.message || 'Unexpected response' );
+				}
+			} catch ( error ) {
+				console.error( 'Error saving favorite:', error );
+				this.showError( error.message || 'Failed to save favorite' );
+			}
+		}
+
+		detectUserLoginState() {
+			// Detect user login state client-side for cache compatibility
+			// Check for WordPress admin bar or other login indicators
+			const adminBar = document.getElementById( 'wpadminbar' );
+			const bodyClasses = document.body.classList;
+
+			// Multiple detection methods for reliability
+			return !! (
+				adminBar ||
+				bodyClasses.contains( 'logged-in' ) ||
+				document.querySelector( '.wp-toolbar' ) ||
+				( typeof window.wp !== 'undefined' && window.wp.api )
+			);
+		}
+
+		async loadUserPreferences() {
+			if ( ! this.isLoggedIn ) {
+				return;
+			}
+
+			try {
+				const response = await fetch(
+					rwpCaptionWriter.restUrl + 'preferences',
+					{
+						method: 'GET',
+						headers: {
+							'X-WP-Nonce': rwpCaptionWriter.nonce,
+						},
+					}
+				);
+
+				if ( response.ok ) {
+					const result = await response.json();
+					if ( result.success && result.data ) {
+						// Only load preference data, not personal information
+						const preferences = {
+							tone: result.data.preferred_tone || 'casual',
+							platforms: result.data.preferred_platforms || [
+								'instagram',
+							],
+						};
+
+						// Update state with preferences (not overriding block attributes)
+						const currentState = this.state.getState();
+						this.state.setState( {
+							tone: currentState.tone || preferences.tone,
+							platforms:
+								currentState.platforms.length > 0
+									? currentState.platforms
+									: preferences.platforms,
+						} );
+					}
+				}
+			} catch ( error ) {}
+		}
+
+		async saveUserPreferences() {
+			if ( ! this.isLoggedIn ) {
+				return;
+			}
+
+			try {
+				const currentState = this.state.getState();
+				const preferences = {
+					preferred_tone: currentState.tone,
+					preferred_platforms: currentState.platforms,
+				};
+
+				await fetch( rwpCaptionWriter.restUrl + 'preferences', {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						'X-WP-Nonce': rwpCaptionWriter.nonce,
+					},
+					body: JSON.stringify( preferences ),
+				} );
+			} catch ( error ) {}
+		}
+
+		async loadUserData() {
+			// Load user favorites and templates (non-personal data)
+			await this.loadUserPreferences();
+		}
+
+		async loadInitialQuota() {
+			// Load quota for both logged-in users and guests
+			// Guests have rate limits too
+
+			try {
+				// Use the dedicated quota endpoint
+				const response = await fetch(
+					rwpCaptionWriter.restUrl + 'quota',
+					{
+						method: 'GET',
+						headers: {
+							'X-WP-Nonce': rwpCaptionWriter.nonce,
+						},
+					}
+				);
+
+				const result = await response.json();
+
+				if ( response.ok && result.success && result.data ) {
+					if ( typeof result.data.remaining !== 'undefined' ) {
+						this.showQuotaInfo( result.data.remaining );
+					}
+				}
+			} catch ( error ) {
+				// Silently fail - quota info is nice to have but not critical
+			}
+		}
+
+		async loadFavorites() {
+			if ( ! this.elements.favoritesList ) {
+				return;
+			}
+
+			try {
+				const response = await fetch(
+					rwpCaptionWriter.restUrl + 'favorites',
+					{
+						method: 'GET',
+						headers: {
+							'X-WP-Nonce': rwpCaptionWriter.nonce,
+						},
+					}
+				);
+
+				const result = await response.json();
+
+				if ( ! response.ok ) {
+					throw new Error(
+						result.message || 'Failed to load favorites'
+					);
+				}
+
+				if ( result.success && result.data ) {
+					this.renderFavorites( result.data );
+				} else {
+					throw new Error( 'Unexpected response format' );
+				}
+			} catch ( error ) {
+				console.error( 'Error loading favorites:', error );
+				this.elements.favoritesList.innerHTML = `
                     <div class="no-favorites">
                         <p>No favorites saved yet. Generate some captions and save your favorites!</p>
                     </div>
                 `;
-            }
-        }
-        
-        renderFavorites(favorites) {
-            if (!this.elements.favoritesList) return;
-            
-            if (favorites.length === 0) {
-                this.elements.favoritesList.innerHTML = `
+			}
+		}
+
+		renderFavorites( favorites ) {
+			if ( ! this.elements.favoritesList ) {
+				return;
+			}
+
+			if ( favorites.length === 0 ) {
+				this.elements.favoritesList.innerHTML = `
                     <div class="no-favorites">
                         <p>No favorites saved yet. Generate some captions and save your favorites!</p>
                     </div>
                 `;
-                return;
-            }
-            
-            this.elements.favoritesList.innerHTML = '';
-            
-            favorites.forEach(favorite => {
-                const favoriteElement = document.createElement('div');
-                favoriteElement.className = 'favorite-item';
-                favoriteElement.innerHTML = `
-                    <div class="favorite-text">${this.escapeHtml(favorite.caption)}</div>
+				return;
+			}
+
+			this.elements.favoritesList.innerHTML = '';
+
+			favorites.forEach( ( favorite ) => {
+				const favoriteElement = document.createElement( 'div' );
+				favoriteElement.className = 'favorite-item';
+				favoriteElement.innerHTML = `
+                    <div class="favorite-text">${ this.escapeHtml(
+						favorite.caption
+					) }</div>
                     <div class="favorite-meta">
-                        <span class="favorite-date">${new Date(favorite.created_at).toLocaleDateString()}</span>
+                        <span class="favorite-date">${ new Date(
+							favorite.created_at
+						).toLocaleDateString() }</span>
                     </div>
                     <div class="favorite-actions">
-                        <button class="use-favorite-btn" data-favorite-id="${favorite.id}">Use This</button>
-                        <button class="delete-favorite-btn" data-favorite-id="${favorite.id}">Delete</button>
+                        <button class="use-favorite-btn" data-favorite-id="${
+							favorite.id
+						}">Use This</button>
+                        <button class="delete-favorite-btn" data-favorite-id="${
+							favorite.id
+						}">Delete</button>
                     </div>
                 `;
-                
-                // Add event listeners
-                const useBtn = favoriteElement.querySelector('.use-favorite-btn');
-                const deleteBtn = favoriteElement.querySelector('.delete-favorite-btn');
-                
-                useBtn.addEventListener('click', () => {
-                    this.selectCaption(favorite.caption);
-                });
-                
-                deleteBtn.addEventListener('click', async () => {
-                    if (confirm('Are you sure you want to delete this favorite?')) {
-                        await this.deleteFavorite(favorite.id);
-                    }
-                });
-                
-                this.elements.favoritesList.appendChild(favoriteElement);
-            });
-        }
-        
-        async deleteFavorite(favoriteId) {
-            try {
-                const response = await fetch(rwpCaptionWriter.restUrl + `favorites/${favoriteId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-WP-Nonce': rwpCaptionWriter.nonce
-                    }
-                });
-                
-                const result = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(result.message || 'Failed to delete favorite');
-                }
-                
-                if (result.success) {
-                    // Reload favorites
-                    this.loadFavorites();
-                } else {
-                    throw new Error('Unexpected response');
-                }
-                
-            } catch (error) {
-                console.error('Error deleting favorite:', error);
-                this.showError(error.message || 'Failed to delete favorite');
-            }
-        }
-        
-        showLoading(show = true) {
-            if (this.elements.loadingDiv) {
-                this.elements.loadingDiv.style.display = show ? 'block' : 'none';
-            }
-        }
-        
-        showError(message) {
-            if (this.elements.errorDiv) {
-                this.elements.errorDiv.style.display = 'block';
-                this.elements.errorDiv.querySelector('.error-message').textContent = message;
-            }
-        }
-        
-        hideError() {
-            if (this.elements.errorDiv) {
-                this.elements.errorDiv.style.display = 'none';
-            }
-        }
-        
-        showSuccess(message) {
-            // Create a temporary success notification
-            const notification = document.createElement('div');
-            notification.className = 'caption-writer-success';
-            notification.innerHTML = `
-                <div class="success-message">${this.escapeHtml(message)}</div>
+
+				// Add event listeners
+				const useBtn =
+					favoriteElement.querySelector( '.use-favorite-btn' );
+				const deleteBtn = favoriteElement.querySelector(
+					'.delete-favorite-btn'
+				);
+
+				useBtn.addEventListener( 'click', () => {
+					this.selectCaption( favorite.caption );
+				} );
+
+				deleteBtn.addEventListener( 'click', async () => {
+					if (
+						confirm(
+							'Are you sure you want to delete this favorite?'
+						)
+					) {
+						await this.deleteFavorite( favorite.id );
+					}
+				} );
+
+				this.elements.favoritesList.appendChild( favoriteElement );
+			} );
+		}
+
+		async deleteFavorite( favoriteId ) {
+			try {
+				const response = await fetch(
+					rwpCaptionWriter.restUrl + `favorites/${ favoriteId }`,
+					{
+						method: 'DELETE',
+						headers: {
+							'X-WP-Nonce': rwpCaptionWriter.nonce,
+						},
+					}
+				);
+
+				const result = await response.json();
+
+				if ( ! response.ok ) {
+					throw new Error(
+						result.message || 'Failed to delete favorite'
+					);
+				}
+
+				if ( result.success ) {
+					// Reload favorites
+					this.loadFavorites();
+				} else {
+					throw new Error( 'Unexpected response' );
+				}
+			} catch ( error ) {
+				console.error( 'Error deleting favorite:', error );
+				this.showError( error.message || 'Failed to delete favorite' );
+			}
+		}
+
+		showLoading( show = true ) {
+			if ( this.elements.loadingDiv ) {
+				this.elements.loadingDiv.style.display = show
+					? 'block'
+					: 'none';
+			}
+		}
+
+		handleError( error, context = '' ) {
+			let userMessage = '';
+
+			// Determine appropriate user message based on error
+			if ( error.message && error.message.includes( 'rate limit' ) ) {
+				userMessage =
+					rwpCaptionWriter.strings.rateLimitError ||
+					'Rate limit exceeded. Please try again later.';
+			} else if ( error.message && error.message.includes( 'quota' ) ) {
+				userMessage =
+					rwpCaptionWriter.strings.quotaExceeded ||
+					'Quote exceeded. Please try again later.';
+			} else if ( error.message && error.message.includes( 'network' ) ) {
+				userMessage =
+					rwpCaptionWriter.strings.networkError ||
+					'Network error. Please check your connection.';
+			} else if (
+				error.message &&
+				error.message.includes( 'description' )
+			) {
+				userMessage =
+					rwpCaptionWriter.strings.errorDescription ||
+					'Please provide a description.';
+			} else if (
+				error.message &&
+				error.message.includes( 'service unavailable' )
+			) {
+				userMessage =
+					rwpCaptionWriter.strings.serviceUnavailable ||
+					'AI service is temporarily unavailable.';
+			} else {
+				userMessage =
+					rwpCaptionWriter.strings.errorGeneral ||
+					'An error occurred. Please try again.';
+			}
+
+			// Extract retry after information if available
+			const retryAfter = error.data?.retry_after || null;
+
+			this.showErrorMessage( userMessage, retryAfter );
+
+			// Log detailed error for debugging
+			console.error( 'Caption Writer Error:', {
+				error,
+				context,
+				timestamp: new Date().toISOString(),
+				userAgent: navigator.userAgent,
+			} );
+		}
+
+		showErrorMessage( message, retryAfter = null ) {
+			if ( ! this.elements.errorDiv ) {
+				return;
+			}
+
+			const errorMessage =
+				this.elements.errorDiv.querySelector( '.error-message' );
+			if ( ! errorMessage ) {
+				return;
+			}
+
+			errorMessage.innerHTML = `
+                <div class="alert alert-error" role="alert">
+                    <div class="flex items-start gap-3">
+                        <div class="text-xl" aria-hidden="true">⚠️</div>
+                        <div class="flex-1">
+                            <p class="font-semibold text-sm mb-1">${ this.escapeHtml(
+								message
+							) }</p>
+                            ${
+								retryAfter
+									? `<p class="text-xs opacity-75">Please try again in ${ retryAfter } seconds.</p>`
+									: ''
+							}
+                        </div>
+                    </div>
+                </div>
             `;
-            notification.style.cssText = `
+
+			this.elements.errorDiv.style.display = 'block';
+
+			// Focus management for accessibility
+			errorMessage.focus();
+
+			// Auto-hide after delay (unless it's a rate limit error)
+			if ( ! retryAfter ) {
+				setTimeout( () => {
+					this.elements.errorDiv.style.display = 'none';
+				}, 8000 );
+			}
+		}
+
+		showError( message ) {
+			if ( this.elements.errorDiv ) {
+				this.elements.errorDiv.style.display = 'block';
+				const errorMessageEl =
+					this.elements.errorDiv.querySelector( '.error-message' );
+				if ( errorMessageEl ) {
+					errorMessageEl.textContent = message;
+				}
+			}
+		}
+
+		hideError() {
+			if ( this.elements.errorDiv ) {
+				this.elements.errorDiv.style.display = 'none';
+			}
+		}
+
+		showSuccess( message ) {
+			// Create a temporary success notification
+			const notification = document.createElement( 'div' );
+			notification.className = 'caption-writer-success';
+			notification.innerHTML = `
+                <div class="success-message">${ this.escapeHtml(
+					message
+				) }</div>
+            `;
+			notification.style.cssText = `
                 position: fixed;
                 top: 20px;
                 right: 20px;
@@ -1174,277 +1468,398 @@
                 font-size: 14px;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             `;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 3000);
-        }
-        
-        showQuotaInfo(remainingQuota) {
-            // Use persistent quota display element from template
-            if (!this.elements.quotaDisplay || !this.elements.quotaText) {
-                return;
-            }
-            
-            // Add icon based on quota level
-            let icon = '🟢';
-            if (remainingQuota <= 5) icon = '🟡';
-            if (remainingQuota <= 2) icon = '🟠';
-            if (remainingQuota === 0) icon = '🔴';
-            
-            // Update quota text
-            if (remainingQuota === 0) {
-                this.elements.quotaText.innerHTML = `${icon} <strong>Daily limit reached.</strong> Please try again later or upgrade your plan.`;
-                
-                // Disable generate button when quota is exhausted
-                if (this.elements.generateBtn) {
-                    this.elements.generateBtn.disabled = true;
-                    this.elements.generateBtn.textContent = 'Quota Exhausted';
-                }
-            } else {
-                this.elements.quotaText.innerHTML = `${icon} Remaining AI generations: <strong>${remainingQuota}</strong>`;
-                
-                // Re-enable generate button if it was disabled
-                if (this.elements.generateBtn && this.elements.generateBtn.textContent === 'Quota Exhausted') {
-                    this.elements.generateBtn.disabled = false;
-                    this.elements.generateBtn.textContent = 'Generate Captions';
-                }
-            }
-            
-            // Show the quota display
-            this.elements.quotaDisplay.style.display = 'block';
-        }
-        
-        validateDescription(description) {
-            const minLength = 10;
-            const maxLength = 500;
-            
-            // Remove any existing validation messages
-            const existingMessages = this.container.querySelectorAll('.validation-message');
-            existingMessages.forEach(msg => msg.remove());
-            
-            if (description.length < minLength && description.length > 0) {
-                this.showValidationMessage(this.elements.descriptionInput, `Please provide more detail (${minLength - description.length} more characters needed)`, 'warning');
-            } else if (description.length > maxLength) {
-                this.showValidationMessage(this.elements.descriptionInput, `Description too long (${description.length - maxLength} characters over limit)`, 'error');
-            }
-        }
-        
-        updateGenerateButtonState() {
-            if (!this.elements.generateBtn) return;
-            
-            const state = this.state.getState();
-            const description = this.elements.descriptionInput?.value?.trim() || state.description;
-            const isValid = description.length >= 10 && description.length <= 500;
-            const isGenerating = state.isGenerating;
-            
-            this.elements.generateBtn.disabled = !isValid || isGenerating;
-            
-            if (!isValid && description.length > 0) {
-                this.elements.generateBtn.title = description.length < 10 ? 'Please provide more detail' : 'Description too long';
-            } else {
-                this.elements.generateBtn.title = '';
-            }
-        }
-        
-        showValidationMessage(element, message, type = 'info') {
-            const messageEl = document.createElement('div');
-            messageEl.className = `validation-message validation-${type}`;
-            messageEl.textContent = message;
-            messageEl.style.cssText = `
+
+			document.body.appendChild( notification );
+
+			setTimeout( () => {
+				if ( notification.parentNode ) {
+					notification.parentNode.removeChild( notification );
+				}
+			}, 3000 );
+		}
+
+		showQuotaInfo( remainingQuota ) {
+			// Use persistent quota display element from template
+			if ( ! this.elements.quotaDisplay || ! this.elements.quotaText ) {
+				return;
+			}
+
+			// Add icon based on quota level
+			let icon = '🟢';
+			if ( remainingQuota <= 5 ) {
+				icon = '🟡';
+			}
+			if ( remainingQuota <= 2 ) {
+				icon = '🟠';
+			}
+			if ( remainingQuota === 0 ) {
+				icon = '🔴';
+			}
+
+			// Update quota text
+			if ( remainingQuota === 0 ) {
+				this.elements.quotaText.innerHTML = `${ icon } <strong>Daily limit reached.</strong> Please try again later or upgrade your plan.`;
+
+				// Disable generate button when quota is exhausted
+				if ( this.elements.generateBtn ) {
+					this.elements.generateBtn.disabled = true;
+					this.elements.generateBtn.textContent = 'Quota Exhausted';
+				}
+			} else {
+				this.elements.quotaText.innerHTML = `${ icon } Remaining AI generations: <strong>${ remainingQuota }</strong>`;
+
+				// Re-enable generate button if it was disabled
+				if (
+					this.elements.generateBtn &&
+					this.elements.generateBtn.textContent === 'Quota Exhausted'
+				) {
+					this.elements.generateBtn.disabled = false;
+					this.elements.generateBtn.textContent = 'Generate Captions';
+				}
+			}
+
+			// Show the quota display
+			this.elements.quotaDisplay.style.display = 'block';
+		}
+
+		validateDescription( description ) {
+			const minLength = 10;
+			const maxLength = 500;
+
+			// Remove any existing validation messages
+			const existingMessages = this.container.querySelectorAll(
+				'.validation-message'
+			);
+			existingMessages.forEach( ( msg ) => msg.remove() );
+
+			if ( description.length < minLength && description.length > 0 ) {
+				this.showValidationMessage(
+					this.elements.descriptionInput,
+					`Please provide more detail (${
+						minLength - description.length
+					} more characters needed)`,
+					'warning'
+				);
+			} else if ( description.length > maxLength ) {
+				this.showValidationMessage(
+					this.elements.descriptionInput,
+					`Description too long (${
+						description.length - maxLength
+					} characters over limit)`,
+					'error'
+				);
+			}
+		}
+
+		updateGenerateButtonState() {
+			if ( ! this.elements.generateBtn ) {
+				return;
+			}
+
+			const state = this.state.getState();
+			const description =
+				this.elements.descriptionInput?.value?.trim() ||
+				state.description;
+			const isValid =
+				description.length >= 10 && description.length <= 500;
+			const isGenerating = state.isGenerating;
+
+			this.elements.generateBtn.disabled = ! isValid || isGenerating;
+
+			if ( ! isValid && description.length > 0 ) {
+				this.elements.generateBtn.title =
+					description.length < 10
+						? 'Please provide more detail'
+						: 'Description too long';
+			} else {
+				this.elements.generateBtn.title = '';
+			}
+		}
+
+		showValidationMessage( element, message, type = 'info' ) {
+			const messageEl = document.createElement( 'div' );
+			messageEl.className = `validation-message validation-${ type }`;
+			messageEl.textContent = message;
+			messageEl.style.cssText = `
                 font-size: 12px;
                 margin-top: 4px;
                 padding: 6px 10px;
                 border-radius: 4px;
                 animation: slideIn 0.2s ease;
-                ${type === 'error' ? 'background: #fee; color: #c53030; border: 1px solid #feb2b2;' : ''}
-                ${type === 'warning' ? 'background: #fffbeb; color: #92400e; border: 1px solid #fed7aa;' : ''}
-                ${type === 'info' ? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;' : ''}
+                ${
+					type === 'error'
+						? 'background: #fee; color: #c53030; border: 1px solid #feb2b2;'
+						: ''
+				}
+                ${
+					type === 'warning'
+						? 'background: #fffbeb; color: #92400e; border: 1px solid #fed7aa;'
+						: ''
+				}
+                ${
+					type === 'info'
+						? 'background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe;'
+						: ''
+				}
             `;
-            
-            element.parentNode.appendChild(messageEl);
-            
-            // Auto-remove after 3 seconds
-            setTimeout(() => {
-                if (messageEl.parentNode) {
-                    messageEl.parentNode.removeChild(messageEl);
-                }
-            }, 3000);
-        }
-        
-        announceToScreenReader(message) {
-            // Create a live region for screen reader announcements
-            let liveRegion = document.getElementById('rwp-caption-writer-live-region');
-            if (!liveRegion) {
-                liveRegion = document.createElement('div');
-                liveRegion.id = 'rwp-caption-writer-live-region';
-                liveRegion.setAttribute('aria-live', 'polite');
-                liveRegion.setAttribute('aria-atomic', 'true');
-                liveRegion.style.cssText = `
+
+			element.parentNode.appendChild( messageEl );
+
+			// Auto-remove after 3 seconds
+			setTimeout( () => {
+				if ( messageEl.parentNode ) {
+					messageEl.parentNode.removeChild( messageEl );
+				}
+			}, 3000 );
+		}
+
+		announceToScreenReader( message ) {
+			// Create a live region for screen reader announcements
+			let liveRegion = document.getElementById(
+				'rwp-caption-writer-live-region'
+			);
+			if ( ! liveRegion ) {
+				liveRegion = document.createElement( 'div' );
+				liveRegion.id = 'rwp-caption-writer-live-region';
+				liveRegion.setAttribute( 'aria-live', 'polite' );
+				liveRegion.setAttribute( 'aria-atomic', 'true' );
+				liveRegion.style.cssText = `
                     position: absolute;
                     left: -10000px;
                     width: 1px;
                     height: 1px;
                     overflow: hidden;
                 `;
-                document.body.appendChild(liveRegion);
-            }
-            
-            liveRegion.textContent = message;
-        }
-        
-        enhanceAccessibility() {
-            // Add ARIA labels and descriptions
-            if (this.elements.descriptionInput) {
-                this.elements.descriptionInput.setAttribute('aria-describedby', 'description-help');
-                this.elements.descriptionInput.setAttribute('aria-label', 'Content description for caption generation');
-                
-                // Add help text
-                const helpText = document.createElement('div');
-                helpText.id = 'description-help';
-                helpText.className = 'sr-only';
-                helpText.textContent = 'Describe your content in detail. Minimum 10 characters, maximum 500 characters. This will be used to generate captions.';
-                this.elements.descriptionInput.parentNode.appendChild(helpText);
-            }
-            
-            // Add role and aria-label to tabs
-            if (this.elements.tabButtons.length > 0) {
-                const tabList = this.elements.tabButtons[0].parentNode;
-                tabList.setAttribute('role', 'tablist');
-                tabList.setAttribute('aria-label', 'Caption generation methods');
-                
-                this.elements.tabButtons.forEach((button, index) => {
-                    button.setAttribute('role', 'tab');
-                    button.setAttribute('aria-selected', button.classList.contains('active'));
-                    button.setAttribute('tabindex', button.classList.contains('active') ? '0' : '-1');
-                    button.setAttribute('aria-controls', `panel-${button.dataset.tab}`);
-                    button.id = `tab-${button.dataset.tab}`;
-                    
-                    // Add descriptive aria-label with enhanced descriptions
-                    const tabNames = {
-                        'generator': 'AI Caption Generator - Generate custom captions using artificial intelligence',
-                        'templates': 'Template Library - Choose from pre-made caption templates',
-                        'favorites': 'Saved Favorites - Access your saved caption favorites'
-                    };
-                    button.setAttribute('aria-label', tabNames[button.dataset.tab] || button.textContent);
-                    
-                    // Add role description for better context
-                    const roleDescriptions = {
-                        'generator': 'Generate AI-powered captions',
-                        'templates': 'Browse caption templates',
-                        'favorites': 'View saved captions'
-                    };
-                    button.setAttribute('aria-roledescription', roleDescriptions[button.dataset.tab] || '');
-                });
-            }
-            
-            // Add role and aria-labelledby to tab panels
-            this.elements.tabContents.forEach(content => {
-                content.setAttribute('role', 'tabpanel');
-                content.id = `panel-${content.dataset.content}`;
-                content.setAttribute('aria-labelledby', `tab-${content.dataset.content}`);
-                content.setAttribute('tabindex', '0');
-                
-                // Hide inactive panels from screen readers
-                if (!content.classList.contains('active')) {
-                    content.setAttribute('aria-hidden', 'true');
-                }
-            });
-            
-            // Add aria-live regions for dynamic content
-            if (this.elements.captionsContainer) {
-                this.elements.captionsContainer.setAttribute('aria-live', 'polite');
-                this.elements.captionsContainer.setAttribute('aria-label', 'Generated captions');
-            }
-            
-            // Add loading announcement region
-            if (this.elements.loadingDiv) {
-                this.elements.loadingDiv.setAttribute('aria-live', 'assertive');
-                this.elements.loadingDiv.setAttribute('aria-label', 'Loading status');
-            }
-            
-            // Add error announcement region
-            if (this.elements.errorDiv) {
-                this.elements.errorDiv.setAttribute('role', 'alert');
-                this.elements.errorDiv.setAttribute('aria-live', 'assertive');
-            }
-            
-            // Enhanced character counter
-            if (this.elements.finalCaptionTextarea && this.elements.charCount) {
-                const counterId = 'char-counter-' + Date.now();
-                this.elements.charCount.parentNode.id = counterId;
-                this.elements.finalCaptionTextarea.setAttribute('aria-describedby', counterId);
-                this.elements.charCount.parentNode.setAttribute('aria-label', 'Character count information');
-                
-                // Add status announcements for character limits
-                const announceId = 'char-announce-' + Date.now();
-                const announcer = document.createElement('div');
-                announcer.id = announceId;
-                announcer.setAttribute('aria-live', 'polite');
-                announcer.setAttribute('aria-atomic', 'true');
-                announcer.className = 'sr-only';
-                this.elements.finalCaptionTextarea.parentNode.appendChild(announcer);
-                
-                this.charAnnouncerElement = announcer;
-            }
-            
-            // Add semantic landmarks
-            const appContainer = this.container.querySelector('.caption-writer-app');
-            if (appContainer) {
-                appContainer.setAttribute('role', 'application');
-                appContainer.setAttribute('aria-label', 'Caption Writer Application');
-            }
-            
-            // Enhance button accessibility
-            this.enhanceButtonAccessibility();
-            
-            // Add skip links for keyboard users
-            this.addSkipLinks();
-            
-            // Enhanced focus management
-            this.setupFocusManagement();
-        }
-        
-        enhanceButtonAccessibility() {
-            // Generate button
-            if (this.elements.generateBtn) {
-                this.elements.generateBtn.setAttribute('aria-describedby', 'generate-help');
-                
-                const helpText = document.createElement('div');
-                helpText.id = 'generate-help';
-                helpText.className = 'sr-only';
-                helpText.textContent = 'Generate AI-powered captions based on your content description and selected tone';
-                this.elements.generateBtn.parentNode.appendChild(helpText);
-            }
-            
-            // Copy button
-            if (this.elements.copyBtn) {
-                this.elements.copyBtn.setAttribute('aria-label', 'Copy final caption to clipboard');
-                this.elements.copyBtn.setAttribute('title', 'Copy to clipboard');
-            }
-            
-            // Save buttons
-            if (this.elements.saveFavoriteBtn) {
-                this.elements.saveFavoriteBtn.setAttribute('aria-label', 'Save caption to favorites');
-                this.elements.saveFavoriteBtn.setAttribute('title', 'Save to favorites');
-            }
-            
-        }
-        
-        addSkipLinks() {
-            const skipLinks = document.createElement('div');
-            skipLinks.className = 'skip-links';
-            skipLinks.innerHTML = `
+				document.body.appendChild( liveRegion );
+			}
+
+			liveRegion.textContent = message;
+		}
+
+		enhanceAccessibility() {
+			// Add ARIA labels and descriptions
+			if ( this.elements.descriptionInput ) {
+				this.elements.descriptionInput.setAttribute(
+					'aria-describedby',
+					'description-help'
+				);
+				this.elements.descriptionInput.setAttribute(
+					'aria-label',
+					'Content description for caption generation'
+				);
+
+				// Add help text
+				const helpText = document.createElement( 'div' );
+				helpText.id = 'description-help';
+				helpText.className = 'sr-only';
+				helpText.textContent =
+					'Describe your content in detail. Minimum 10 characters, maximum 500 characters. This will be used to generate captions.';
+				this.elements.descriptionInput.parentNode.appendChild(
+					helpText
+				);
+			}
+
+			// Add role and aria-label to tabs
+			if ( this.elements.tabButtons.length > 0 ) {
+				const tabList = this.elements.tabButtons[ 0 ].parentNode;
+				tabList.setAttribute( 'role', 'tablist' );
+				tabList.setAttribute(
+					'aria-label',
+					'Caption generation methods'
+				);
+
+				this.elements.tabButtons.forEach( ( button, index ) => {
+					button.setAttribute( 'role', 'tab' );
+					button.setAttribute(
+						'aria-selected',
+						button.classList.contains( 'active' )
+					);
+					button.setAttribute(
+						'tabindex',
+						button.classList.contains( 'active' ) ? '0' : '-1'
+					);
+					button.setAttribute(
+						'aria-controls',
+						`panel-${ button.dataset.tab }`
+					);
+					button.id = `tab-${ button.dataset.tab }`;
+
+					// Add descriptive aria-label with enhanced descriptions
+					const tabNames = {
+						generator:
+							'AI Caption Generator - Generate custom captions using artificial intelligence',
+						templates:
+							'Template Library - Choose from pre-made caption templates',
+						favorites:
+							'Saved Favorites - Access your saved caption favorites',
+					};
+					button.setAttribute(
+						'aria-label',
+						tabNames[ button.dataset.tab ] || button.textContent
+					);
+
+					// Add role description for better context
+					const roleDescriptions = {
+						generator: 'Generate AI-powered captions',
+						templates: 'Browse caption templates',
+						favorites: 'View saved captions',
+					};
+					button.setAttribute(
+						'aria-roledescription',
+						roleDescriptions[ button.dataset.tab ] || ''
+					);
+				} );
+			}
+
+			// Add role and aria-labelledby to tab panels
+			this.elements.tabContents.forEach( ( content ) => {
+				content.setAttribute( 'role', 'tabpanel' );
+				content.id = `panel-${ content.dataset.content }`;
+				content.setAttribute(
+					'aria-labelledby',
+					`tab-${ content.dataset.content }`
+				);
+				content.setAttribute( 'tabindex', '0' );
+
+				// Hide inactive panels from screen readers
+				if ( ! content.classList.contains( 'active' ) ) {
+					content.setAttribute( 'aria-hidden', 'true' );
+				}
+			} );
+
+			// Add aria-live regions for dynamic content
+			if ( this.elements.captionsContainer ) {
+				this.elements.captionsContainer.setAttribute(
+					'aria-live',
+					'polite'
+				);
+				this.elements.captionsContainer.setAttribute(
+					'aria-label',
+					'Generated captions'
+				);
+			}
+
+			// Add loading announcement region
+			if ( this.elements.loadingDiv ) {
+				this.elements.loadingDiv.setAttribute(
+					'aria-live',
+					'assertive'
+				);
+				this.elements.loadingDiv.setAttribute(
+					'aria-label',
+					'Loading status'
+				);
+			}
+
+			// Add error announcement region
+			if ( this.elements.errorDiv ) {
+				this.elements.errorDiv.setAttribute( 'role', 'alert' );
+				this.elements.errorDiv.setAttribute( 'aria-live', 'assertive' );
+			}
+
+			// Enhanced character counter
+			if (
+				this.elements.finalCaptionTextarea &&
+				this.elements.charCount
+			) {
+				const counterId = 'char-counter-' + Date.now();
+				this.elements.charCount.parentNode.id = counterId;
+				this.elements.finalCaptionTextarea.setAttribute(
+					'aria-describedby',
+					counterId
+				);
+				this.elements.charCount.parentNode.setAttribute(
+					'aria-label',
+					'Character count information'
+				);
+
+				// Add status announcements for character limits
+				const announceId = 'char-announce-' + Date.now();
+				const announcer = document.createElement( 'div' );
+				announcer.id = announceId;
+				announcer.setAttribute( 'aria-live', 'polite' );
+				announcer.setAttribute( 'aria-atomic', 'true' );
+				announcer.className = 'sr-only';
+				this.elements.finalCaptionTextarea.parentNode.appendChild(
+					announcer
+				);
+
+				this.charAnnouncerElement = announcer;
+			}
+
+			// Add semantic landmarks
+			const appContainer = this.container.querySelector(
+				'.caption-writer-app'
+			);
+			if ( appContainer ) {
+				appContainer.setAttribute( 'role', 'application' );
+				appContainer.setAttribute(
+					'aria-label',
+					'Caption Writer Application'
+				);
+			}
+
+			// Enhance button accessibility
+			this.enhanceButtonAccessibility();
+
+			// Add skip links for keyboard users
+			this.addSkipLinks();
+
+			// Enhanced focus management
+			this.setupFocusManagement();
+		}
+
+		enhanceButtonAccessibility() {
+			// Generate button
+			if ( this.elements.generateBtn ) {
+				this.elements.generateBtn.setAttribute(
+					'aria-describedby',
+					'generate-help'
+				);
+
+				const helpText = document.createElement( 'div' );
+				helpText.id = 'generate-help';
+				helpText.className = 'sr-only';
+				helpText.textContent =
+					'Generate AI-powered captions based on your content description and selected tone';
+				this.elements.generateBtn.parentNode.appendChild( helpText );
+			}
+
+			// Copy button
+			if ( this.elements.copyBtn ) {
+				this.elements.copyBtn.setAttribute(
+					'aria-label',
+					'Copy final caption to clipboard'
+				);
+				this.elements.copyBtn.setAttribute(
+					'title',
+					'Copy to clipboard'
+				);
+			}
+
+			// Save buttons
+			if ( this.elements.saveFavoriteBtn ) {
+				this.elements.saveFavoriteBtn.setAttribute(
+					'aria-label',
+					'Save caption to favorites'
+				);
+				this.elements.saveFavoriteBtn.setAttribute(
+					'title',
+					'Save to favorites'
+				);
+			}
+		}
+
+		addSkipLinks() {
+			const skipLinks = document.createElement( 'div' );
+			skipLinks.className = 'skip-links';
+			skipLinks.innerHTML = `
                 <a href="#caption-generator" class="skip-link">Skip to generator</a>
                 <a href="#final-caption" class="skip-link">Skip to final caption</a>
             `;
-            
-            const style = document.createElement('style');
-            style.textContent = `
+
+			const style = document.createElement( 'style' );
+			style.textContent = `
                 .skip-links {
                     position: absolute;
                     top: -1000px;
@@ -1468,290 +1883,344 @@
                     overflow: visible;
                 }
             `;
-            
-            if (!document.getElementById('skip-links-style')) {
-                style.id = 'skip-links-style';
-                document.head.appendChild(style);
-            }
-            
-            this.container.insertBefore(skipLinks, this.container.firstChild);
-            
-            // Add IDs to skip targets
-            if (this.elements.descriptionInput) {
-                this.elements.descriptionInput.id = 'caption-generator';
-            }
-            if (this.elements.finalCaptionTextarea) {
-                this.elements.finalCaptionTextarea.id = 'final-caption';
-            }
-        }
-        
-        setupFocusManagement() {
-            // Enhanced tab navigation
-            this.elements.tabButtons.forEach((button, index) => {
-                button.addEventListener('keydown', (e) => {
-                    let nextIndex = index;
-                    
-                    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        nextIndex = (index + 1) % this.elements.tabButtons.length;
-                    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        nextIndex = (index - 1 + this.elements.tabButtons.length) % this.elements.tabButtons.length;
-                    } else if (e.key === 'Home') {
-                        e.preventDefault();
-                        nextIndex = 0;
-                    } else if (e.key === 'End') {
-                        e.preventDefault();
-                        nextIndex = this.elements.tabButtons.length - 1;
-                    } else if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        this.switchTab(e.target.dataset.tab);
-                        return;
-                    }
-                    
-                    if (nextIndex !== index) {
-                        // Update tabindex
-                        this.elements.tabButtons[index].setAttribute('tabindex', '-1');
-                        this.elements.tabButtons[nextIndex].setAttribute('tabindex', '0');
-                        this.elements.tabButtons[nextIndex].focus();
-                    }
-                });
-            });
-            
-            // Focus management for tab switching
-            const originalSwitchTab = this.switchTab.bind(this);
-            this.switchTab = (tabName) => {
-                originalSwitchTab(tabName);
-                
-                // Update aria-selected and aria-hidden
-                this.elements.tabButtons.forEach(btn => {
-                    btn.setAttribute('aria-selected', btn.dataset.tab === tabName);
-                    btn.setAttribute('tabindex', btn.dataset.tab === tabName ? '0' : '-1');
-                });
-                
-                this.elements.tabContents.forEach(content => {
-                    const isActive = content.dataset.content === tabName;
-                    content.setAttribute('aria-hidden', !isActive);
-                });
-                
-                // Announce tab change
-                this.announceToScreenReader(`Switched to ${tabName} tab`);
-            };
-        }
-        
-        updateCharacterCountAccessibility() {
-            if (this.charAnnouncerElement && this.elements.charCount) {
-                const count = this.state.getState().characterCount;
-                const limit = this.state.getState().characterLimit;
-                const percentage = (count / limit) * 100;
-                
-                if (percentage > 90) {
-                    let message = '';
-                    if (count > limit) {
-                        message = `Over character limit by ${count - limit} characters`;
-                    } else if (percentage > 95) {
-                        message = `Approaching character limit. ${limit - count} characters remaining`;
-                    }
-                    
-                    if (message) {
-                        this.charAnnouncerElement.textContent = message;
-                    }
-                }
-            }
-        }
-        
-        initializeFallbackMode() {
-            // Initialize without RWPStateManager using basic object state
-            this.state = {
-                _state: {
-                    description: '',
-                    platforms: ['instagram'],
-                    tone: 'casual',
-                    generatedCaptions: [],
-                    templates: [],
-                    favorites: [],
-                    finalCaption: '',
-                    isGenerating: false,
-                    activeTab: 'generator',
-                    characterCount: 0
-                },
-                getState: function() { return this._state; },
-                setState: function(newState) { 
-                    Object.assign(this._state, newState);
-                }
-            };
-            
-            this.elements = {};
-            this.initWithoutStateManager();
-        }
-        
-        initWithoutStateManager() {
-            // Basic initialization without full state management
-            this.cacheElements();
-            this.loadBuiltInTemplates();
-            
-            // Show user-friendly message about limited functionality
-            const errorDiv = this.container.querySelector('[data-error]');
-            if (errorDiv) {
-                errorDiv.style.display = 'block';
-                errorDiv.querySelector('.error-message').textContent = 
-                    'Limited functionality mode. Some features may not work as expected.';
-            }
-        }
-        
-        setupLoggedInExperience() {
-            // Show AI generator tab and make it active
-            const generatorTab = this.container.querySelector('[data-tab="generator"]');
-            const templatesTab = this.container.querySelector('[data-tab="templates"]');
-            const favoritesTab = this.container.querySelector('[data-tab="favorites"]');
-            
-            if (generatorTab) {
-                generatorTab.classList.add('active');
-            }
-            if (templatesTab) {
-                templatesTab.classList.remove('active');
-            }
-            if (favoritesTab) {
-                favoritesTab.style.display = 'block';
-            }
-            
-            // Show AI generator content and hide guest teaser
-            const generatorContent = this.container.querySelector('[data-content="generator"]');
-            const aiGeneratorSection = this.container.querySelector('.ai-generator-logged-in');
-            const guestTeaser = this.container.querySelector('.ai-generator-guest-teaser');
-            const templatesContent = this.container.querySelector('[data-content="templates"]');
-            
-            if (generatorContent) {
-                generatorContent.classList.add('active');
-            }
-            if (aiGeneratorSection) {
-                aiGeneratorSection.style.display = 'block';
-            }
-            if (guestTeaser) {
-                guestTeaser.style.display = 'none';
-            }
-            if (templatesContent) {
-                templatesContent.classList.remove('active');
-            }
-            
-            // Show save to favorites button and hide login prompt
-            const saveFavoriteBtn = this.container.querySelector('[data-save-favorite]');
-            const loginPrompt = this.container.querySelector('.login-prompt');
-            
-            if (saveFavoriteBtn) {
-                saveFavoriteBtn.style.display = 'block';
-            }
-            if (loginPrompt) {
-                loginPrompt.style.display = 'none';
-            }
-            
-            // Initialize logged-in user functionality
-            this.updateGenerateButtonState();
-            this.loadUserData();
-            this.loadInitialQuota();
-        }
-        
-        setupGuestExperience() {
-            // Templates tab remains active (set in PHP), AI generator shows teaser
-            // This is the default state from PHP rendering
-            
-            // Ensure favorites tab is hidden
-            const favoritesTab = this.container.querySelector('[data-tab="favorites"]');
-            if (favoritesTab) {
-                favoritesTab.style.display = 'none';
-            }
-            
-            // Ensure guest teaser is visible and AI section is hidden
-            const aiGeneratorSection = this.container.querySelector('.ai-generator-logged-in');
-            const guestTeaser = this.container.querySelector('.ai-generator-guest-teaser');
-            
-            if (aiGeneratorSection) {
-                aiGeneratorSection.style.display = 'none';
-            }
-            if (guestTeaser) {
-                guestTeaser.style.display = 'block';
-            }
-            
-            // Ensure save favorites button is hidden and login prompt is shown
-            const saveFavoriteBtn = this.container.querySelector('[data-save-favorite]');
-            const loginPrompt = this.container.querySelector('.login-prompt');
-            
-            if (saveFavoriteBtn) {
-                saveFavoriteBtn.style.display = 'none';
-            }
-            if (loginPrompt) {
-                loginPrompt.style.display = 'block';
-            }
-            
-            // Load quota for guests too
-            this.loadInitialQuota();
-        }
-        
-        
-        escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-        
-        scrollToElement(element, offset = 20) {
-            if (!element) return;
-            
-            const elementRect = element.getBoundingClientRect();
-            const absoluteElementTop = elementRect.top + window.pageYOffset;
-            const elementHeight = elementRect.height;
-            const viewportHeight = window.innerHeight;
-            
-            // Center the element on the page
-            const top = absoluteElementTop - (viewportHeight / 2) + (elementHeight / 2) + offset;
-            
-            window.scrollTo({
-                top: top,
-                behavior: 'smooth'
-            });
-        }
-    }
-    
-    // Initialize Caption Writer apps when DOM is loaded
-    function initializeCaptionWriters() {
-        // Check for global dependencies
-        if (typeof rwpCaptionWriter === 'undefined') {
-            console.error('CaptionWriter: Global configuration not loaded');
-            return;
-        }
-        
-        const containers = document.querySelectorAll('.rwp-caption-writer-container');
-        
-        if (containers.length === 0) {
-            return; // No caption writer blocks on this page
-        }
-        
-        containers.forEach(container => {
-            try {
-                const config = JSON.parse(container.dataset.config || '{}');
-                const app = new CaptionWriterApp(container, config);
-                
-                // Store app instance on container for potential cleanup
-                container.captionWriterApp = app;
-            } catch (error) {
-                console.error('Failed to initialize Caption Writer:', error);
-                // Show user-friendly error in the container
-                container.innerHTML = `
+
+			if ( ! document.getElementById( 'skip-links-style' ) ) {
+				style.id = 'skip-links-style';
+				document.head.appendChild( style );
+			}
+
+			this.container.insertBefore( skipLinks, this.container.firstChild );
+
+			// Add IDs to skip targets
+			if ( this.elements.descriptionInput ) {
+				this.elements.descriptionInput.id = 'caption-generator';
+			}
+			if ( this.elements.finalCaptionTextarea ) {
+				this.elements.finalCaptionTextarea.id = 'final-caption';
+			}
+		}
+
+		setupFocusManagement() {
+			// Enhanced tab navigation
+			this.elements.tabButtons.forEach( ( button, index ) => {
+				button.addEventListener( 'keydown', ( e ) => {
+					let nextIndex = index;
+
+					if ( e.key === 'ArrowRight' || e.key === 'ArrowDown' ) {
+						e.preventDefault();
+						nextIndex =
+							( index + 1 ) % this.elements.tabButtons.length;
+					} else if ( e.key === 'ArrowLeft' || e.key === 'ArrowUp' ) {
+						e.preventDefault();
+						nextIndex =
+							( index - 1 + this.elements.tabButtons.length ) %
+							this.elements.tabButtons.length;
+					} else if ( e.key === 'Home' ) {
+						e.preventDefault();
+						nextIndex = 0;
+					} else if ( e.key === 'End' ) {
+						e.preventDefault();
+						nextIndex = this.elements.tabButtons.length - 1;
+					} else if ( e.key === 'Enter' || e.key === ' ' ) {
+						e.preventDefault();
+						this.switchTab( e.target.dataset.tab );
+						return;
+					}
+
+					if ( nextIndex !== index ) {
+						// Update tabindex
+						this.elements.tabButtons[ index ].setAttribute(
+							'tabindex',
+							'-1'
+						);
+						this.elements.tabButtons[ nextIndex ].setAttribute(
+							'tabindex',
+							'0'
+						);
+						this.elements.tabButtons[ nextIndex ].focus();
+					}
+				} );
+			} );
+
+			// Focus management for tab switching
+			const originalSwitchTab = this.switchTab.bind( this );
+			this.switchTab = ( tabName ) => {
+				originalSwitchTab( tabName );
+
+				// Update aria-selected and aria-hidden
+				this.elements.tabButtons.forEach( ( btn ) => {
+					btn.setAttribute(
+						'aria-selected',
+						btn.dataset.tab === tabName
+					);
+					btn.setAttribute(
+						'tabindex',
+						btn.dataset.tab === tabName ? '0' : '-1'
+					);
+				} );
+
+				this.elements.tabContents.forEach( ( content ) => {
+					const isActive = content.dataset.content === tabName;
+					content.setAttribute( 'aria-hidden', ! isActive );
+				} );
+
+				// Announce tab change
+				this.announceToScreenReader( `Switched to ${ tabName } tab` );
+			};
+		}
+
+		updateCharacterCountAccessibility() {
+			if ( this.charAnnouncerElement && this.elements.charCount ) {
+				const count = this.state.getState().characterCount;
+				const limit = this.state.getState().characterLimit;
+				const percentage = ( count / limit ) * 100;
+
+				if ( percentage > 90 ) {
+					let message = '';
+					if ( count > limit ) {
+						message = `Over character limit by ${
+							count - limit
+						} characters`;
+					} else if ( percentage > 95 ) {
+						message = `Approaching character limit. ${
+							limit - count
+						} characters remaining`;
+					}
+
+					if ( message ) {
+						this.charAnnouncerElement.textContent = message;
+					}
+				}
+			}
+		}
+
+		initializeFallbackMode() {
+			// Initialize without RWPStateManager using basic object state
+			this.state = {
+				_state: {
+					description: '',
+					platforms: [ 'instagram' ],
+					tone: 'casual',
+					generatedCaptions: [],
+					templates: [],
+					favorites: [],
+					finalCaption: '',
+					isGenerating: false,
+					activeTab: 'generator',
+					characterCount: 0,
+				},
+				getState() {
+					return this._state;
+				},
+				setState( newState ) {
+					Object.assign( this._state, newState );
+				},
+			};
+
+			this.elements = {};
+			this.initWithoutStateManager();
+		}
+
+		initWithoutStateManager() {
+			// Basic initialization without full state management
+			this.cacheElements();
+			this.loadBuiltInTemplates();
+
+			// Show user-friendly message about limited functionality
+			const errorDiv = this.container.querySelector( '[data-error]' );
+			if ( errorDiv ) {
+				errorDiv.style.display = 'block';
+				errorDiv.querySelector( '.error-message' ).textContent =
+					'Limited functionality mode. Some features may not work as expected.';
+			}
+		}
+
+		setupLoggedInExperience() {
+			// Show AI generator tab and make it active
+			const generatorTab = this.container.querySelector(
+				'[data-tab="generator"]'
+			);
+			const templatesTab = this.container.querySelector(
+				'[data-tab="templates"]'
+			);
+			const favoritesTab = this.container.querySelector(
+				'[data-tab="favorites"]'
+			);
+
+			if ( generatorTab ) {
+				generatorTab.classList.add( 'active' );
+			}
+			if ( templatesTab ) {
+				templatesTab.classList.remove( 'active' );
+			}
+			if ( favoritesTab ) {
+				favoritesTab.style.display = 'block';
+			}
+
+			// Show AI generator content and hide guest teaser
+			const generatorContent = this.container.querySelector(
+				'[data-content="generator"]'
+			);
+			const aiGeneratorSection = this.container.querySelector(
+				'.ai-generator-logged-in'
+			);
+			const guestTeaser = this.container.querySelector(
+				'.ai-generator-guest-teaser'
+			);
+			const templatesContent = this.container.querySelector(
+				'[data-content="templates"]'
+			);
+
+			if ( generatorContent ) {
+				generatorContent.classList.add( 'active' );
+			}
+			if ( aiGeneratorSection ) {
+				aiGeneratorSection.style.display = 'block';
+			}
+			if ( guestTeaser ) {
+				guestTeaser.style.display = 'none';
+			}
+			if ( templatesContent ) {
+				templatesContent.classList.remove( 'active' );
+			}
+
+			// Show save to favorites button and hide login prompt
+			const saveFavoriteBtn = this.container.querySelector(
+				'[data-save-favorite]'
+			);
+			const loginPrompt = this.container.querySelector( '.login-prompt' );
+
+			if ( saveFavoriteBtn ) {
+				saveFavoriteBtn.style.display = 'block';
+			}
+			if ( loginPrompt ) {
+				loginPrompt.style.display = 'none';
+			}
+
+			// Initialize logged-in user functionality
+			this.updateGenerateButtonState();
+			this.loadUserData();
+			this.loadInitialQuota();
+		}
+
+		setupGuestExperience() {
+			// Templates tab remains active (set in PHP), AI generator shows teaser
+			// This is the default state from PHP rendering
+
+			// Ensure favorites tab is hidden
+			const favoritesTab = this.container.querySelector(
+				'[data-tab="favorites"]'
+			);
+			if ( favoritesTab ) {
+				favoritesTab.style.display = 'none';
+			}
+
+			// Ensure guest teaser is visible and AI section is hidden
+			const aiGeneratorSection = this.container.querySelector(
+				'.ai-generator-logged-in'
+			);
+			const guestTeaser = this.container.querySelector(
+				'.ai-generator-guest-teaser'
+			);
+
+			if ( aiGeneratorSection ) {
+				aiGeneratorSection.style.display = 'none';
+			}
+			if ( guestTeaser ) {
+				guestTeaser.style.display = 'block';
+			}
+
+			// Ensure save favorites button is hidden and login prompt is shown
+			const saveFavoriteBtn = this.container.querySelector(
+				'[data-save-favorite]'
+			);
+			const loginPrompt = this.container.querySelector( '.login-prompt' );
+
+			if ( saveFavoriteBtn ) {
+				saveFavoriteBtn.style.display = 'none';
+			}
+			if ( loginPrompt ) {
+				loginPrompt.style.display = 'block';
+			}
+
+			// Load quota for guests too
+			this.loadInitialQuota();
+		}
+
+		escapeHtml( text ) {
+			const div = document.createElement( 'div' );
+			div.textContent = text;
+			return div.innerHTML;
+		}
+
+		scrollToElement( element, offset = 20 ) {
+			if ( ! element ) {
+				return;
+			}
+
+			const elementRect = element.getBoundingClientRect();
+			const absoluteElementTop = elementRect.top + window.pageYOffset;
+			const elementHeight = elementRect.height;
+			const viewportHeight = window.innerHeight;
+
+			// Center the element on the page
+			const top =
+				absoluteElementTop -
+				viewportHeight / 2 +
+				elementHeight / 2 +
+				offset;
+
+			window.scrollTo( {
+				top,
+				behavior: 'smooth',
+			} );
+		}
+	}
+
+	// Initialize Caption Writer apps when DOM is loaded
+	function initializeCaptionWriters() {
+		// Check for global dependencies
+		if ( typeof rwpCaptionWriter === 'undefined' ) {
+			console.error( 'CaptionWriter: Global configuration not loaded' );
+			return;
+		}
+
+		const containers = document.querySelectorAll(
+			'.rwp-caption-writer-container'
+		);
+
+		if ( containers.length === 0 ) {
+			return; // No caption writer blocks on this page
+		}
+
+		containers.forEach( ( container ) => {
+			try {
+				const config = JSON.parse( container.dataset.config || '{}' );
+				const app = new CaptionWriterApp( container, config );
+
+				// Store app instance on container for potential cleanup
+				container.captionWriterApp = app;
+			} catch ( error ) {
+				console.error( 'Failed to initialize Caption Writer:', error );
+				// Show user-friendly error in the container
+				container.innerHTML = `
                     <div class="caption-writer-error">
                         <div class="error-message">
                             Failed to initialize Caption Writer. Please refresh the page.
                         </div>
                     </div>
                 `;
-            }
-        });
-    }
-    
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeCaptionWriters);
-    } else {
-        initializeCaptionWriters();
-    }
-    
-})();
+			}
+		} );
+	}
+
+	// Initialize when DOM is ready
+	if ( document.readyState === 'loading' ) {
+		document.addEventListener(
+			'DOMContentLoaded',
+			initializeCaptionWriters
+		);
+	} else {
+		initializeCaptionWriters();
+	}
+} )();

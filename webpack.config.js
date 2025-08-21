@@ -57,10 +57,23 @@ module.exports = {
 			'src/blocks/account-manager/style.js'
 		),
 	},
-	// Performance monitoring for development
+
+	optimization: {
+		...defaultConfig.optimization,
+		splitChunks: {
+			cacheGroups: {
+				vendor: {
+					test: /[\\/]node_modules[\\/]/,
+					name: 'vendors',
+					chunks: 'all',
+				},
+			},
+		},
+	},
+
 	performance: {
 		hints: process.env.NODE_ENV === 'production' ? 'warning' : false,
-		maxEntrypointSize: 512000, // 500KB - reasonable for WordPress blocks
-		maxAssetSize: 512000,
+		maxEntrypointSize: 300000, // 300KB - optimized from 500KB
+		maxAssetSize: 300000,
 	},
 };

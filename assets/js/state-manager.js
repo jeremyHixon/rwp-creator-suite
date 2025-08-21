@@ -129,10 +129,10 @@ class StateManager {
 	setItem( key, data, options = {} ) {
 		const fullKey = `${ this.config.storagePrefix }${ key }`;
 		const storageData = {
-			data: data,
+			data,
 			timestamp: Date.now(),
 			version: '1.0',
-			options: options,
+			options,
 		};
 
 		try {
@@ -353,7 +353,9 @@ class StateManager {
 	}
 
 	saveViewedAccounts( viewedAccounts ) {
-		return this.setItem( 'viewed_accounts', viewedAccounts, { type: 'viewed' } );
+		return this.setItem( 'viewed_accounts', viewedAccounts, {
+			type: 'viewed',
+		} );
 	}
 
 	getViewedAccounts() {
@@ -376,95 +378,98 @@ class StateManager {
 
 /**
  * Generic RWP State Manager
- * 
+ *
  * A lightweight state management solution for RWP blocks with state persistence
  * and event handling capabilities.
  */
 class RWPStateManager {
-    constructor(namespace, initialState = {}) {
-        this.namespace = namespace;
-        this.state = { ...initialState };
-        this.listeners = [];
-        this.storageKey = `rwp_${namespace}_state`;
-        
-        // Load persisted state
-        this.loadState();
-    }
-    
-    setState(updates) {
-        const prevState = { ...this.state };
-        this.state = { ...this.state, ...updates };
-        
-        // Persist state
-        this.saveState();
-        
-        // Notify listeners
-        this.listeners.forEach(listener => {
-            try {
-                listener(this.state, prevState);
-            } catch (error) {
-                console.error('State listener error:', error);
-            }
-        });
-    }
-    
-    getState() {
-        return { ...this.state };
-    }
-    
-    subscribe(listener) {
-        if (typeof listener !== 'function') {
-            console.error('State listener must be a function');
-            return () => {};
-        }
-        
-        this.listeners.push(listener);
-        
-        // Return unsubscribe function
-        return () => {
-            const index = this.listeners.indexOf(listener);
-            if (index > -1) {
-                this.listeners.splice(index, 1);
-            }
-        };
-    }
-    
-    resetState() {
-        this.state = {};
-        this.clearPersistedState();
-    }
-    
-    loadState() {
-        try {
-            if (typeof Storage !== 'undefined') {
-                const stored = localStorage.getItem(this.storageKey);
-                if (stored) {
-                    const parsedState = JSON.parse(stored);
-                    this.state = { ...this.state, ...parsedState };
-                }
-            }
-        } catch (error) {
-            console.warn('Failed to load persisted state:', error);
-        }
-    }
-    
-    saveState() {
-        try {
-            if (typeof Storage !== 'undefined') {
-                localStorage.setItem(this.storageKey, JSON.stringify(this.state));
-            }
-        } catch (error) {
-            console.warn('Failed to persist state:', error);
-        }
-    }
-    
-    clearPersistedState() {
-        try {
-            if (typeof Storage !== 'undefined') {
-                localStorage.removeItem(this.storageKey);
-            }
-        } catch (error) {
-            console.warn('Failed to clear persisted state:', error);
-        }
-    }
+	constructor( namespace, initialState = {} ) {
+		this.namespace = namespace;
+		this.state = { ...initialState };
+		this.listeners = [];
+		this.storageKey = `rwp_${ namespace }_state`;
+
+		// Load persisted state
+		this.loadState();
+	}
+
+	setState( updates ) {
+		const prevState = { ...this.state };
+		this.state = { ...this.state, ...updates };
+
+		// Persist state
+		this.saveState();
+
+		// Notify listeners
+		this.listeners.forEach( ( listener ) => {
+			try {
+				listener( this.state, prevState );
+			} catch ( error ) {
+				console.error( 'State listener error:', error );
+			}
+		} );
+	}
+
+	getState() {
+		return { ...this.state };
+	}
+
+	subscribe( listener ) {
+		if ( typeof listener !== 'function' ) {
+			console.error( 'State listener must be a function' );
+			return () => {};
+		}
+
+		this.listeners.push( listener );
+
+		// Return unsubscribe function
+		return () => {
+			const index = this.listeners.indexOf( listener );
+			if ( index > -1 ) {
+				this.listeners.splice( index, 1 );
+			}
+		};
+	}
+
+	resetState() {
+		this.state = {};
+		this.clearPersistedState();
+	}
+
+	loadState() {
+		try {
+			if ( typeof Storage !== 'undefined' ) {
+				const stored = localStorage.getItem( this.storageKey );
+				if ( stored ) {
+					const parsedState = JSON.parse( stored );
+					this.state = { ...this.state, ...parsedState };
+				}
+			}
+		} catch ( error ) {
+			console.warn( 'Failed to load persisted state:', error );
+		}
+	}
+
+	saveState() {
+		try {
+			if ( typeof Storage !== 'undefined' ) {
+				localStorage.setItem(
+					this.storageKey,
+					JSON.stringify( this.state )
+				);
+			}
+		} catch ( error ) {
+			console.warn( 'Failed to persist state:', error );
+		}
+	}
+
+	clearPersistedState() {
+		try {
+			if ( typeof Storage !== 'undefined' ) {
+				localStorage.removeItem( this.storageKey );
+			}
+		} catch ( error ) {
+			console.warn( 'Failed to clear persisted state:', error );
+		}
+	}
 }

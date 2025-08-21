@@ -7,7 +7,7 @@
 // Mock the edit component
 const mockEdit = () => {
 	const blockProps = wp.blockEditor.useBlockProps();
-	
+
 	return wp.element.createElement(
 		'div',
 		blockProps,
@@ -15,7 +15,7 @@ const mockEdit = () => {
 			'div',
 			{
 				className: 'wp-block-placeholder',
-				'data-testid': 'caption-writer-placeholder'
+				'data-testid': 'caption-writer-placeholder',
 			},
 			wp.element.createElement(
 				'div',
@@ -25,7 +25,7 @@ const mockEdit = () => {
 			wp.element.createElement(
 				'div',
 				{ className: 'wp-block-placeholder__instructions' },
-				wp.i18n.__( 
+				wp.i18n.__(
 					'This block will display an AI-powered caption generation interface on the frontend.',
 					'rwp-creator-suite'
 				)
@@ -37,22 +37,22 @@ const mockEdit = () => {
 describe( 'Caption Writer Block Edit Component', () => {
 	beforeEach( () => {
 		// Mock useBlockProps to return basic props
-		wp.blockEditor.useBlockProps.mockReturnValue({
+		wp.blockEditor.useBlockProps.mockReturnValue( {
 			className: 'wp-block-rwp-creator-suite-caption-writer',
-			'data-block': 'caption-writer'
-		});
-	});
+			'data-block': 'caption-writer',
+		} );
+	} );
 
 	afterEach( () => {
 		// Clear DOM after each test
 		document.body.innerHTML = '';
-	});
+	} );
 
 	test( 'should render placeholder with correct label', () => {
 		// Create a container and render the component
 		const container = document.createElement( 'div' );
 		document.body.appendChild( container );
-		
+
 		// Mock React-like rendering
 		const element = mockEdit();
 		container.innerHTML = `
@@ -65,15 +65,19 @@ describe( 'Caption Writer Block Edit Component', () => {
 		`;
 
 		// Test that placeholder is rendered
-		const placeholder = container.querySelector( '[data-testid="caption-writer-placeholder"]' );
+		const placeholder = container.querySelector(
+			'[data-testid="caption-writer-placeholder"]'
+		);
 		expect( placeholder ).toBeDefined();
-		expect( placeholder.classList.contains( 'wp-block-placeholder' ) ).toBe( true );
-	});
+		expect( placeholder.classList.contains( 'wp-block-placeholder' ) ).toBe(
+			true
+		);
+	} );
 
 	test( 'should display correct block label', () => {
 		const container = document.createElement( 'div' );
 		document.body.appendChild( container );
-		
+
 		container.innerHTML = `
 			<div class="wp-block-rwp-creator-suite-caption-writer">
 				<div class="wp-block-placeholder">
@@ -85,12 +89,12 @@ describe( 'Caption Writer Block Edit Component', () => {
 		const label = container.querySelector( '.wp-block-placeholder__label' );
 		expect( label ).toBeDefined();
 		expect( label.textContent ).toBe( 'Caption Writer' );
-	});
+	} );
 
 	test( 'should display correct instructions', () => {
 		const container = document.createElement( 'div' );
 		document.body.appendChild( container );
-		
+
 		container.innerHTML = `
 			<div class="wp-block-rwp-creator-suite-caption-writer">
 				<div class="wp-block-placeholder">
@@ -99,18 +103,20 @@ describe( 'Caption Writer Block Edit Component', () => {
 			</div>
 		`;
 
-		const instructions = container.querySelector( '.wp-block-placeholder__instructions' );
-		expect( instructions ).toBeDefined();
-		expect( instructions.textContent ).toBe( 
-			'This block will display an AI-powered caption generation interface on the frontend.' 
+		const instructions = container.querySelector(
+			'.wp-block-placeholder__instructions'
 		);
-	});
+		expect( instructions ).toBeDefined();
+		expect( instructions.textContent ).toBe(
+			'This block will display an AI-powered caption generation interface on the frontend.'
+		);
+	} );
 
 	test( 'should use block props from useBlockProps hook', () => {
 		// Verify that useBlockProps is called
 		mockEdit();
 		expect( wp.blockEditor.useBlockProps ).toHaveBeenCalled();
-	});
+	} );
 
 	test( 'should use WordPress i18n for text translation', () => {
 		// Mock the translation function to track calls
@@ -119,20 +125,23 @@ describe( 'Caption Writer Block Edit Component', () => {
 
 		mockEdit();
 
-		expect( wp.i18n.__ ).toHaveBeenCalledWith( 'Caption Writer', 'rwp-creator-suite' );
-		expect( wp.i18n.__ ).toHaveBeenCalledWith( 
+		expect( wp.i18n.__ ).toHaveBeenCalledWith(
+			'Caption Writer',
+			'rwp-creator-suite'
+		);
+		expect( wp.i18n.__ ).toHaveBeenCalledWith(
 			'This block will display an AI-powered caption generation interface on the frontend.',
 			'rwp-creator-suite'
 		);
 
 		// Restore original function
 		wp.i18n.__ = originalTranslate;
-	});
+	} );
 
 	test( 'should render with correct CSS classes', () => {
 		const container = document.createElement( 'div' );
 		document.body.appendChild( container );
-		
+
 		container.innerHTML = `
 			<div class="wp-block-rwp-creator-suite-caption-writer" data-block="caption-writer">
 				<div class="wp-block-placeholder">
@@ -141,18 +150,22 @@ describe( 'Caption Writer Block Edit Component', () => {
 			</div>
 		`;
 
-		const blockElement = container.querySelector( '.wp-block-rwp-creator-suite-caption-writer' );
+		const blockElement = container.querySelector(
+			'.wp-block-rwp-creator-suite-caption-writer'
+		);
 		expect( blockElement ).toBeDefined();
-		expect( blockElement.getAttribute( 'data-block' ) ).toBe( 'caption-writer' );
-		
+		expect( blockElement.getAttribute( 'data-block' ) ).toBe(
+			'caption-writer'
+		);
+
 		const placeholder = container.querySelector( '.wp-block-placeholder' );
 		expect( placeholder ).toBeDefined();
-	});
+	} );
 
 	test( 'should be accessible with proper structure', () => {
 		const container = document.createElement( 'div' );
 		document.body.appendChild( container );
-		
+
 		container.innerHTML = `
 			<div class="wp-block-rwp-creator-suite-caption-writer">
 				<div class="wp-block-placeholder">
@@ -164,11 +177,13 @@ describe( 'Caption Writer Block Edit Component', () => {
 
 		// Check that label and instructions are present for screen readers
 		const label = container.querySelector( '.wp-block-placeholder__label' );
-		const instructions = container.querySelector( '.wp-block-placeholder__instructions' );
-		
+		const instructions = container.querySelector(
+			'.wp-block-placeholder__instructions'
+		);
+
 		expect( label ).toBeDefined();
 		expect( instructions ).toBeDefined();
 		expect( label.textContent ).toBeTruthy();
 		expect( instructions.textContent ).toBeTruthy();
-	});
-});
+	} );
+} );

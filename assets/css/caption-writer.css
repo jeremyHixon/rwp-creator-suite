@@ -3,6 +3,8 @@
  * DaisyUI Light Theme - Consistent with Instagram Analyzer & Banner blocks
  */
 
+/* Accessibility - Using Tailwind's sr-only class is preferred, but keeping fallback */
+
 /* Base Container */
 .rwp-caption-writer-container {
     font-family: system-ui, -apple-system, sans-serif;

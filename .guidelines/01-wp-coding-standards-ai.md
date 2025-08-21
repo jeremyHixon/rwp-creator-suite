@@ -198,6 +198,47 @@ jQuery.ajax({
 function name( $id ) {}
 ```
 
+## Debugging
+
+### Enable Debug Mode
+Add to `wp-config.php`:
+```php
+define('WP_DEBUG', true);
+define('WP_DEBUG_LOG', true);
+define('WP_DEBUG_DISPLAY', false);
+```
+
+### Logging Patterns
+```php
+// Log errors
+error_log('Debug message: ' . $variable);
+
+// Log arrays/objects
+error_log('Debug data: ' . print_r($data, true));
+
+// Performance logging
+$start_time = microtime(true);
+// ... code execution ...
+$duration = microtime(true) - $start_time;
+if ($duration > 1.0) {
+    error_log("Slow operation: {$duration}s");
+}
+```
+
+### Browser Debugging
+```javascript
+// Use console groups for organized logging
+console.group('My Component Debug');
+console.log('State:', this.state.getState());
+console.log('Elements:', this.elements);
+console.groupEnd();
+
+// Performance timing
+console.time('Operation');
+// ... code execution ...
+console.timeEnd('Operation');
+```
+
 ## Critical Rules
 1. Prefix everything: `plugin_name_`
 2. Escape output: `esc_*`
@@ -207,3 +248,5 @@ function name( $id ) {}
 6. Use `$wpdb->prepare()`
 7. Text domain: `'plugin-name'`
 8. **Nest All Admin Pages**: All admin option pages MUST use `add_submenu_page()` with parent slug `'rwp-creator-tools'` - never create additional top-level menus
+9. **Enable Debug Logging**: Use WordPress debug constants and error_log for development
+10. **Performance Aware**: Log slow operations and monitor execution times

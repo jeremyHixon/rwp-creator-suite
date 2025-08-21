@@ -985,6 +985,123 @@ module.exports = {
 };
 ```
 
+## Version Management Process
+
+### Version Update Workflow
+When releasing a new version, update these locations in order:
+
+1. **package.json**: Update version number
+   ```json
+   {
+     "name": "rwp-creator-suite",
+     "version": "1.2.0"
+   }
+   ```
+
+2. **Main Plugin File Header**: Update version in plugin header
+   ```php
+   /**
+    * Plugin Name: RWP Creator Suite
+    * Version: 1.2.0
+    * Description: WordPress plugin for content creators
+    */
+   ```
+
+3. **readme.txt**: Update stable tag
+   ```
+   === RWP Creator Suite ===
+   Stable tag: 1.2.0
+   Tested up to: 6.4
+   Requires at least: 5.8
+   ```
+
+### Build Process Commands
+```bash
+# Development build
+npm run build
+
+# Production build with optimizations
+npm run build:production
+
+# Create deployment package
+npm run package
+
+# Complete release workflow
+npm version patch  # Updates package.json
+npm run build:production
+npm run package
+```
+
+### Deployment Package Creation
+```bash
+# Manual package creation
+mkdir -p package
+zip -r package/rwp-creator-suite-1.2.0.zip . \
+  -x "node_modules/*" \
+     "tests/*" \
+     "src/*" \
+     ".git/*" \
+     ".gitignore" \
+     "package*.json" \
+     "webpack.config.js" \
+     "jest.config.js" \
+     ".eslintrc.js" \
+     "phpunit.xml" \
+     "composer.json" \
+     "composer.lock" \
+     "assets/js/*" \
+     "assets/css/*" \
+     "**/*.map"
+```
+
+### Automated Version Bumping
+```javascript
+// scripts/version-bump.js
+const fs = require('fs');
+const path = require('path');
+
+function updatePluginVersion(version) {
+    // Update main plugin file
+    const pluginFile = path.resolve(__dirname, '../rwp-creator-suite.php');
+    let content = fs.readFileSync(pluginFile, 'utf8');
+    content = content.replace(
+        /Version:\s*[\d.]+/,
+        `Version: ${version}`
+    );
+    fs.writeFileSync(pluginFile, content);
+    
+    // Update readme.txt
+    const readmeFile = path.resolve(__dirname, '../readme.txt');
+    let readmeContent = fs.readFileSync(readmeFile, 'utf8');
+    readmeContent = readmeContent.replace(
+        /Stable tag:\s*[\d.]+/,
+        `Stable tag: ${version}`
+    );
+    fs.writeFileSync(readmeFile, readmeContent);
+    
+    console.log(`Updated version to ${version}`);
+}
+
+// Run with: node scripts/version-bump.js 1.2.0
+const version = process.argv[2];
+if (version) {
+    updatePluginVersion(version);
+} else {
+    console.error('Please provide a version number');
+}
+```
+
+### Release Checklist
+- [ ] Update version in package.json
+- [ ] Update version in main plugin file header
+- [ ] Update stable tag in readme.txt
+- [ ] Run full test suite (`npm run test:coverage`)
+- [ ] Build production assets (`npm run build:production`)
+- [ ] Test in clean WordPress installation
+- [ ] Create git tag for release
+- [ ] Generate deployment package
+- [ ] Update changelog/release notes
+
 ### Critical Deployment Rules
 
 1. **Always Build for Production** - Use `NODE_ENV=production`
@@ -996,6 +1113,8 @@ module.exports = {
 7. **Automated Testing** - Never deploy without tests passing
 8. **Nest All Admin Pages** - All admin option pages MUST use `add_submenu_page()` with parent slug `'rwp-creator-tools'` - never create additional top-level menus
 9. **Rollback Strategy** - Always have a way to revert changes
+10. **Version Consistency** - Update all version references consistently
+11. **Clean Packages** - Exclude development files from deployment packages
 
 ## LocalWP Development Environment Issues
 

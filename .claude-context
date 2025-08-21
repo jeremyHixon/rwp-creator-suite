@@ -30,6 +30,101 @@ Review this plugin in its entirity. Look for deviations from the guidelines and 
 - **Feature flags**: Use feature toggles for experimental functionality
 - **Database migrations**: Only add columns/tables, never remove without explicit instruction
 
+## Performance Best Practices
+
+### Database Optimization
+- **Always use caching**: `wp_cache_get/set` for expensive operations
+- **Optimize queries**: Combine multiple queries when possible, use `$wpdb->prepare()`
+- **Monitor slow queries**: Log queries taking more than 1 second
+
+### Frontend Performance
+- **Lazy load components**: Only initialize when needed with dynamic imports
+- **Debounce user input**: Use 300ms debounce for search/API calls
+- **Batch DOM updates**: Use DocumentFragment for multiple DOM changes
+- **Event delegation**: Use container event listeners instead of individual ones
+
+### State Management Performance
+- **localStorage first**: Check localStorage before making API calls
+- **Debounced persistence**: Save state changes with 1-second debounce
+- **Clean expired data**: Remove old localStorage entries regularly
+- **Memory management**: Implement LRU cache for API responses
+
+## Enhanced Security Guidelines
+
+### Input Sanitization Patterns
+```php
+// Sanitize by data type
+$title = sanitize_text_field( $_POST['title'] );
+$content = wp_kses_post( $_POST['content'] );
+$email = sanitize_email( $_POST['email'] );
+$url = esc_url_raw( $_POST['url'] );
+$number = absint( $_POST['count'] );
+```
+
+### Nonce Implementation
+```php
+// Create nonce for forms
+wp_nonce_field( 'plugin_name_action', 'plugin_name_nonce' );
+
+// Verify nonce in processing
+if ( ! wp_verify_nonce( $_POST['plugin_name_nonce'], 'plugin_name_action' ) ) {
+    wp_die( 'Security check failed' );
+}
+
+// REST API nonce verification
+$nonce = $request->get_header( 'X-WP-Nonce' );
+if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+    return new WP_Error( 'rest_forbidden', 'Invalid nonce', array( 'status' => 403 ) );
+}
+```
+
+### Output Escaping by Context
+```php
+// HTML content
+echo esc_html( $user_data );
+
+// HTML attributes
+echo '<div class="' . esc_attr( $css_class ) . '">';
+
+// URLs
+echo '<a href="' . esc_url( $link ) . '">';
+
+// JavaScript data
+echo '<script>var data = ' . wp_json_encode( $data ) . ';</script>';
+```
+
+## Debugging and Monitoring
+
+### Development Debugging
+```php
+// Enable WordPress debugging
+define('WP_DEBUG', true);
+define('WP_DEBUG_LOG', true);
+define('WP_DEBUG_DISPLAY', false);
+
+// Performance logging
+$start_time = microtime(true);
+// ... operation ...
+$duration = microtime(true) - $start_time;
+if ($duration > 1.0) {
+    error_log("Slow operation: {$duration}s");
+}
+```
+
+### JavaScript Performance Monitoring
+```javascript
+// Track API performance
+console.time('API Call');
+await apiClient.getData();
+console.timeEnd('API Call');
+
+// Monitor state changes
+console.group('State Update');
+console.log('Previous:', previousState);
+console.log('New:', newState);
+console.groupEnd();
+```
+
 ## Pre-Implementation Analysis Protocol
 
 ### Analysis-First Development Workflow

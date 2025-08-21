@@ -919,6 +919,96 @@ class RWP_Creator_Suite_Test_Environment_Validator {
 }
 ```
 
+## Commit Message Conventions
+
+### Conventional Commit Format
+Use conventional commit format for consistent version control:
+
+```bash
+# Feature commits
+feat: add new user preferences API endpoint
+feat(blocks): implement lazy loading for heavy components
+
+# Bug fixes  
+fix: resolve localStorage fallback in Safari
+fix(api): handle empty response from server gracefully
+
+# Documentation
+docs: update developer guide with new testing patterns
+docs(readme): add troubleshooting section
+
+# Code style/formatting
+style: fix indentation in state manager
+style(css): organize block styles alphabetically
+
+# Refactoring
+refactor: extract common API patterns into base class
+refactor(state): simplify user transition logic
+
+# Tests
+test: add integration tests for user preferences
+test(js): mock localStorage in all component tests
+
+# Performance improvements
+perf: optimize database queries in analytics module
+perf(frontend): debounce search input to reduce API calls
+```
+
+### Pull Request Process
+
+1. **Create Feature Branch**: Always branch from `main`
+   ```bash
+   git checkout main
+   git pull origin main
+   git checkout -b feature/new-analytics-dashboard
+   ```
+
+2. **Implement Changes**: Include comprehensive tests
+   ```bash
+   # Run tests during development
+   npm run test:js:watch
+   ./vendor/bin/phpunit --filter=Analytics
+   ```
+
+3. **Run Full Test Suite**: Before submitting PR
+   ```bash
+   npm run test:coverage
+   composer test
+   npm run lint:js
+   npm run lint:css
+   ```
+
+4. **Submit Pull Request**: With detailed description
+   - Describe what the PR does and why
+   - Include testing instructions
+   - Reference any related issues
+   - Ensure CI passes before requesting review
+
+5. **Code Review**: Address feedback promptly
+   - Respond to comments constructively
+   - Make requested changes in additional commits
+   - Keep PR scope focused and manageable
+
+### Git Workflow Best Practices
+
+```bash
+# Commit frequently with meaningful messages
+git add src/modules/analytics/
+git commit -m "feat(analytics): add user engagement tracking
+
+- Track page views and time on page
+- Store data in localStorage with server sync
+- Add privacy controls for GDPR compliance"
+
+# Keep commits atomic and focused
+git add tests/test-analytics.php
+git commit -m "test(analytics): add unit tests for engagement tracker"
+
+# Rebase before merging to maintain clean history
+git rebase main
+git push origin feature/analytics --force-with-lease
+```
+
 ## Critical Testing Rules
 
 1. **Mock WordPress Functions** - Use Brain Monkey for unit tests
@@ -930,3 +1020,5 @@ class RWP_Creator_Suite_Test_Environment_Validator {
 7. **Error Handling** - Test failure scenarios
 8. **Nest All Admin Pages** - All admin option pages MUST use `add_submenu_page()` with parent slug `'rwp-creator-tools'` - never create additional top-level menus
 9. **Performance Testing** - Test with large datasets
+10. **Conventional Commits** - Use standard commit message format
+11. **PR Best Practices** - Include tests, documentation, and detailed descriptions

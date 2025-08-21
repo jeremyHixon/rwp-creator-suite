@@ -15,6 +15,8 @@ This document outlines the implementation strategy for Phase 3 UI/UX improvement
 
 **Impact:** Transforms the plugin into a premium, accessible, and delightful user experience
 
+**Notes:** You must use Tailwind/DaisyUI component classes in place of standard CSS wherever possible.
+
 ---
 
 ## 1. Complete Accessibility Overhaul

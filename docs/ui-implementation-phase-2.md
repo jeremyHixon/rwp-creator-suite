@@ -15,6 +15,8 @@ This document outlines the implementation strategy for Phase 2 UI/UX improvement
 
 **Target Blocks:** All blocks with focus on input-heavy interfaces
 
+**Notes:** You must use Tailwind/DaisyUI component classes in place of standard CSS wherever possible.
+
 ---
 
 ## 1. Input Field Enhancements

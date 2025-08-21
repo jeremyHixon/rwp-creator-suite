@@ -13,6 +13,8 @@ This document outlines the implementation strategy for Phase 1 UI/UX improvement
 
 **Target Blocks:** Caption Writer, Content Repurposer, Instagram Analyzer
 
+**Notes:** You must use Tailwind/DaisyUI component classes in place of standard CSS wherever possible.
+
 ---
 
 ## 1. Platform Selection Cards Redesign

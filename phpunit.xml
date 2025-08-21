@@ -20,6 +20,13 @@
 			<file>tests/test-service-container.php</file>
 			<file>tests/test-transient-manager.php</file>
 			<file>tests/test-api-validation-trait.php</file>
+			<file>tests/test-instagram-analyzer-api.php</file>
+			<file>tests/test-analytics-api.php</file>
+			<file>tests/test-user-value-api.php</file>
+			<file>tests/test-account-manager-api.php</file>
+		</testsuite>
+		<testsuite name="Integration Tests">
+			<directory>tests/integration/</directory>
 		</testsuite>
 	</testsuites>
 	

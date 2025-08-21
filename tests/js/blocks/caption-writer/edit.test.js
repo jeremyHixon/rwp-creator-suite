@@ -2,7 +2,7 @@
  * Tests for Caption Writer block edit component
  */
 
-import { render, screen } from '@testing-library/dom';
+// Tests use DOM manipulation patterns without external imports
 
 // Mock the edit component
 const mockEdit = () => {

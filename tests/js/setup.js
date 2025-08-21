@@ -4,7 +4,7 @@
  * This file is run before each test file is executed.
  */
 
-import '@testing-library/jest-dom';
+require('@testing-library/jest-dom');
 
 // Mock WordPress globals
 global.wp = {

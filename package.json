@@ -45,9 +45,9 @@
 			"^@/(.*)$": "<rootDir>/assets/js/$1"
 		},
 		"collectCoverageFrom": [
-			"assets/js/**/*.js",
-			"src/blocks/**/*.js",
-			"!assets/js/**/*.min.js",
+			"tests/js/**/*.js",
+			"!tests/js/setup.js",
+			"!tests/js/helpers/**",
 			"!**/node_modules/**",
 			"!**/build/**"
 		],
@@ -55,8 +55,17 @@
 		"coverageReporters": [
 			"text",
 			"html",
-			"lcov"
-		]
+			"lcov",
+			"json-summary"
+		],
+		"coverageThreshold": {
+			"global": {
+				"branches": 70,
+				"functions": 70,
+				"lines": 70,
+				"statements": 70
+			}
+		}
 	},
 	"dependencies": {
 		"lodash": "^4.17.21"

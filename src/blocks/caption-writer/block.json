@@ -20,6 +20,7 @@
   "textdomain": "rwp-creator-suite",
   "editorScript": "file:./index.js",
   "editorStyle": "file:./editor.scss",
+  "style": ["file:./style.css", "file:./style-style.css"],
   "render": "file:./render.php",
   "attributes": {
     "platforms": {

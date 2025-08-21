@@ -18,7 +18,7 @@
 	"textdomain": "rwp-creator-suite",
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./editor.css",
-	"style": "file:./style-style.css",
+	"style": ["file:./style.css", "file:./style-style.css"],
 	"render": "file:./render.php",
 	"supports": {
 		"html": false,

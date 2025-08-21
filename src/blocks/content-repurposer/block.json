@@ -35,5 +35,6 @@
 	},
 	"textdomain": "rwp-creator-suite",
 	"editorScript": "file:./index.js",
-	"editorStyle": "file:./editor.css"
+	"editorStyle": "file:./editor.css",
+	"style": ["file:./style.css", "file:./style-style.css"]
 }

@@ -3,6 +3,7 @@ import metadata from './block.json';
 import Edit from './edit';
 import save from './save';
 import './editor';
+import './style';
 
 const { name } = metadata;
 

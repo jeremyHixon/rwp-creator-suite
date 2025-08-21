@@ -1,8 +1,12 @@
 <?php
 /**
  * Caption Writer API
- * 
+ *
  * Handles REST API endpoints for caption generation and user data.
+ *
+ * @package    RWP_Creator_Suite
+ * @subpackage RWP_Creator_Suite/caption-writer
+ * @since      1.0.0
  */
 
 defined( 'ABSPATH' ) || exit;

@@ -1,9 +1,13 @@
 <?php
 /**
  * Comprehensive Cache Manager
- * 
+ *
  * Multi-tier caching system with intelligent invalidation and performance metrics.
  * Supports memory cache, transients, and object cache for optimal performance.
+ *
+ * @package    RWP_Creator_Suite
+ * @subpackage RWP_Creator_Suite/common
+ * @since      1.0.0
  */
 
 defined( 'ABSPATH' ) || exit;

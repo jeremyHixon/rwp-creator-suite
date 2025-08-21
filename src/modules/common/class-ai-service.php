@@ -1,9 +1,13 @@
 <?php
 /**
  * AI Service
- * 
+ *
  * Handles integration with AI services (OpenAI, Claude, etc.) for various AI tasks
  * including caption generation and content repurposing.
+ *
+ * @package    RWP_Creator_Suite
+ * @subpackage RWP_Creator_Suite/common
+ * @since      1.0.0
  */
 
 defined( 'ABSPATH' ) || exit;

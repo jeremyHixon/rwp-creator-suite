@@ -3,6 +3,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Phase 3 UI/UX Enhancement Imports */
+@import './accessibility.css';
+@import './mobile.css';
+@import './animations.css';
+
 /* CSS Isolation Reset Pattern - Applied to all block containers */
 .wp-block-rwp-creator-suite-instagram-analyzer,
 .wp-block-rwp-creator-suite-instagram-banner,
@@ -30,6 +35,26 @@
   /* Ensure block boundary */
   container-type: inline-size;
   isolation: isolate;
+  
+  /* Phase 3: Progressive enhancement detection */
+  &.blk-has-touch {
+    touch-action: manipulation;
+  }
+  
+  &.blk-reduced-motion {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+  
+  &.blk-high-contrast {
+    * {
+      border-width: 2px;
+      outline-width: 2px;
+    }
+  }
 }
 
 /* Light Theme Variables for DaisyUI */
@@ -44,4 +69,25 @@
   --blk-neutral: #f8fafc;      /* Light background */
   --blk-base-100: #ffffff;     /* Pure white */
   --blk-base-content: #1f2937; /* Dark text */
+  
+  /* Phase 3: Enhanced color system */
+  --blk-success: #059669;
+  --blk-warning: #d97706;
+  --blk-error: #dc2626;
+  --blk-info: #0284c7;
+  
+  /* Focus colors */
+  --blk-focus-ring: rgba(59, 130, 246, 0.2);
+  --blk-focus-border: #3b82f6;
+  
+  /* Animation easing */
+  --blk-ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --blk-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --blk-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Shadow system */
+  --blk-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --blk-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --blk-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --blk-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }

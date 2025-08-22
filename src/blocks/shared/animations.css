@@ -1,0 +1,567 @@
+/**
+ * Advanced Micro-Animations System
+ * Phase 3 UI/UX Implementation
+ * 
+ * Comprehensive animation utilities with performance optimization
+ * and accessibility support
+ */
+
+/* Base Animation Utilities */
+.blk-animate-fade-in {
+    animation: blk-fadeIn 0.6s ease-out forwards;
+}
+
+.blk-animate-slide-up {
+    animation: blk-slideUp 0.5s ease-out forwards;
+}
+
+.blk-animate-slide-down {
+    animation: blk-slideDown 0.5s ease-out forwards;
+}
+
+.blk-animate-slide-left {
+    animation: blk-slideLeft 0.5s ease-out forwards;
+}
+
+.blk-animate-slide-right {
+    animation: blk-slideRight 0.5s ease-out forwards;
+}
+
+.blk-animate-scale-in {
+    animation: blk-scaleIn 0.4s ease-out forwards;
+}
+
+.blk-animate-scale-out {
+    animation: blk-scaleOut 0.3s ease-in forwards;
+}
+
+.blk-animate-bounce-in {
+    animation: blk-bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.blk-animate-elastic-in {
+    animation: blk-elasticIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.blk-animate-flip-in {
+    animation: blk-flipIn 0.6s ease-out forwards;
+}
+
+/* Staggered Animation Delays */
+.blk-animate-stagger-1 { animation-delay: 0.1s; }
+.blk-animate-stagger-2 { animation-delay: 0.2s; }
+.blk-animate-stagger-3 { animation-delay: 0.3s; }
+.blk-animate-stagger-4 { animation-delay: 0.4s; }
+.blk-animate-stagger-5 { animation-delay: 0.5s; }
+.blk-animate-stagger-6 { animation-delay: 0.6s; }
+
+/* Dynamic stagger calculations */
+.blk-stagger-container {
+    --stagger-delay: 0.1s;
+}
+
+.blk-stagger-container .blk-stagger-item:nth-child(1) { animation-delay: calc(var(--stagger-delay) * 0); }
+.blk-stagger-container .blk-stagger-item:nth-child(2) { animation-delay: calc(var(--stagger-delay) * 1); }
+.blk-stagger-container .blk-stagger-item:nth-child(3) { animation-delay: calc(var(--stagger-delay) * 2); }
+.blk-stagger-container .blk-stagger-item:nth-child(4) { animation-delay: calc(var(--stagger-delay) * 3); }
+.blk-stagger-container .blk-stagger-item:nth-child(5) { animation-delay: calc(var(--stagger-delay) * 4); }
+.blk-stagger-container .blk-stagger-item:nth-child(6) { animation-delay: calc(var(--stagger-delay) * 5); }
+
+/* Keyframe Definitions */
+@keyframes blk-fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes blk-slideUp {
+    from { 
+        opacity: 0; 
+        transform: translateY(30px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+@keyframes blk-slideDown {
+    from { 
+        opacity: 0; 
+        transform: translateY(-30px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+@keyframes blk-slideLeft {
+    from { 
+        opacity: 0; 
+        transform: translateX(30px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateX(0); 
+    }
+}
+
+@keyframes blk-slideRight {
+    from { 
+        opacity: 0; 
+        transform: translateX(-30px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateX(0); 
+    }
+}
+
+@keyframes blk-scaleIn {
+    from { 
+        opacity: 0; 
+        transform: scale(0.9); 
+    }
+    to { 
+        opacity: 1; 
+        transform: scale(1); 
+    }
+}
+
+@keyframes blk-scaleOut {
+    from { 
+        opacity: 1; 
+        transform: scale(1); 
+    }
+    to { 
+        opacity: 0; 
+        transform: scale(0.9); 
+    }
+}
+
+@keyframes blk-bounceIn {
+    0% { 
+        opacity: 0; 
+        transform: scale(0.3); 
+    }
+    50% { 
+        opacity: 1; 
+        transform: scale(1.05); 
+    }
+    70% { 
+        transform: scale(0.9); 
+    }
+    100% { 
+        opacity: 1; 
+        transform: scale(1); 
+    }
+}
+
+@keyframes blk-elasticIn {
+    0% { 
+        opacity: 0; 
+        transform: scale(0.3) rotate(-10deg); 
+    }
+    50% { 
+        transform: scale(1.05) rotate(5deg); 
+    }
+    70% { 
+        transform: scale(0.9) rotate(-1deg); 
+    }
+    100% { 
+        opacity: 1; 
+        transform: scale(1) rotate(0deg); 
+    }
+}
+
+@keyframes blk-flipIn {
+    0% { 
+        opacity: 0; 
+        transform: perspective(400px) rotateY(-90deg); 
+    }
+    40% { 
+        transform: perspective(400px) rotateY(-20deg); 
+    }
+    60% { 
+        opacity: 1; 
+        transform: perspective(400px) rotateY(10deg); 
+    }
+    80% { 
+        transform: perspective(400px) rotateY(-5deg); 
+    }
+    100% { 
+        opacity: 1; 
+        transform: perspective(400px) rotateY(0deg); 
+    }
+}
+
+/* Spin Animation */
+@keyframes blk-spin {
+    to { transform: rotate(360deg); }
+}
+
+.blk-animate-spin {
+    animation: blk-spin 1s linear infinite;
+}
+
+/* Pulse Animation */
+@keyframes blk-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.blk-animate-pulse {
+    animation: blk-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Ripple Effect */
+.blk-ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.blk-ripple-effect {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(0);
+    animation: blk-ripple-animation 0.6s linear;
+    pointer-events: none;
+}
+
+@keyframes blk-ripple-animation {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+/* Button Animations */
+.blk-btn-enhanced {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+}
+
+.blk-btn-enhanced:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.blk-btn-enhanced:active {
+    transform: translateY(0);
+    transition-duration: 0.1s;
+}
+
+.blk-btn-enhanced.blk-btn-loading {
+    color: transparent;
+    pointer-events: none;
+}
+
+.blk-btn-enhanced.blk-btn-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin-top: -8px;
+    margin-left: -8px;
+    border: 2px solid currentColor;
+    border-top: 2px solid transparent;
+    border-radius: 50%;
+    animation: blk-spin 1s linear infinite;
+}
+
+/* Card Reveal Animations */
+.blk-card-reveal {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.blk-card-reveal.blk-in-view {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.blk-card-hover {
+    transition: all 0.3s ease;
+}
+
+.blk-card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Platform Card Animations */
+.blk-platform-card {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+}
+
+.blk-platform-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.blk-platform-card:active {
+    transform: translateY(0);
+    transition-duration: 0.1s;
+}
+
+.blk-platform-card[aria-pressed="true"] {
+    animation: blk-platform-select 0.3s ease-out;
+}
+
+@keyframes blk-platform-select {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Loading State Animations */
+.blk-skeleton-shimmer {
+    background: linear-gradient(
+        90deg,
+        #f1f5f9 25%,
+        #e2e8f0 50%,
+        #f1f5f9 75%
+    );
+    background-size: 200% 100%;
+    animation: blk-shimmer 1.5s infinite;
+}
+
+@keyframes blk-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.blk-loading-dots {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.blk-loading-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: blk-loading-dot 1.4s infinite ease-in-out both;
+}
+
+.blk-loading-dot:nth-child(1) { animation-delay: -0.32s; }
+.blk-loading-dot:nth-child(2) { animation-delay: -0.16s; }
+.blk-loading-dot:nth-child(3) { animation-delay: 0; }
+
+@keyframes blk-loading-dot {
+    0%, 80%, 100% { 
+        transform: scale(0.8); 
+        opacity: 0.5; 
+    }
+    40% { 
+        transform: scale(1); 
+        opacity: 1; 
+    }
+}
+
+/* Success/Error Animations */
+.blk-success-checkmark {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #10b981;
+    position: relative;
+    display: inline-block;
+    animation: blk-success-scale 0.4s ease-out;
+}
+
+.blk-success-checkmark::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 8px;
+    width: 8px;
+    height: 4px;
+    border: 2px solid white;
+    border-top: none;
+    border-right: none;
+    transform: rotate(-45deg);
+    animation: blk-checkmark-draw 0.6s ease-out 0.2s both;
+}
+
+@keyframes blk-success-scale {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+}
+
+@keyframes blk-checkmark-draw {
+    0% { 
+        width: 0; 
+        height: 0; 
+    }
+    50% { 
+        width: 8px; 
+        height: 0; 
+    }
+    100% { 
+        width: 8px; 
+        height: 4px; 
+    }
+}
+
+.blk-error-cross {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #ef4444;
+    position: relative;
+    display: inline-block;
+    animation: blk-error-shake 0.5s ease-in-out;
+}
+
+.blk-error-cross::before,
+.blk-error-cross::after {
+    content: '';
+    position: absolute;
+    top: 11px;
+    left: 6px;
+    width: 12px;
+    height: 2px;
+    background: white;
+    border-radius: 1px;
+}
+
+.blk-error-cross::before {
+    transform: rotate(45deg);
+}
+
+.blk-error-cross::after {
+    transform: rotate(-45deg);
+}
+
+@keyframes blk-error-shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+}
+
+/* Text Reveal Animation */
+.blk-text-reveal {
+    overflow: hidden;
+}
+
+.blk-text-reveal .blk-word {
+    display: inline-block;
+    transform: translateY(100%);
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.blk-text-reveal.blk-animate .blk-word {
+    transform: translateY(0);
+}
+
+/* Scroll-based Animations */
+.blk-parallax {
+    will-change: transform;
+}
+
+.blk-parallax-slow {
+    transform: translateY(calc(var(--scroll-progress) * -50px));
+}
+
+.blk-parallax-medium {
+    transform: translateY(calc(var(--scroll-progress) * -100px));
+}
+
+.blk-parallax-fast {
+    transform: translateY(calc(var(--scroll-progress) * -150px));
+}
+
+/* Performance Optimizations */
+.blk-will-change-transform {
+    will-change: transform;
+}
+
+.blk-will-change-opacity {
+    will-change: opacity;
+}
+
+.blk-will-change-contents {
+    will-change: contents;
+}
+
+.blk-gpu-accelerated {
+    transform: translateZ(0);
+}
+
+/* Hover States with Animations */
+.blk-hover-lift:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease;
+}
+
+.blk-hover-grow:hover {
+    transform: scale(1.02);
+    transition: transform 0.2s ease;
+}
+
+.blk-hover-glow:hover {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    transition: box-shadow 0.3s ease;
+}
+
+/* Focus Animations */
+.blk-focus-pulse:focus-visible {
+    animation: blk-focus-pulse-animation 1s ease-in-out infinite alternate;
+}
+
+@keyframes blk-focus-pulse-animation {
+    from { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
+    to { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.1); }
+}
+
+/* Reduced Motion Overrides */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    
+    .blk-parallax,
+    .blk-parallax-slow,
+    .blk-parallax-medium,
+    .blk-parallax-fast {
+        transform: none !important;
+    }
+    
+    .blk-card-reveal,
+    .blk-platform-card {
+        transform: none !important;
+        transition: none !important;
+    }
+    
+    /* Keep essential transitions for accessibility */
+    .blk-btn-enhanced:focus-visible,
+    .blk-form-input:focus-visible,
+    .blk-platform-card:focus-visible {
+        transition-duration: 0.1s !important;
+    }
+}
+
+/* High Performance Mode (when frame rate is low) */
+.blk-reduced-performance .blk-card-reveal,
+.blk-reduced-performance .blk-platform-card,
+.blk-reduced-performance .blk-btn-enhanced {
+    transition: none !important;
+    animation: none !important;
+}
+
+.blk-reduced-performance .blk-skeleton-shimmer {
+    background: #e2e8f0 !important;
+    animation: none !important;
+}

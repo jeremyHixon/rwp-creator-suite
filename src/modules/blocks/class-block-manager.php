@@ -425,7 +425,7 @@ class RWP_Creator_Suite_Block_Manager {
         wp_enqueue_style(
             'rwp-content-repurposer-style',
             RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/content-repurposer.css',
-            array(),
+            array( 'font-awesome-brands' ),
             RWP_CREATOR_SUITE_VERSION,
             'all'
         );

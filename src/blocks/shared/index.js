@@ -2,6 +2,7 @@
  * Shared Block Components Index
  *
  * Exports all shared components for easy importing across blocks.
+ * Updated for Phase 3 UI/UX Implementation
  */
 
 // Main components
@@ -34,6 +35,22 @@ export {
 	LoadingButton,
 	LoadingPresets as EnhancedLoadingPresets
 } from './components/EnhancedLoadingStates';
+
+// Phase 3 Advanced Components
+export { default as AccessiblePlatformSelector } from './components/AccessiblePlatformSelector';
+export { default as MobileModal } from './components/MobileModal';
+export { default as MobileTabNavigation } from './components/MobileTabNavigation';
+export { default as ContentSuggestions } from './components/ContentSuggestions';
+export { 
+	default as SmartCopyButton,
+	ClipboardHistory 
+} from './components/SmartClipboard';
+
+// Phase 3 Hooks
+export * from './hooks/useAccessibility';
+export * from './hooks/useMobileGestures';
+export * from './hooks/useAnimations';
+export * from './hooks/useAdvancedUX';
 
 // Component utilities and hooks
 export * from './utils/platform-utils';

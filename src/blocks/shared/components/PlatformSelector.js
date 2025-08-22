@@ -159,49 +159,56 @@ const PlatformSelector = ( {
 		return (
 			<div
 				key={ platform.value }
-				className={ `rwp-platform-item ${
-					isSelected ? 'selected' : ''
-				} ${ isDisabled ? 'disabled' : '' }` }
+				className={ `
+					p-3 sm:p-4 rounded-xl text-center relative min-h-[70px] sm:min-h-[80px] 
+					flex flex-col items-center justify-center cursor-pointer
+					transition-all duration-200 ease-in-out
+					bg-gradient-to-br from-gray-50 to-white
+					border-2 border-gray-200
+					${isSelected 
+						? 'border-blue-500 bg-gradient-to-br from-blue-50 to-white shadow-lg shadow-blue-500/15' 
+						: 'hover:shadow-lg hover:-translate-y-0.5'
+					}
+					${isDisabled 
+						? 'opacity-60 cursor-not-allowed hover:shadow-none hover:translate-y-0' 
+						: ''
+					}
+				` }
+				onClick={ () => !isDisabled && handlePlatformChange( platform.value, !isSelected ) }
+				role="button"
+				tabIndex={ isDisabled ? -1 : 0 }
+				onKeyDown={ ( e ) => {
+					if ( ( e.key === 'Enter' || e.key === ' ' ) && !isDisabled ) {
+						e.preventDefault();
+						handlePlatformChange( platform.value, !isSelected );
+					}
+				} }
+				aria-pressed={ isSelected }
+				aria-disabled={ isDisabled }
 			>
-				<CheckboxControl
-					label={
-						<div className="rwp-platform-label">
-							<span className="platform-icon">
-								{ platform.icon }
-							</span>
-							<span className="platform-name">
-								{ platform.label }
-							</span>
-							{ showDescriptions && (
-								<span className="platform-description">
-									{ platform.description }
-								</span>
-							) }
-						</div>
-					}
-					checked={ isSelected }
-					onChange={ ( checked ) =>
-						handlePlatformChange( platform.value, checked )
-					}
-					disabled={ isDisabled }
-				/>
-
+				<div className={ `text-xl sm:text-2xl mb-1 sm:mb-2 transition-opacity duration-200 ${isSelected ? 'opacity-100' : 'opacity-70'}` }>
+					{ platform.icon }
+				</div>
+				<div className={ `text-xs sm:text-sm font-medium ${isSelected ? 'text-gray-900 font-semibold' : 'text-gray-600'}` }>
+					{ platform.label }
+				</div>
+				
 				{ isSelected && (
-					<div className="platform-details">
-						<div className="platform-characteristics">
+					<div className="mt-2 pt-2 border-t border-gray-200 w-full">
+						<div className="mb-1">
 							{ platform.characteristics.map( ( char ) => (
 								<span
 									key={ char }
-									className="characteristic-tag"
+									className="inline-block bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded mr-1 mb-1"
 								>
 									{ char }
 								</span>
 							) ) }
 						</div>
-						<div className="platform-limits">
+						<div className="text-xs text-gray-500">
 							{ sprintf(
 								__(
-									'Max length: %d characters',
+									'Max: %d chars',
 									'rwp-creator-suite'
 								),
 								platform.maxLength
@@ -209,6 +216,15 @@ const PlatformSelector = ( {
 						</div>
 					</div>
 				) }
+
+				{ /* Hidden checkbox for form compatibility */ }
+				<input
+					type="checkbox"
+					checked={ isSelected }
+					onChange={ () => {} }
+					className="hidden"
+					data-platform-checkbox={ platform.value }
+				/>
 			</div>
 		);
 	};
@@ -242,10 +258,10 @@ const PlatformSelector = ( {
 	};
 
 	return (
-		<div className={ `rwp-platform-selector layout-${ layout }` }>
-			<div className="platform-selector-header">
-				<h4>{ __( 'Select Platforms', 'rwp-creator-suite' ) }</h4>
-				<div className="selection-summary">
+		<div className="border border-gray-300 rounded-lg p-4 my-4">
+			<div className="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+				<h4 className="m-0 text-base font-semibold">{ __( 'Select Platforms', 'rwp-creator-suite' ) }</h4>
+				<div className="text-sm text-gray-600">
 					{ getSelectionSummary() }
 				</div>
 			</div>
@@ -272,19 +288,19 @@ const PlatformSelector = ( {
 				</Notice>
 			) }
 
-			<div className="platforms-grid">
+			<div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-3 my-4 sm:grid-cols-[repeat(auto-fit,minmax(140px,1fr))] lg:gap-4">
 				{ platforms.map( renderPlatformItem ) }
 			</div>
 
 			{ selectedPlatforms.length > 0 && (
-				<div className="selected-platforms-summary">
-					<h5>
+				<div className="mt-4 pt-4 border-t border-gray-200">
+					<h5 className="m-0 mb-2 text-sm font-medium">
 						{ __(
 							'Content will be optimized for:',
 							'rwp-creator-suite'
 						) }
 					</h5>
-					<div className="selected-list">
+					<div className="flex flex-wrap gap-2">
 						{ selectedPlatforms.map( ( platformValue ) => {
 							const platform = platforms.find(
 								( p ) => p.value === platformValue
@@ -292,7 +308,7 @@ const PlatformSelector = ( {
 							return platform ? (
 								<span
 									key={ platformValue }
-									className="selected-platform-tag"
+									className="bg-green-500 text-white px-2 py-1 rounded text-xs font-medium"
 								>
 									{ platform.icon } { platform.label }
 								</span>
@@ -302,145 +318,6 @@ const PlatformSelector = ( {
 				</div>
 			) }
 
-			<style jsx>{ `
-				.rwp-platform-selector {
-					border: 1px solid #ddd;
-					border-radius: 4px;
-					padding: 16px;
-					margin: 16px 0;
-				}
-
-				.platform-selector-header {
-					display: flex;
-					justify-content: space-between;
-					align-items: center;
-					margin-bottom: 16px;
-					border-bottom: 1px solid #eee;
-					padding-bottom: 8px;
-				}
-
-				.platform-selector-header h4 {
-					margin: 0;
-				}
-
-				.selection-summary {
-					font-size: 14px;
-					color: #666;
-				}
-
-				.platforms-grid {
-					display: grid;
-					gap: 12px;
-				}
-
-				.layout-grid .platforms-grid {
-					grid-template-columns: repeat(
-						auto-fit,
-						minmax( 300px, 1fr )
-					);
-				}
-
-				.layout-list .platforms-grid {
-					grid-template-columns: 1fr;
-				}
-
-				.rwp-platform-item {
-					border: 1px solid #e0e0e0;
-					border-radius: 6px;
-					padding: 12px;
-					transition: all 0.2s ease;
-				}
-
-				.rwp-platform-item:hover {
-					border-color: #007cba;
-					background-color: #f8f9fa;
-				}
-
-				.rwp-platform-item.selected {
-					border-color: #007cba;
-					background-color: #e7f3ff;
-				}
-
-				.rwp-platform-item.disabled {
-					opacity: 0.6;
-					cursor: not-allowed;
-				}
-
-				.rwp-platform-label {
-					display: flex;
-					align-items: flex-start;
-					gap: 8px;
-				}
-
-				.platform-icon {
-					font-size: 18px;
-					line-height: 1;
-				}
-
-				.platform-name {
-					font-weight: 600;
-					color: #1e1e1e;
-				}
-
-				.platform-description {
-					font-size: 13px;
-					color: #666;
-					margin-left: auto;
-					text-align: right;
-					max-width: 200px;
-				}
-
-				.platform-details {
-					margin-top: 8px;
-					padding-top: 8px;
-					border-top: 1px solid #e0e0e0;
-				}
-
-				.platform-characteristics {
-					margin-bottom: 4px;
-				}
-
-				.characteristic-tag {
-					display: inline-block;
-					background: #007cba;
-					color: white;
-					font-size: 11px;
-					padding: 2px 6px;
-					border-radius: 3px;
-					margin-right: 4px;
-				}
-
-				.platform-limits {
-					font-size: 12px;
-					color: #666;
-				}
-
-				.selected-platforms-summary {
-					margin-top: 16px;
-					padding-top: 16px;
-					border-top: 1px solid #eee;
-				}
-
-				.selected-platforms-summary h5 {
-					margin: 0 0 8px 0;
-					font-size: 14px;
-				}
-
-				.selected-list {
-					display: flex;
-					flex-wrap: wrap;
-					gap: 6px;
-				}
-
-				.selected-platform-tag {
-					background: #28a745;
-					color: white;
-					padding: 4px 8px;
-					border-radius: 4px;
-					font-size: 12px;
-					font-weight: 500;
-				}
-			` }</style>
 		</div>
 	);
 };

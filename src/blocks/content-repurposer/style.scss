@@ -54,6 +54,7 @@
         @apply blk-rounded-md blk-text-sm blk-leading-relaxed blk-resize-y;
         @apply blk-transition-all blk-duration-200 blk-bg-white blk-mb-4;
         font-family: inherit;
+        color: #111827 !important;
 
         &:focus {
             @apply blk-outline-none blk-border-blue-500 blk-ring-1 blk-ring-blue-500;
@@ -79,6 +80,15 @@
                 @apply blk-text-red-600;
             }
         }
+    }
+
+    // Override h3 styles that might affect platform labels
+    .rwp-platform-selection h3,
+    h3.platform-selection-heading {
+        @apply blk-text-sm blk-font-semibold !important;
+        font-size: 0.875rem !important;
+        line-height: 1.25rem !important;
+        margin: 0 0 0.5rem 0 !important;
     }
 
     // Platform Selection
@@ -111,6 +121,8 @@
         input[type="checkbox"] {
             @apply blk-w-4 blk-h-4 blk-border blk-border-gray-300 blk-rounded;
             @apply blk-bg-white blk-cursor-pointer blk-m-0;
+            appearance: none;
+            -webkit-appearance: none;
 
             &:checked {
                 @apply blk-bg-blue-500 blk-border-blue-500;
@@ -132,6 +144,7 @@
         @apply blk-w-full blk-max-w-xs blk-py-3 blk-px-4 blk-border blk-border-gray-300;
         @apply blk-rounded-md blk-text-sm blk-bg-white blk-cursor-pointer;
         @apply blk-transition-all blk-duration-200;
+        color: #111827 !important;
 
         &:focus {
             @apply blk-outline-none blk-border-blue-500 blk-ring-1 blk-ring-blue-500;
@@ -143,27 +156,32 @@
         @apply blk-mt-8;
     }
 
+    // Clean, simple button styling
     .rwp-repurpose-button {
-        @apply blk-bg-blue-600 blk-text-white blk-border-0 blk-py-3 blk-px-6;
-        @apply blk-text-sm blk-font-semibold blk-rounded-md blk-cursor-pointer;
-        @apply blk-transition-all blk-duration-200 blk-relative blk-overflow-hidden;
-        @apply blk-min-w-32;
-
+        @apply blk-bg-blue-600 blk-text-white blk-border-0;
+        @apply blk-py-4 blk-px-7 blk-text-base blk-font-semibold;
+        @apply blk-rounded-lg blk-cursor-pointer blk-transition-colors blk-duration-200;
+        @apply blk-min-h-12 blk-inline-flex blk-items-center blk-justify-center blk-gap-2;
+        
         &:hover:not(:disabled) {
             @apply blk-bg-blue-700;
         }
-
-        &:active {
+        
+        &:focus:not(:disabled) {
+            @apply blk-bg-blue-700 blk-outline-2 blk-outline-blue-500 blk-outline-offset-2;
+        }
+        
+        &:active:not(:disabled) {
             @apply blk-bg-blue-800;
         }
-
+        
         &:disabled {
             @apply blk-opacity-50 blk-cursor-not-allowed;
         }
-
+        
         &.rwp-loading {
-            @apply blk-text-transparent;
-
+            @apply blk-text-transparent blk-relative;
+            
             &::after {
                 content: '';
                 @apply blk-absolute blk-top-1/2 blk-left-1/2 blk-w-4 blk-h-4;
@@ -256,16 +274,29 @@
         }
 
         .rwp-copy-button {
-            @apply blk-bg-blue-600 blk-text-white blk-border-0 blk-py-2 blk-px-4;
-            @apply blk-rounded-md blk-text-xs blk-font-medium blk-cursor-pointer;
-            @apply blk-transition-all blk-duration-200;
+            @apply blk-bg-blue-600 blk-text-white blk-border-0;
+            @apply blk-py-2 blk-px-4 blk-rounded-lg blk-text-sm blk-font-semibold;
+            @apply blk-cursor-pointer blk-transition-colors blk-duration-200;
+            @apply blk-inline-flex blk-items-center blk-justify-center;
 
             &:hover {
                 @apply blk-bg-blue-700;
             }
+            
+            &:focus {
+                @apply blk-bg-blue-700 blk-outline-2 blk-outline-blue-500 blk-outline-offset-2;
+            }
+
+            &:active {
+                @apply blk-bg-blue-800;
+            }
 
             &.rwp-copied {
-                @apply blk-bg-green-500 blk-text-white;
+                @apply blk-bg-green-600;
+                
+                &:hover {
+                    @apply blk-bg-green-700;
+                }
             }
         }
 
@@ -635,19 +666,23 @@
         }
     }
 
-    // Guest Button Styling - Consistent with logged-in user button
+    // Guest button - extends main button styling
     .rwp-guest-repurpose-button {
-        @apply blk-bg-green-500 blk-text-white blk-border-0 blk-py-3 blk-px-6;
-        @apply blk-text-sm blk-font-semibold blk-rounded-md blk-cursor-pointer;
-        @apply blk-transition-all blk-duration-200 blk-relative blk-overflow-hidden;
-        @apply blk-min-w-32;
+        @apply blk-bg-green-600 blk-text-white blk-border-0;
+        @apply blk-py-3 blk-px-6 blk-text-sm blk-font-semibold;
+        @apply blk-rounded-lg blk-cursor-pointer blk-transition-colors blk-duration-200;
+        @apply blk-min-w-32 blk-relative;
 
         &:hover:not(:disabled) {
-            @apply blk-bg-green-600;
+            @apply blk-bg-green-700;
+        }
+        
+        &:focus:not(:disabled) {
+            @apply blk-bg-green-700 blk-outline-2 blk-outline-green-500 blk-outline-offset-2;
         }
 
-        &:active {
-            @apply blk-bg-green-700;
+        &:active:not(:disabled) {
+            @apply blk-bg-green-800;
         }
 
         &:disabled {
@@ -715,8 +750,6 @@
     }
 
     // Focus Indicators for accessibility
-    .rwp-repurpose-button:focus-visible,
-    .rwp-copy-button:focus-visible,
     .rwp-content-input:focus-visible,
     .rwp-tone-select:focus-visible {
         @apply blk-outline-2 blk-outline-blue-600 blk-outline-offset-2;

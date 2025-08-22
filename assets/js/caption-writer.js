@@ -550,12 +550,20 @@
 			this.showLoading( true );
 			this.hideError();
 
-			// Update generate button
+			// Update generate button with enhanced styling
 			if ( this.elements.generateBtn ) {
-				this.elements.generateBtn.textContent =
-					rwpCaptionWriter.strings.processing;
+				const btnText = this.elements.generateBtn.querySelector('.btn-text');
+				const spinner = this.elements.generateBtn.querySelector('.loading-spinner');
+				
+				if ( btnText ) {
+					btnText.textContent = rwpCaptionWriter.strings.processing;
+				}
 				this.elements.generateBtn.disabled = true;
 				this.elements.generateBtn.classList.add( 'loading' );
+				
+				if ( spinner ) {
+					spinner.style.display = 'flex';
+				}
 			}
 
 			try {
@@ -614,11 +622,20 @@
 				this.showLoading( false );
 			}
 
-			// Reset generate button
+			// Reset generate button with enhanced styling
 			if ( this.elements.generateBtn ) {
-				this.elements.generateBtn.textContent = 'Generate Captions';
+				const btnText = this.elements.generateBtn.querySelector('.btn-text');
+				const spinner = this.elements.generateBtn.querySelector('.loading-spinner');
+				
+				if ( btnText ) {
+					btnText.textContent = 'Generate Captions';
+				}
 				this.elements.generateBtn.disabled = false;
 				this.elements.generateBtn.classList.remove( 'loading' );
+				
+				if ( spinner ) {
+					spinner.style.display = 'none';
+				}
 			}
 		}
 
@@ -1502,19 +1519,22 @@
 
 				// Disable generate button when quota is exhausted
 				if ( this.elements.generateBtn ) {
+					const btnText = this.elements.generateBtn.querySelector('.btn-text');
 					this.elements.generateBtn.disabled = true;
-					this.elements.generateBtn.textContent = 'Quota Exhausted';
+					if ( btnText ) {
+						btnText.textContent = 'Quota Exhausted';
+					}
 				}
 			} else {
 				this.elements.quotaText.innerHTML = `${ icon } Remaining AI generations: <strong>${ remainingQuota }</strong>`;
 
 				// Re-enable generate button if it was disabled
-				if (
-					this.elements.generateBtn &&
-					this.elements.generateBtn.textContent === 'Quota Exhausted'
-				) {
-					this.elements.generateBtn.disabled = false;
-					this.elements.generateBtn.textContent = 'Generate Captions';
+				if ( this.elements.generateBtn ) {
+					const btnText = this.elements.generateBtn.querySelector('.btn-text');
+					if ( btnText && btnText.textContent === 'Quota Exhausted' ) {
+						this.elements.generateBtn.disabled = false;
+						btnText.textContent = 'Generate Captions';
+					}
 				}
 			}
 

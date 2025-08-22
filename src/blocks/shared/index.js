@@ -8,6 +8,9 @@
 export { default as PlatformSelector } from './components/PlatformSelector';
 export { default as ToneSelector } from './components/ToneSelector';
 export { default as CharacterCounter } from './components/CharacterCounter';
+export { default as CharacterMeter } from './components/CharacterMeter';
+export { default as EnhancedButton } from './components/EnhancedButton';
+export { default as ModernTabs } from './components/ModernTabs';
 export {
 	default as LoadingStates,
 	LoadingPresets,

@@ -122,8 +122,13 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                             </select>
                         </div>
                         
-                        <button class="generate-btn btn-primary" data-generate>
-                            <?php esc_html_e( 'Generate Captions', 'rwp-creator-suite' ); ?>
+                        <button class="enhanced-btn primary large" data-generate data-variant="primary" data-size="large">
+                            <span class="btn-content">
+                                <span class="btn-text"><?php esc_html_e( 'Generate Captions', 'rwp-creator-suite' ); ?></span>
+                                <span class="loading-spinner" style="display: none;">
+                                    <div class="spinner-ring"></div>
+                                </span>
+                            </span>
                         </button>
                         
                         <div class="quota-info" data-quota-display style="display: none;">

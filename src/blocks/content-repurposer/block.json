@@ -4,16 +4,16 @@
 	"name": "rwp-creator-suite/content-repurposer",
 	"version": "1.0.0",
 	"title": "Content Repurposer",
-	"category": "widgets",
+	"category": "rwp-creator-suite",
 	"icon": "admin-post",
 	"description": "Transform long-form content into platform-specific social media posts using AI.",
 	"example": {},
 	"supports": {
 		"html": false,
-		"align": true,
+		"align": ["wide", "full"],
 		"spacing": {
-			"padding": true,
-			"margin": true
+			"margin": true,
+			"padding": true
 		}
 	},
 	"attributes": {
@@ -22,7 +22,11 @@
 		},
 		"platforms": {
 			"type": "array",
-			"default": ["twitter", "linkedin"]
+			"default": ["twitter", "linkedin"],
+			"items": {
+				"type": "string",
+				"enum": ["instagram", "tiktok", "twitter", "linkedin", "facebook"]
+			}
 		},
 		"tone": {
 			"type": "string",
@@ -36,5 +40,5 @@
 	"textdomain": "rwp-creator-suite",
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./editor.css",
-	"style": ["file:./style.css", "file:./style-style.css"]
+	"style": "file:./index.css"
 }

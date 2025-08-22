@@ -361,7 +361,7 @@
             @apply blk-bg-white blk-text-gray-700 blk-border-gray-300;
             
             &:hover:not(:disabled) {
-                @apply blk-bg-gray-50 blk-border-gray-400;
+                @apply blk-bg-gray-50 blk-border-gray-400 blk-text-gray-800;
             }
         }
         

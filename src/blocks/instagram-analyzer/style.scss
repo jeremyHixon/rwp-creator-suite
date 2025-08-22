@@ -222,10 +222,12 @@
 
         .blk-search-input {
             @apply blk-py-2 blk-px-3 blk-border blk-border-gray-300 blk-rounded-md blk-text-sm;
+            @apply blk-bg-white blk-text-gray-900;
             min-width: 200px;
 
             &:focus {
                 @apply blk-outline-none blk-border-blue-500 blk-ring-1 blk-ring-blue-500;
+                @apply blk-bg-white blk-text-gray-900;
             }
         }
     }

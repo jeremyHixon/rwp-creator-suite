@@ -20,6 +20,21 @@ export {
 	ErrorPresets,
 } from './components/ErrorDisplay';
 
+// Phase 2 Enhanced Components
+export { default as FloatingInput } from './components/FloatingInput';
+export { default as SmartTextarea } from './components/SmartTextarea';
+export { 
+	default as ResultCard, 
+	ResultCardSkeleton, 
+	ResultsGrid 
+} from './components/ResultCard';
+export { default as EnhancedGuestTeaser } from './components/EnhancedGuestTeaser';
+export { 
+	default as EnhancedLoadingStates, 
+	LoadingButton,
+	LoadingPresets as EnhancedLoadingPresets
+} from './components/EnhancedLoadingStates';
+
 // Component utilities and hooks
 export * from './utils/platform-utils';
 export * from './utils/content-utils';

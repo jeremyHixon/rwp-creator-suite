@@ -1,0 +1,513 @@
+/**
+ * Enhanced Content Repurposer Block Styles - Phase 2 Implementation
+ *
+ * Modern UI with floating inputs, smart textarea, enhanced result cards,
+ * and gradient guest teaser components.
+ */
+
+/* Base container styles */
+.wp-block-rwp-creator-suite-content-repurposer.rwp-enhanced {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 32px;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-radius: 20px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e2e8f0;
+}
+
+.rwp-content-repurposer-container {
+    position: relative;
+}
+
+/* Enhanced Form Styles */
+.rwp-enhanced-form {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.rwp-form-group {
+    position: relative;
+}
+
+.rwp-section-label {
+    display: block;
+    margin-bottom: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    line-height: 1.4;
+}
+
+.rwp-section-description {
+    display: block;
+    font-size: 14px;
+    font-weight: 400;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+/* Platform Selection Grid */
+.rwp-platform-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.rwp-platform-card {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    background: #ffffff;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.rwp-platform-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.rwp-platform-card:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.rwp-platform-card:hover::before {
+    opacity: 0.5;
+}
+
+.rwp-platform-card--selected {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.2);
+}
+
+.rwp-platform-card--selected::before {
+    opacity: 1;
+}
+
+.rwp-platform-checkbox {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.rwp-platform-card-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.rwp-platform-icon {
+    font-size: 20px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.rwp-platform-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+}
+
+.rwp-platform-card--selected .rwp-platform-name {
+    color: #1e40af;
+    font-weight: 600;
+}
+
+/* Enhanced Form Actions */
+.rwp-form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-top: 8px;
+}
+
+.rwp-action-buttons {
+    display: flex;
+    justify-content: center;
+}
+
+/* Guest Attempts Banner */
+.rwp-guest-attempts-banner {
+    margin-bottom: 24px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: 12px;
+    border: 1px solid #f59e0b;
+}
+
+.rwp-attempts-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: center;
+}
+
+.rwp-attempts-icon {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.rwp-attempts-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: #92400e;
+}
+
+.rwp-attempts-count {
+    font-size: 16px;
+    font-weight: 700;
+    color: #b45309;
+}
+
+/* Guest Upgrade Hint */
+.rwp-guest-upgrade-hint {
+    margin-top: 8px;
+}
+
+.rwp-hint-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.rwp-hint-icon {
+    font-size: 16px;
+    line-height: 1;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.rwp-hint-content p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.4;
+    color: #1e40af;
+}
+
+/* Enhanced Results Styles */
+.rwp-results-container {
+    margin-top: 40px;
+}
+
+.rwp-results-header {
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.rwp-results-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+    background: linear-gradient(135deg, #1f2937 0%, #4b5563 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Enhanced Guest Results Upgrade */
+.rwp-guest-results-upgrade {
+    margin-top: 32px;
+    display: flex;
+    justify-content: center;
+}
+
+.rwp-upgrade-card {
+    max-width: 480px;
+    padding: 32px;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-radius: 16px;
+    border: 2px solid #e2e8f0;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+}
+
+.rwp-upgrade-icon {
+    font-size: 32px;
+    margin-bottom: 16px;
+    line-height: 1;
+}
+
+.rwp-upgrade-card h5 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0 0 12px;
+}
+
+.rwp-upgrade-card p {
+    font-size: 15px;
+    color: #6b7280;
+    line-height: 1.5;
+    margin: 0 0 24px;
+}
+
+.rwp-upgrade-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+/* Enhanced Loading Container */
+.rwp-loading-container {
+    margin: 40px 0;
+}
+
+/* Enhanced Error Styles */
+.rwp-error-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    background: #fef2f2;
+    border: 2px solid #fecaca;
+    border-radius: 12px;
+    margin: 24px 0;
+}
+
+.rwp-error-icon {
+    font-size: 24px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.rwp-error-content {
+    flex: 1;
+    font-size: 15px;
+    color: #dc2626;
+    line-height: 1.4;
+}
+
+/* Usage Stats Enhancement */
+.rwp-usage-stats {
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(16, 185, 129, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    margin-top: 16px;
+}
+
+.rwp-usage-stats .quota-text {
+    font-size: 14px;
+    color: #065f46;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .wp-block-rwp-creator-suite-content-repurposer.rwp-enhanced {
+        padding: 24px 20px;
+        border-radius: 16px;
+    }
+    
+    .rwp-enhanced-form {
+        gap: 24px;
+    }
+    
+    .rwp-platform-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    
+    .rwp-platform-card {
+        padding: 14px 16px;
+    }
+    
+    .rwp-platform-card-content {
+        gap: 10px;
+    }
+    
+    .rwp-platform-icon {
+        font-size: 18px;
+    }
+    
+    .rwp-platform-name {
+        font-size: 13px;
+    }
+    
+    .rwp-guest-attempts-banner {
+        padding: 12px 16px;
+        margin-bottom: 20px;
+    }
+    
+    .rwp-attempts-text {
+        font-size: 13px;
+    }
+    
+    .rwp-attempts-count {
+        font-size: 15px;
+    }
+    
+    .rwp-hint-content {
+        padding: 12px;
+        gap: 10px;
+    }
+    
+    .rwp-hint-content p {
+        font-size: 12px;
+    }
+    
+    .rwp-upgrade-card {
+        padding: 24px 20px;
+    }
+    
+    .rwp-upgrade-card h5 {
+        font-size: 18px;
+    }
+    
+    .rwp-upgrade-card p {
+        font-size: 14px;
+    }
+    
+    .rwp-upgrade-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .rwp-upgrade-actions .loading-button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .rwp-error-card {
+        padding: 16px;
+        gap: 12px;
+    }
+    
+    .rwp-error-icon {
+        font-size: 20px;
+    }
+    
+    .rwp-error-content {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .wp-block-rwp-creator-suite-content-repurposer.rwp-enhanced {
+        padding: 20px 16px;
+    }
+    
+    .rwp-results-title {
+        font-size: 20px;
+    }
+    
+    .rwp-upgrade-card {
+        padding: 20px 16px;
+    }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+    .rwp-platform-card {
+        border-width: 3px;
+    }
+    
+    .rwp-platform-card--selected {
+        border-width: 3px;
+    }
+    
+    .rwp-guest-attempts-banner {
+        border-width: 2px;
+    }
+    
+    .rwp-error-card {
+        border-width: 3px;
+    }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    .rwp-platform-card,
+    .rwp-platform-card::before {
+        transition: none;
+    }
+    
+    .rwp-platform-card:hover {
+        transform: none;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .wp-block-rwp-creator-suite-content-repurposer.rwp-enhanced {
+        background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+        border-color: #374151;
+    }
+    
+    .rwp-platform-card {
+        background: #374151;
+        border-color: #4b5563;
+        color: #f9fafb;
+    }
+    
+    .rwp-platform-card--selected {
+        background: #1e3a8a;
+        border-color: #3b82f6;
+    }
+    
+    .rwp-platform-name {
+        color: #f3f4f6;
+    }
+    
+    .rwp-platform-card--selected .rwp-platform-name {
+        color: #dbeafe;
+    }
+    
+    .rwp-section-label {
+        color: #f9fafb;
+    }
+    
+    .rwp-section-description {
+        color: #d1d5db;
+    }
+    
+    .rwp-results-title {
+        background: linear-gradient(135deg, #f9fafb 0%, #d1d5db 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .rwp-upgrade-card {
+        background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+        border-color: #4b5563;
+        color: #f9fafb;
+    }
+    
+    .rwp-upgrade-card h5 {
+        color: #f9fafb;
+    }
+    
+    .rwp-upgrade-card p {
+        color: #d1d5db;
+    }
+}

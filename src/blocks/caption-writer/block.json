@@ -25,14 +25,22 @@
   "attributes": {
     "platforms": {
       "type": "array",
-      "default": ["instagram"],
+      "default": [
+        "instagram"
+      ],
       "items": {
         "type": "string",
-        "enum": ["instagram", "tiktok", "twitter", "linkedin", "facebook"]
+        "enum": [
+          "instagram",
+          "tiktok",
+          "twitter",
+          "linkedin",
+          "facebook"
+        ]
       }
     },
     "tone": {
-      "type": "string", 
+      "type": "string",
       "default": "casual"
     },
     "selectedTemplate": {
@@ -50,7 +58,10 @@
   },
   "supports": {
     "html": false,
-    "align": ["wide", "full"],
+    "align": [
+      "wide",
+      "full"
+    ],
     "spacing": {
       "margin": true,
       "padding": true
@@ -58,7 +69,9 @@
   },
   "example": {
     "attributes": {
-      "platforms": ["instagram"],
+      "platforms": [
+        "instagram"
+      ],
       "tone": "casual",
       "showPreview": true
     }

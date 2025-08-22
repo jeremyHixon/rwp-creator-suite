@@ -1,2 +1,5 @@
-// Editor styles entry point
+/**
+ * Caption Writer Block - Editor Styles
+ */
+
 import './editor.scss';

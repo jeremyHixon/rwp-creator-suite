@@ -1,0 +1,66 @@
+/**
+ * Shared Editor Styles for RWP Creator Suite Blocks
+ * Common preview and inspector control styling patterns
+ */
+
+// Preview Container Mixin
+@mixin block-preview($block-class-suffix) {
+    .rwp-#{$block-class-suffix}-preview {
+        background: #f8f9fa;
+        border: 1px solid #e2e4e7;
+        border-radius: 4px;
+        padding: 16px;
+        margin: 16px 0;
+
+        .rwp-preview-settings {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+
+            strong {
+                color: #1e1e1e;
+                font-weight: 600;
+            }
+
+            ul {
+                margin: 0;
+                padding-left: 20px;
+                
+                li {
+                    margin: 4px 0;
+                }
+            }
+
+            span {
+                color: #757575;
+            }
+        }
+    }
+
+    .description {
+        color: #757575;
+        font-style: italic;
+        margin-top: 16px;
+    }
+}
+
+// Inspector Controls Styling (shared across all blocks)
+.block-editor-block-inspector {
+    .components-panel__body {
+        fieldset {
+            border: none;
+            padding: 0;
+            margin: 16px 0;
+
+            legend {
+                font-weight: 600;
+                margin-bottom: 8px;
+                display: block;
+            }
+
+            .components-checkbox-control {
+                margin: 4px 0;
+            }
+        }
+    }
+}

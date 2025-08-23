@@ -32,6 +32,10 @@ module.exports = {
 			__dirname,
 			'src/blocks/caption-writer/index.js'
 		),
+		'blocks/caption-writer/style': path.resolve(
+			__dirname,
+			'src/blocks/caption-writer/style.js'
+		),
 		'blocks/caption-writer/editor': path.resolve(
 			__dirname,
 			'src/blocks/caption-writer/editor.js'
@@ -39,6 +43,10 @@ module.exports = {
 		'blocks/content-repurposer/index': path.resolve(
 			__dirname,
 			'src/blocks/content-repurposer/index.js'
+		),
+		'blocks/content-repurposer/style': path.resolve(
+			__dirname,
+			'src/blocks/content-repurposer/style.js'
 		),
 		'blocks/content-repurposer/editor': path.resolve(
 			__dirname,

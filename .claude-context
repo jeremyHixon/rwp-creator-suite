@@ -1,5 +1,7 @@
 # Task
-Complete the task outlined in docs/ui-implementation-phase-3.md
+Analyze the blocks folder and any related modules: src/blocks
+The caption-writer and content-repurposer look very different even though they share a lot of elements.
+Check the CSS files. I've seen references to index.css, style.css, and style-etyle.css. We need to organize and clean up the files.
 
 # Project Context
 

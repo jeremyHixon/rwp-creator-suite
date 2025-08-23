@@ -1,0 +1,26 @@
+/**
+ * Shared Styles Index for RWP Creator Suite
+ * Main entry point for all shared styling resources
+ */
+
+// Design system foundation
+@import './variables.scss';
+
+// Editor-specific styles
+@import './editor-common.scss';
+
+// Reusable mixins for frontend styles
+@import './mixins.scss';
+
+// Export common variables for JavaScript usage
+:export {
+  primaryColor: var(--rwp-primary-500);
+  primaryHover: var(--rwp-primary-600);
+  grayLight: var(--rwp-gray-100);
+  grayDark: var(--rwp-gray-700);
+  fontFamily: var(--rwp-font-family);
+  transitionBase: var(--rwp-transition-base);
+  breakpointSm: 640px;
+  breakpointMd: 768px;
+  breakpointLg: 1024px;
+}

@@ -1,0 +1,242 @@
+// Caption Writer Block Styles with Shared Mixins
+@import '../shared/styles/variables.scss';
+@import '../shared/styles/mixins.scss';
+
+.wp-block-rwp-creator-suite-caption-writer {
+    @apply blk-my-8 blk-font-sans;
+
+    .rwp-caption-writer-container {
+        @apply blk-min-h-96 blk-w-full blk-relative;
+        container-type: inline-size;
+        
+        @apply blk-bg-white blk-p-6 blk-rounded-xl blk-leading-relaxed blk-text-gray-700;
+        
+        @media (max-width: 640px) {
+            @apply blk-p-4;
+        }
+
+        @container (max-width: 480px) {
+            .rwp-platform-result .rwp-platform-header {
+                @apply blk-flex-col blk-items-start blk-gap-2;
+            }
+            
+            .rwp-caption-version {
+                @apply blk-p-4;
+            }
+        }
+    }
+
+    // Form Styles
+    .rwp-caption-form {
+        @apply blk-bg-gray-50 blk-rounded-xl blk-p-8 blk-mb-6;
+        @apply blk-border blk-border-gray-200;
+        
+        @media (max-width: 640px) {
+            @apply blk-p-5;
+        }
+    }
+
+    // Include shared form input styles
+    @include form-input-styles();
+
+    // Include shared platform selection styles
+    @include platform-selection-styles();
+
+    // Form Actions
+    .rwp-form-actions {
+        @apply blk-mt-8;
+    }
+
+    // Include primary button styles
+    @include primary-button-styles('rwp-generate-button');
+
+    // Usage Stats
+    .rwp-usage-stats {
+        @apply blk-bg-blue-50 blk-border blk-border-blue-300 blk-text-blue-800;
+        @apply blk-py-3 blk-px-4 blk-rounded-md blk-text-xs blk-mt-4;
+        @apply blk-flex blk-items-center blk-gap-2;
+
+        strong {
+            @apply blk-font-semibold;
+        }
+    }
+
+    // Include shared results container styles
+    @include results-container-styles();
+
+    // Template Selection (unique to caption-writer)
+    .rwp-template-selection {
+        @apply blk-mb-6;
+
+        .rwp-template-grid {
+            @apply blk-grid blk-grid-cols-1 blk-gap-3 blk-mt-4;
+
+            @media (min-width: 640px) {
+                @apply blk-grid-cols-2;
+            }
+
+            @media (min-width: 1024px) {
+                @apply blk-grid-cols-3;
+            }
+        }
+
+        .rwp-template-card {
+            @apply blk-bg-white blk-border blk-border-gray-200 blk-rounded-lg blk-p-4;
+            @apply blk-cursor-pointer blk-transition-all blk-duration-200;
+
+            &:hover {
+                @apply blk-border-blue-300 blk-shadow-sm;
+            }
+
+            &.selected {
+                @apply blk-border-blue-500 blk-bg-blue-50;
+            }
+
+            .rwp-template-name {
+                @apply blk-font-semibold blk-text-gray-700 blk-text-sm blk-mb-2;
+            }
+
+            .rwp-template-description {
+                @apply blk-text-xs blk-text-gray-500 blk-leading-relaxed;
+            }
+        }
+    }
+
+    // Caption Results
+    .rwp-caption-result {
+        @apply blk-mb-4 blk-border blk-border-gray-200 blk-rounded-lg blk-p-5;
+        @apply blk-transition-all blk-duration-200 blk-bg-gray-50;
+
+        &:hover {
+            @apply blk-border-blue-500 blk-shadow-md;
+        }
+
+        .rwp-platform-header {
+            @apply blk-flex blk-justify-between blk-items-center blk-mb-4;
+
+            .rwp-platform-name {
+                @apply blk-font-semibold blk-text-gray-700 blk-capitalize blk-text-lg;
+            }
+
+            .rwp-character-limit {
+                @apply blk-text-xs blk-text-blue-600 blk-bg-blue-50 blk-py-1 blk-px-3;
+                @apply blk-rounded-md blk-inline-block blk-capitalize;
+            }
+        }
+
+        .rwp-caption-versions {
+            @apply blk-flex blk-flex-col blk-gap-4;
+        }
+
+        .rwp-caption-version {
+            @apply blk-bg-white blk-border blk-border-gray-200 blk-rounded-lg blk-p-5;
+            @apply blk-transition-all blk-duration-200 blk-relative;
+
+            .rwp-version-text {
+                @apply blk-text-sm blk-leading-relaxed blk-text-gray-600 blk-mb-4;
+                white-space: pre-wrap;
+            }
+
+            .rwp-version-meta {
+                @apply blk-flex blk-justify-between blk-items-center;
+            }
+
+            .rwp-template-used {
+                @apply blk-text-xs blk-text-gray-500 blk-bg-gray-100;
+                @apply blk-py-1 blk-px-2 blk-rounded-md blk-font-medium;
+            }
+        }
+
+        // Include secondary button styles for copy buttons
+        @include secondary-button-styles('rwp-copy-button');
+
+        .rwp-copy-button {
+            &.rwp-copied {
+                @apply blk-bg-green-600 blk-text-white blk-border-green-600;
+                
+                &:hover {
+                    @apply blk-bg-green-700;
+                }
+            }
+        }
+    }
+
+    // Error Message
+    .rwp-error-message {
+        @apply blk-bg-red-50 blk-border blk-border-red-300 blk-rounded-md;
+        @apply blk-p-4 blk-my-6 blk-text-center;
+
+        .rwp-error-content {
+            @apply blk-text-red-700 blk-text-sm blk-font-medium;
+        }
+    }
+
+    // Include shared loading states
+    @include loading-states();
+
+    // Include shared character counter styles
+    @include character-counter-styles();
+
+    // Include shared guest/upgrade styles
+    @include guest-upgrade-styles();
+
+    // Caption Writer specific guest teaser
+    .rwp-caption-guest-teaser {
+        @extend .rwp-guest-teaser;
+    }
+
+    .rwp-caption-teaser-icon {
+        @apply blk-text-5xl blk-mb-4 blk-block;
+    }
+
+    .rwp-caption-benefits {
+        @apply blk-grid blk-grid-cols-1 blk-gap-4 blk-my-8 blk-text-left;
+
+        @media (max-width: 640px) {
+            @apply blk-gap-3;
+        }
+    }
+
+    .rwp-caption-benefit-item {
+        @apply blk-flex blk-items-center blk-gap-3 blk-p-3 blk-bg-white;
+        @apply blk-rounded-lg blk-border blk-border-gray-200 blk-text-sm blk-text-gray-600;
+
+        @media (max-width: 640px) {
+            @apply blk-p-2 blk-text-xs;
+        }
+    }
+
+    .rwp-caption-benefit-icon {
+        @apply blk-text-xl blk-flex-shrink-0;
+    }
+
+    // Success Notifications
+    .rwp-success-notification {
+        @apply blk-fixed blk-top-5 blk-right-5 blk-bg-green-50 blk-text-green-800;
+        @apply blk-py-4 blk-px-5 blk-rounded-lg blk-border-2 blk-border-green-300;
+        @apply blk-z-50 blk-text-sm blk-font-medium blk-shadow-lg;
+        animation: slideInRight 0.3s ease;
+    }
+
+    @keyframes slideInRight {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    // Guest attempts counter (similar to content-repurposer)
+    .rwp-guest-attempts-counter {
+        @apply blk-text-center blk-mb-6 blk-py-3 blk-px-4 blk-bg-blue-100;
+        @apply blk-rounded-lg blk-border blk-border-blue-300;
+    }
+
+    .rwp-attempts-remaining {
+        @apply blk-text-sm blk-font-semibold blk-text-blue-800;
+    }
+
+    .rwp-attempts-count {
+        @apply blk-text-xl blk-font-bold blk-text-blue-600;
+    }
+
+    // Include shared accessibility styles
+    @include accessibility-styles();
+}

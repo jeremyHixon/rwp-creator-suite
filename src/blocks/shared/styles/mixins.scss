@@ -1,0 +1,363 @@
+/**
+ * Shared SCSS Mixins for RWP Creator Suite Blocks
+ * Common styling patterns using Tailwind classes
+ */
+
+// Platform Selection Styling
+@mixin platform-selection-styles() {
+    .platform-selection {
+        @apply blk-flex blk-flex-col blk-gap-4 blk-mb-6;
+    }
+
+    .platform-selection h3,
+    .platform-label {
+        @apply blk-text-gray-700 blk-text-sm blk-font-semibold !important;
+        font-size: 0.875rem !important;
+        line-height: 1.25rem !important;
+        margin: 0 0 0.5rem 0 !important;
+        
+        strong {
+            @apply blk-font-semibold;
+        }
+        
+        .platform-description {
+            @apply blk-font-normal blk-text-gray-500;
+        }
+    }
+
+    .platform-checkboxes {
+        @apply blk-flex blk-flex-wrap blk-gap-3 blk-mt-2;
+
+        @media (max-width: 640px) {
+            @apply blk-gap-2;
+        }
+    }
+
+    .platform-checkbox {
+        @apply blk-flex blk-items-center blk-gap-2 blk-cursor-pointer;
+        @apply blk-bg-gray-50 blk-py-2 blk-px-3 blk-rounded-md;
+        @apply blk-border blk-border-gray-200 blk-transition-all blk-duration-200;
+
+        @media (max-width: 640px) {
+            @apply blk-text-xs blk-py-1 blk-px-2;
+        }
+
+        &:hover {
+            @apply blk-bg-gray-100 blk-border-gray-300;
+        }
+
+        &:has(input[type="checkbox"]:checked) {
+            @apply blk-bg-blue-50 blk-border-blue-200;
+        }
+
+        input[type="checkbox"] {
+            @apply blk-w-4 blk-h-4 blk-border blk-border-gray-300 blk-rounded;
+            @apply blk-bg-white blk-cursor-pointer blk-m-0;
+            appearance: none;
+            -webkit-appearance: none;
+
+            &:checked {
+                @apply blk-bg-blue-500 blk-border-blue-500;
+            }
+        }
+    }
+
+    .platform-icon-label {
+        @apply blk-flex blk-items-center blk-gap-2;
+        
+        .platform-name {
+            @apply blk-text-sm blk-text-gray-600 blk-font-medium blk-select-none;
+            @apply blk-transition-colors blk-duration-200;
+        }
+    }
+
+    .platform-icon {
+        @apply blk-inline-block blk-w-5 blk-h-5 blk-text-center blk-leading-5;
+        font-size: 16px;
+        font-family: "Font Awesome 6 Brands", "Font Awesome 6 Free";
+
+        &.instagram::before {
+            content: "\f16d";
+            font-weight: 400;
+        }
+
+        &.tiktok::before {
+            content: "\e07b";
+            font-weight: 400;
+        }
+
+        &.twitter::before {
+            content: "\e61b";
+            font-weight: 400;
+        }
+
+        &.linkedin::before {
+            content: "\f08c";
+            font-weight: 400;
+        }
+
+        &.facebook::before {
+            content: "\f09a";
+            font-weight: 400;
+        }
+    }
+}
+
+// Form Input Styling
+@mixin form-input-styles() {
+    .rwp-form-group {
+        @apply blk-mb-6;
+
+        &:last-child {
+            @apply blk-mb-0;
+        }
+    }
+
+    .rwp-form-label {
+        @apply blk-block blk-text-gray-700 blk-mb-4 blk-text-sm;
+    }
+
+    .rwp-content-input {
+        @apply blk-w-full blk-min-h-32 blk-py-3 blk-px-4 blk-border blk-border-gray-300;
+        @apply blk-rounded-md blk-text-sm blk-leading-relaxed blk-resize-y;
+        @apply blk-transition-all blk-duration-200 blk-bg-white blk-mb-4;
+        @apply blk-text-gray-700;
+        font-family: inherit;
+
+        &:focus {
+            @apply blk-outline-none blk-border-blue-500 blk-ring-1 blk-ring-blue-500;
+        }
+
+        &::placeholder {
+            @apply blk-text-gray-400 blk-opacity-100;
+        }
+    }
+
+    .rwp-tone-select {
+        @apply blk-w-full blk-max-w-xs blk-py-3 blk-px-4 blk-border blk-border-gray-300;
+        @apply blk-rounded-md blk-text-sm blk-bg-white blk-cursor-pointer;
+        @apply blk-transition-all blk-duration-200 blk-text-gray-700;
+
+        &:focus {
+            @apply blk-outline-none blk-border-blue-500 blk-ring-1 blk-ring-blue-500;
+        }
+    }
+}
+
+// Primary Button Styling
+@mixin primary-button-styles($button-class) {
+    .#{$button-class} {
+        @apply blk-bg-blue-600 blk-text-white blk-border-0;
+        @apply blk-py-4 blk-px-7 blk-text-base blk-font-semibold;
+        @apply blk-rounded-lg blk-cursor-pointer blk-transition-colors blk-duration-200;
+        @apply blk-min-h-12 blk-inline-flex blk-items-center blk-justify-center blk-gap-2;
+        
+        &:hover:not(:disabled) {
+            @apply blk-bg-blue-700;
+        }
+        
+        &:focus:not(:disabled) {
+            @apply blk-bg-blue-700 blk-outline-2 blk-outline-blue-500 blk-outline-offset-2;
+        }
+        
+        &:active:not(:disabled) {
+            @apply blk-bg-blue-800;
+        }
+        
+        &:disabled {
+            @apply blk-opacity-50 blk-cursor-not-allowed;
+        }
+        
+        &.rwp-loading {
+            @apply blk-text-transparent blk-relative;
+            
+            &::after {
+                content: '';
+                @apply blk-absolute blk-top-1/2 blk-left-1/2 blk-w-4 blk-h-4;
+                @apply blk-border-2 blk-border-transparent blk-border-t-white;
+                @apply blk-rounded-full;
+                margin: -8px 0 0 -8px;
+                animation: spin 1s linear infinite;
+            }
+        }
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+}
+
+// Secondary Button Styling
+@mixin secondary-button-styles($button-class) {
+    .#{$button-class} {
+        @apply blk-bg-gray-100 blk-text-gray-700 blk-border blk-border-gray-300;
+        @apply blk-py-3 blk-px-6 blk-text-sm blk-font-medium;
+        @apply blk-rounded-lg blk-cursor-pointer blk-transition-colors blk-duration-200;
+        @apply blk-inline-flex blk-items-center blk-justify-center blk-gap-2;
+        
+        &:hover:not(:disabled) {
+            @apply blk-bg-gray-200 blk-border-gray-400;
+        }
+        
+        &:focus:not(:disabled) {
+            @apply blk-bg-gray-200 blk-outline-2 blk-outline-gray-500 blk-outline-offset-2;
+        }
+        
+        &:active:not(:disabled) {
+            @apply blk-bg-gray-300;
+        }
+        
+        &:disabled {
+            @apply blk-opacity-50 blk-cursor-not-allowed;
+        }
+    }
+}
+
+// Loading States
+@mixin loading-states() {
+    .rwp-loading-container {
+        @apply blk-text-center blk-py-8 blk-bg-gray-50 blk-rounded-lg blk-my-6;
+        @apply blk-border blk-border-gray-200;
+
+        p {
+            @apply blk-m-0 blk-text-sm blk-text-gray-500 blk-font-medium;
+        }
+    }
+
+    .loading-spinner {
+        @apply blk-w-8 blk-h-8 blk-border-4 blk-border-gray-200 blk-border-t-blue-600;
+        @apply blk-rounded-full blk-mx-auto blk-mb-4;
+        animation: spin 1s linear infinite;
+    }
+}
+
+// Character Counter Styling
+@mixin character-counter-styles() {
+    .rwp-character-count {
+        @apply blk-text-right blk-text-xs blk-text-gray-500 blk-bg-gray-100;
+        @apply blk-py-1 blk-px-3 blk-rounded-md blk-mt-1 blk-inline-block;
+
+        .rwp-count-current {
+            @apply blk-font-semibold;
+
+            &.rwp-count-warning {
+                @apply blk-text-amber-600;
+            }
+
+            &.rwp-count-error {
+                @apply blk-text-red-600;
+            }
+        }
+    }
+
+    .rwp-character-counter {
+        @apply blk-my-3 blk-text-sm blk-font-medium blk-flex blk-flex-wrap blk-gap-4 blk-items-center;
+    }
+
+    .rwp-current-count {
+        @apply blk-bg-gray-100 blk-py-2 blk-px-3 blk-rounded-md blk-font-semibold;
+        @apply blk-text-gray-700 blk-border blk-border-gray-300 blk-min-w-16;
+        @apply blk-text-center blk-transition-all blk-duration-200;
+
+        &.warning {
+            @apply blk-text-amber-600 blk-bg-amber-50 blk-border-amber-300;
+        }
+
+        &.over-limit {
+            @apply blk-text-red-600 blk-bg-red-50 blk-border-red-300;
+        }
+    }
+}
+
+// Guest/Upgrade Messaging
+@mixin guest-upgrade-styles() {
+    .rwp-guest-teaser {
+        @apply blk-bg-gray-50 blk-rounded-xl blk-p-8 blk-mb-6;
+        @apply blk-border blk-border-gray-200 blk-text-center;
+
+        @media (max-width: 640px) {
+            @apply blk-p-6;
+        }
+    }
+
+    .rwp-guest-teaser-content {
+        @apply blk-max-w-2xl blk-mx-auto;
+    }
+
+    .rwp-guest-teaser-title {
+        @apply blk-text-2xl blk-font-bold blk-text-gray-700 blk-mb-4;
+
+        @media (max-width: 640px) {
+            @apply blk-text-xl;
+        }
+    }
+
+    .rwp-guest-cta-button {
+        @apply blk-inline-block blk-bg-blue-600 blk-text-white blk-no-underline;
+        @apply blk-py-3 blk-px-8 blk-rounded-lg blk-font-semibold blk-text-base;
+        @apply blk-transition-all blk-duration-200 blk-mb-4;
+
+        @media (max-width: 640px) {
+            @apply blk-py-3 blk-px-6 blk-text-sm;
+        }
+
+        &:hover {
+            @apply blk-bg-blue-700 blk-text-white blk-no-underline;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+    }
+}
+
+// Results Container Styling
+@mixin results-container-styles() {
+    .rwp-results-container {
+        @apply blk-bg-white blk-rounded-lg blk-p-6 blk-border blk-border-gray-200;
+        @apply blk-mt-6;
+        animation: slideIn 0.4s ease;
+
+        @media (max-width: 640px) {
+            @apply blk-p-4;
+        }
+
+        .rwp-results-title {
+            @apply blk-m-0 blk-mb-6 blk-text-gray-700 blk-text-xl blk-font-semibold;
+        }
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+}
+
+// Accessibility & Motion Preferences
+@mixin accessibility-styles() {
+    // Focus Indicators
+    .rwp-content-input:focus-visible,
+    .rwp-tone-select:focus-visible {
+        @apply blk-outline-2 blk-outline-blue-600 blk-outline-offset-2;
+    }
+
+    // Reduce Motion
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+        
+        .loading-spinner {
+            animation: none;
+            @apply blk-border-4 blk-border-blue-600;
+        }
+        
+        .rwp-guest-cta-button:hover {
+            transform: none !important;
+        }
+    }
+}

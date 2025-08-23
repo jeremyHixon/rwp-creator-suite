@@ -89,9 +89,14 @@
     color: #1f2937;
     font-size: 0.875rem;
     margin-bottom: 0.5rem;
+    font-weight: 600;
 }
 .platform-label strong {
     font-weight: 600;
+}
+.platform-label .platform-description {
+    font-weight: 400;
+    color: #6b7280;
 }
 
 .platform-checkboxes {

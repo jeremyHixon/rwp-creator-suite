@@ -366,7 +366,7 @@ class RWP_Creator_Suite_Block_Manager {
         // Enqueue Caption Writer CSS with performance optimization
         wp_enqueue_style(
             'rwp-caption-writer-style',
-            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/caption-writer.css',
+            RWP_CREATOR_SUITE_PLUGIN_URL . 'build/blocks/caption-writer/style.css',
             array( 'font-awesome-brands' ),
             RWP_CREATOR_SUITE_VERSION,
             'all'
@@ -424,7 +424,7 @@ class RWP_Creator_Suite_Block_Manager {
         // Enqueue Content Repurposer CSS
         wp_enqueue_style(
             'rwp-content-repurposer-style',
-            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/content-repurposer.css',
+            RWP_CREATOR_SUITE_PLUGIN_URL . 'build/blocks/content-repurposer/style.css',
             array( 'font-awesome-brands' ),
             RWP_CREATOR_SUITE_VERSION,
             'all'

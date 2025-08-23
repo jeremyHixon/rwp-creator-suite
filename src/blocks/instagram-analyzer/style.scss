@@ -1,16 +1,17 @@
-.blk-instagram-analyzer-container {
-    @apply blk-min-h-96 blk-w-full blk-relative;
-    container-type: inline-size;
-    
-    // Basic container styling - Using Tailwind utilities
-    @apply blk-bg-white blk-p-6;
-    
-    // Ensure isolation from theme styles
-    @apply blk-font-sans blk-leading-normal blk-text-gray-700;
+.wp-block-rwp-creator-suite-instagram-analyzer {
+    @apply blk-my-8 blk-font-sans;
 
-    // Responsive padding
-    @media (max-width: 640px) {
-        @apply blk-p-4 blk-rounded-md;
+    .rwp-instagram-analyzer-container {
+        @apply blk-min-h-96 blk-w-full blk-relative;
+        container-type: inline-size;
+        
+        // Basic container styling - Using Tailwind utilities
+        @apply blk-bg-white blk-p-6 blk-rounded-xl blk-leading-relaxed blk-text-gray-700;
+
+        // Responsive padding
+        @media (max-width: 640px) {
+            @apply blk-p-4 blk-rounded-md;
+        }
     }
 
     // Container query support for modern layouts

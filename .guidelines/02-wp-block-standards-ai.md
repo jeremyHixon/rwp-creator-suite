@@ -50,24 +50,28 @@ import { useBlockProps } from '@wordpress/block-editor';
 import { Placeholder, SelectControl } from '@wordpress/components';
 
 export default function Edit({ attributes, setAttributes }) {
-    const blockProps = useBlockProps();
+    const blockProps = useBlockProps({
+        className: 'rwp-block-isolation'
+    });
     
     return (
         <div {...blockProps}>
             <Placeholder
                 icon="admin-tools"
-                label="Plugin Name App"
+                label="RWP Creator Suite App"
                 instructions="This will load your app on the frontend."
+                className="rwp-placeholder"
             >
                 <SelectControl
                     label="App Type"
                     value={attributes.appType}
                     options={[
-                        { label: 'Dashboard', value: 'dashboard' },
-                        { label: 'User Profile', value: 'user-profile' },
-                        { label: 'Data Viewer', value: 'data-viewer' }
+                        { label: 'Caption Writer', value: 'caption-writer' },
+                        { label: 'Content Repurposer', value: 'content-repurposer' },
+                        { label: 'Account Manager', value: 'account-manager' }
                     ]}
                     onChange={(appType) => setAttributes({ appType })}
+                    className="rwp-app-selector"
                 />
             </Placeholder>
         </div>
@@ -104,28 +108,31 @@ registerBlockType( metadata.name, {
     save,
 } );
 
-registerBlockVariation('plugin-name/app-container', {
-    name: 'dashboard',
-    title: 'Dashboard App',
-    attributes: { appType: 'dashboard' },
-    icon: 'dashboard',
-    scope: ['inserter']
+registerBlockVariation('rwp-creator-suite/app-container', {
+    name: 'caption-writer',
+    title: 'Caption Writer',
+    attributes: { appType: 'caption-writer' },
+    icon: 'editor-alignleft',
+    scope: ['inserter'],
+    keywords: ['caption', 'social', 'content']
 });
 
-registerBlockVariation('plugin-name/app-container', {
-    name: 'user-profile',
-    title: 'User Profile App', 
-    attributes: { appType: 'user-profile' },
+registerBlockVariation('rwp-creator-suite/app-container', {
+    name: 'content-repurposer',
+    title: 'Content Repurposer', 
+    attributes: { appType: 'content-repurposer' },
+    icon: 'update',
+    scope: ['inserter'],
+    keywords: ['repurpose', 'convert', 'content']
+});
+
+registerBlockVariation('rwp-creator-suite/app-container', {
+    name: 'account-manager',
+    title: 'Account Manager',
+    attributes: { appType: 'account-manager' },
     icon: 'admin-users',
-    scope: ['inserter']
-});
-
-registerBlockVariation('plugin-name/app-container', {
-    name: 'data-viewer',
-    title: 'Data Viewer App',
-    attributes: { appType: 'data-viewer' },
-    icon: 'chart-area',
-    scope: ['inserter']
+    scope: ['inserter'],
+    keywords: ['account', 'profile', 'manage']
 });
 ```
 
@@ -375,4 +382,5 @@ import { useState, useEffect, useMemo } from '@wordpress/element';
 8. NO direct DOM manipulation IN BLOCKS
 9. **Blocks are containers only** - complex apps mount into them
 10. **Use Placeholder components** for editor preview
-11. **Nest All Admin Pages** - All admin option pages MUST use `add_submenu_page()` with parent slug `'rwp-creator-tools'` - never create additional top-level menus
+11. **RWP Class Naming** - Use `rwp-` prefix for components, `blk-` for Tailwind utilities
+12. **Nest All Admin Pages** - All admin option pages MUST use `add_submenu_page()` with parent slug `'rwp-creator-tools'` - never create additional top-level menus

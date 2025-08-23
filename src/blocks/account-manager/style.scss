@@ -1,27 +1,23 @@
+// Account Manager Block Styles with Shared Mixins
+@import '../shared/styles/variables.scss';
+@import '../shared/styles/mixins.scss';
+
 .wp-block-rwp-creator-suite-account-manager {
-    // Base container with Tailwind utilities
-    @apply blk-min-h-96 blk-w-full blk-relative;
-    container-type: inline-size;
-    
-    // Basic styling using Tailwind
-    @apply blk-bg-white blk-border blk-border-gray-200 blk-rounded-lg blk-overflow-hidden;
-    
+    @apply blk-my-8 blk-font-sans;
+
     .rwp-account-manager-container {
-        @apply blk-w-full blk-h-full;
-        min-height: inherit;
-    }
-    
-    // Loading states
-    .rwp-loading {
-        @apply blk-flex blk-items-center blk-justify-center blk-h-96 blk-text-gray-500;
+        @apply blk-min-h-96 blk-w-full blk-relative;
+        container-type: inline-size;
         
-        &::after {
-            content: "";
-            @apply blk-w-5 blk-h-5 blk-border-2 blk-border-gray-200 blk-border-t-blue-600;
-            @apply blk-rounded-full blk-ml-2;
-            animation: spin 1s linear infinite;
+        @apply blk-bg-white blk-p-6 blk-rounded-xl blk-leading-relaxed blk-text-gray-700;
+        
+        @media (max-width: 640px) {
+            @apply blk-p-4;
         }
     }
+    
+    // Include shared loading states
+    @include loading-states();
     
     // Login prompt for guests
     .rwp-login-prompt {
@@ -37,30 +33,12 @@
         
         .rwp-auth-buttons {
             @apply blk-flex blk-gap-3 blk-justify-center blk-flex-wrap;
-            
-            button {
-                @apply blk-py-3 blk-px-6 blk-rounded-md blk-text-sm blk-font-medium;
-                @apply blk-cursor-pointer blk-transition-all blk-duration-200;
-                @apply blk-border blk-border-transparent;
-                
-                &.primary {
-                    @apply blk-bg-blue-600 blk-text-white;
-                    
-                    &:hover {
-                        @apply blk-bg-blue-700;
-                    }
-                }
-                
-                &.secondary {
-                    @apply blk-bg-transparent blk-text-blue-600 blk-border-blue-600;
-                    
-                    &:hover {
-                        @apply blk-bg-gray-50;
-                    }
-                }
-            }
         }
     }
+
+    // Include shared primary and secondary button styles
+    @include primary-button-styles('rwp-button--primary');
+    @include secondary-button-styles('rwp-button--secondary');
     
     // Responsive design
     @media (max-width: 782px) {
@@ -70,15 +48,14 @@
             .rwp-auth-buttons {
                 @apply blk-flex-col blk-items-center;
                 
-                button {
+                .rwp-button--primary,
+                .rwp-button--secondary {
                     @apply blk-w-full blk-max-w-xs;
                 }
             }
         }
     }
     
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
+    // Include shared accessibility styles
+    @include accessibility-styles();
 }

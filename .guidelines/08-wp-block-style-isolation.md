@@ -96,6 +96,26 @@ module.exports = {
   isolation: isolate;
 }
 
+/* RWP Creator Suite Specific Isolation */
+.wp-block-rwp-creator-suite-caption-writer,
+.wp-block-rwp-creator-suite-content-repurposer,
+.wp-block-rwp-creator-suite-account-manager {
+  /* Universal RWP isolation */
+  all: initial;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  isolation: isolate;
+  
+  /* Re-enable inheritance for children */
+  * {
+    all: unset;
+    display: revert;
+    box-sizing: border-box;
+  }
+  
+  /* Ensure block boundary */
+  container-type: inline-size;
+}
+
 /* Scope DaisyUI components */
 .wp-block-plugin-name-block .dui-btn,
 .wp-block-plugin-name-block .dui-card,
@@ -431,6 +451,115 @@ function plugin_name_inline_critical_block_css() {
 add_action('wp_enqueue_scripts', 'plugin_name_inline_critical_block_css');
 ```
 
+## RWP Creator Suite Class Standards
+
+### Universal Prefix System
+All RWP blocks use the `rwp-` prefix for component classes, following the standards defined in `src/blocks/shared/styles/class-naming-standards.md`:
+
+```css
+/* Component Classes */
+.rwp-form                  /* Form wrapper */
+.rwp-form-group           /* Form field container */
+.rwp-form-label           /* Field labels */
+.rwp-content-input        /* Text inputs and textareas */
+.rwp-tone-select          /* Select dropdowns */
+.rwp-button               /* Base button class */
+.rwp-button--primary      /* Primary action buttons */
+.rwp-generate-button      /* Specific generate buttons */
+
+/* Platform Selection */
+.rwp-platform-selection   /* Platform selection wrapper */
+.rwp-platform-checkbox    /* Individual platform checkbox */
+.rwp-platform-icon        /* Platform icons */
+.rwp-platform-name        /* Platform name text */
+
+/* Results & Content */
+.rwp-results-container     /* Results wrapper */
+.rwp-platform-result      /* Platform-specific result */
+.rwp-content-versions      /* Content versions wrapper */
+.rwp-version-text          /* Version content text */
+
+/* States */
+.rwp-loading              /* Loading state modifier */
+.rwp-copied               /* Copied state modifier */
+.rwp-error-message        /* Error display */
+```
+
+### Block Container Pattern
+Each block follows this consistent structure:
+```css
+.wp-block-rwp-creator-suite-{block-name} {
+  /* WordPress block wrapper with isolation */
+}
+
+.rwp-{block-name}-container {
+  /* Main block container */
+}
+```
+
+### RWP Block Implementation Example
+```javascript
+// Caption Writer block with proper RWP class naming
+export default function Edit({ attributes, setAttributes }) {
+    const blockProps = useBlockProps();
+    
+    return (
+        <div {...blockProps}>
+            <div className="rwp-caption-writer-container">
+                <form className="rwp-form">
+                    <div className="rwp-form-group">
+                        <label className="rwp-form-label">Content</label>
+                        <textarea 
+                            className="rwp-content-input blk-w-full blk-p-3 blk-border blk-rounded"
+                            placeholder="Enter your content..."
+                        />
+                    </div>
+                    
+                    <div className="rwp-platform-selection">
+                        <span className="rwp-platform-label">Platforms:</span>
+                        <div className="rwp-platform-checkboxes blk-flex blk-gap-2">
+                            <label className="rwp-platform-icon-label">
+                                <input type="checkbox" className="rwp-platform-checkbox" />
+                                <span className="rwp-platform-icon">📷</span>
+                                <span className="rwp-platform-name">Instagram</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div className="rwp-form-actions blk-mt-4">
+                        <button className="rwp-button rwp-button--primary rwp-generate-button">
+                            Generate Captions
+                        </button>
+                    </div>
+                </form>
+                
+                <div className="rwp-results-container blk-mt-6 blk-hidden">
+                    <h3 className="rwp-results-title">Generated Captions</h3>
+                    <div className="rwp-platform-result">
+                        <div className="rwp-platform-header blk-flex blk-justify-between">
+                            <span className="rwp-platform-name blk-font-medium">Instagram</span>
+                            <span className="rwp-character-limit blk-text-sm blk-text-gray-500">
+                                <span className="rwp-character-count">
+                                    <span className="rwp-count-current">0</span>/2200
+                                </span>
+                            </span>
+                        </div>
+                        <div className="rwp-content-versions blk-space-y-3">
+                            <div className="rwp-content-version blk-p-3 blk-border blk-rounded">
+                                <div className="rwp-version-text blk-mb-2"></div>
+                                <div className="rwp-version-meta blk-flex blk-justify-between">
+                                    <button className="rwp-copy-button blk-text-sm">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+```
+
 ## Block Variations with Isolated Themes
 
 ### Block Variations with Light Theme Styling
@@ -596,6 +725,7 @@ describe('Block Style Isolation', () => {
 11. **CSS Layers** - Use cascade layers for precise control
 12. **Subtle Interactions** - Minimize shadows, animations, and effects
 13. **Clean Typography** - Use system fonts and normal font weights
+14. **RWP Class Standards** - Follow class naming standards in `src/blocks/shared/styles/class-naming-standards.md`
 
 ## Troubleshooting
 

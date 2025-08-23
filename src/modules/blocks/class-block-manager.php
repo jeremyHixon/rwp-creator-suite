@@ -363,14 +363,8 @@ class RWP_Creator_Suite_Block_Manager {
             '6.5.1'
         );
 
-        // Enqueue Caption Writer CSS with performance optimization
-        wp_enqueue_style(
-            'rwp-caption-writer-style',
-            RWP_CREATOR_SUITE_PLUGIN_URL . 'build/blocks/caption-writer/style.css',
-            array( 'font-awesome-brands' ),
-            RWP_CREATOR_SUITE_VERSION,
-            'all'
-        );
+        // Caption Writer styles are automatically handled by WordPress block registration
+        // No manual enqueuing needed as the built files are in build/blocks/caption-writer/
         
         // Add preload hint for better performance
         add_filter( 'wp_resource_hints', array( $this, 'add_preload_hints' ), 10, 2 );
@@ -421,14 +415,8 @@ class RWP_Creator_Suite_Block_Manager {
             return; // Already enqueued
         }
 
-        // Enqueue Content Repurposer CSS
-        wp_enqueue_style(
-            'rwp-content-repurposer-style',
-            RWP_CREATOR_SUITE_PLUGIN_URL . 'build/blocks/content-repurposer/style.css',
-            array( 'font-awesome-brands' ),
-            RWP_CREATOR_SUITE_VERSION,
-            'all'
-        );
+        // Content Repurposer styles are automatically handled by WordPress block registration
+        // No manual enqueuing needed as the built files are in build/blocks/content-repurposer/
 
         // Enqueue Content Repurposer app (state manager and utilities already loaded by shared dependencies)
         wp_enqueue_script(
@@ -476,14 +464,8 @@ class RWP_Creator_Suite_Block_Manager {
             return; // Already enqueued
         }
 
-        // Enqueue Account Manager CSS
-        wp_enqueue_style(
-            'rwp-account-manager-style',
-            RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/account-manager.css',
-            array(),
-            RWP_CREATOR_SUITE_VERSION,
-            'all'
-        );
+        // Account Manager styles are automatically handled by WordPress block registration
+        // No manual enqueuing needed as the built files are in build/blocks/account-manager/
 
         // Enqueue Account Manager app (state manager and utilities already loaded by shared dependencies)
         wp_enqueue_script(
@@ -550,7 +532,7 @@ class RWP_Creator_Suite_Block_Manager {
                 'as'   => 'script',
             );
             $urls[] = array(
-                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/caption-writer.css',
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'build/blocks/caption-writer/style.css',
                 'as'   => 'style',
             );
         }
@@ -561,7 +543,7 @@ class RWP_Creator_Suite_Block_Manager {
                 'as'   => 'script',
             );
             $urls[] = array(
-                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/content-repurposer.css',
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'build/blocks/content-repurposer/style.css',
                 'as'   => 'style',
             );
         }
@@ -749,7 +731,7 @@ class RWP_Creator_Suite_Block_Manager {
         // Block-specific preloading
         if ( has_block( 'rwp-creator-suite/caption-writer', $post ) ) {
             $preload_assets[] = array(
-                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/caption-writer.css',
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'build/blocks/caption-writer/style.css',
                 'as' => 'style',
                 'type' => 'text/css'
             );
@@ -771,7 +753,7 @@ class RWP_Creator_Suite_Block_Manager {
         
         if ( has_block( 'rwp-creator-suite/content-repurposer', $post ) ) {
             $preload_assets[] = array(
-                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'assets/css/content-repurposer.css',
+                'href' => RWP_CREATOR_SUITE_PLUGIN_URL . 'build/blocks/content-repurposer/style.css',
                 'as' => 'style',
                 'type' => 'text/css'
             );

@@ -1,7 +1,5 @@
 # Task
-Analyze the blocks folder and any related modules: src/blocks
-The caption-writer and content-repurposer look very different even though they share a lot of elements.
-Check the CSS files. I've seen references to index.css, style.css, and style-etyle.css. We need to organize and clean up the files.
+Read ALL the developer guidelines in .guidelines. Read ALL the contents of the Claude development context template in .claude-context. Read ALL the contents of the new CSS class naming standards file in .src/blocks/shared/styles/class-naming-standards.md. Suggest places where these new standards can be added in the developer guidelines files and Claude development context template to ENSURE they are adhered to in future development projects.
 
 # Project Context
 
@@ -280,10 +278,22 @@ jQuery.ajax({
 
 ### CSS Standards
 
-#### Naming
+#### RWP Creator Suite Naming Convention
 ```css
-.plugin-name-container {}
-.plugin-name-button-primary {}
+/* Universal RWP prefix for all components */
+.rwp-form {}
+.rwp-button {}
+.rwp-button--primary {}
+.rwp-results-container {}
+
+/* Block-specific containers follow pattern */
+.wp-block-rwp-creator-suite-caption-writer {}
+.rwp-caption-writer-container {}
+
+/* Tailwind utilities use blk- prefix */
+.blk-text-center {}
+.blk-bg-blue-500 {}
+.blk-p-4 {}
 
 /* Breakpoints */
 @media screen and (max-width: 782px) {}
@@ -1025,6 +1035,33 @@ module.exports = {
   isolation: isolate;
 }
 
+/* RWP Creator Suite Specific Isolation */
+.wp-block-rwp-creator-suite-caption-writer,
+.wp-block-rwp-creator-suite-content-repurposer,
+.wp-block-rwp-creator-suite-account-manager {
+  /* Universal RWP isolation */
+  all: initial;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  isolation: isolate;
+  
+  /* Re-enable inheritance for children */
+  * {
+    all: unset;
+    display: revert;
+    box-sizing: border-box;
+  }
+  
+  /* Ensure block boundary */
+  container-type: inline-size;
+}
+
+/* RWP Component Classes within isolated blocks */
+.wp-block-rwp-creator-suite * .rwp-form,
+.wp-block-rwp-creator-suite * .rwp-button,
+.wp-block-rwp-creator-suite * .rwp-results-container {
+  /* Component-specific styling inherits from isolation wrapper */
+}
+
 /* Light theme custom properties */
 .wp-block-plugin-name-block {
   --blk-primary: #3b82f6;      /* Clean blue */
@@ -1113,6 +1150,7 @@ export default function Edit({ attributes, setAttributes }) {
 4. **Disable Preflight** - Prevent base style conflicts
 5. **Isolation First** - Use `all: initial` and `isolation: isolate`
 6. **Editor Consistency** - Same styles in editor and frontend
+7. **RWP Naming Standards** - Follow class naming standards in `src/blocks/shared/styles/class-naming-standards.md`
 
 ### Build & Deployment
 1. **Always Build for Production** - Use `NODE_ENV=production`

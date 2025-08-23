@@ -5,12 +5,12 @@
 
 // Platform Selection Styling
 @mixin platform-selection-styles() {
-    .platform-selection {
+    .rwp-platform-selection {
         @apply blk-flex blk-flex-col blk-gap-4 blk-mb-6;
     }
 
-    .platform-selection h3,
-    .platform-label {
+    .rwp-platform-selection h3,
+    .rwp-platform-label {
         @apply blk-text-gray-700 blk-text-sm blk-font-semibold !important;
         font-size: 0.875rem !important;
         line-height: 1.25rem !important;
@@ -20,12 +20,12 @@
             @apply blk-font-semibold;
         }
         
-        .platform-description {
+        .rwp-platform-description {
             @apply blk-font-normal blk-text-gray-500;
         }
     }
 
-    .platform-checkboxes {
+    .rwp-platform-checkboxes {
         @apply blk-flex blk-flex-wrap blk-gap-3 blk-mt-2;
 
         @media (max-width: 640px) {
@@ -33,7 +33,7 @@
         }
     }
 
-    .platform-checkbox {
+    .rwp-platform-checkbox {
         @apply blk-flex blk-items-center blk-gap-2 blk-cursor-pointer;
         @apply blk-bg-gray-50 blk-py-2 blk-px-3 blk-rounded-md;
         @apply blk-border blk-border-gray-200 blk-transition-all blk-duration-200;
@@ -62,16 +62,16 @@
         }
     }
 
-    .platform-icon-label {
+    .rwp-platform-icon-label {
         @apply blk-flex blk-items-center blk-gap-2;
         
-        .platform-name {
+        .rwp-platform-name {
             @apply blk-text-sm blk-text-gray-600 blk-font-medium blk-select-none;
             @apply blk-transition-colors blk-duration-200;
         }
     }
 
-    .platform-icon {
+    .rwp-platform-icon {
         @apply blk-inline-block blk-w-5 blk-h-5 blk-text-center blk-leading-5;
         font-size: 16px;
         font-family: "Font Awesome 6 Brands", "Font Awesome 6 Free";
@@ -145,7 +145,7 @@
 }
 
 // Primary Button Styling
-@mixin primary-button-styles($button-class) {
+@mixin primary-button-styles($button-class: 'rwp-button--primary') {
     .#{$button-class} {
         @apply blk-bg-blue-600 blk-text-white blk-border-0;
         @apply blk-py-4 blk-px-7 blk-text-base blk-font-semibold;
@@ -189,7 +189,7 @@
 }
 
 // Secondary Button Styling
-@mixin secondary-button-styles($button-class) {
+@mixin secondary-button-styles($button-class: 'rwp-button--secondary') {
     .#{$button-class} {
         @apply blk-bg-gray-100 blk-text-gray-700 blk-border blk-border-gray-300;
         @apply blk-py-3 blk-px-6 blk-text-sm blk-font-medium;

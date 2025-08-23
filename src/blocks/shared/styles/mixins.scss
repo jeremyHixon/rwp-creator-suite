@@ -11,9 +11,9 @@
 
     .rwp-platform-selection h3,
     .rwp-platform-label {
-        @apply blk-text-gray-700 blk-text-sm blk-font-semibold !important;
-        font-size: 0.875rem !important;
-        line-height: 1.25rem !important;
+        @apply blk-text-gray-700 blk-text-xs blk-font-semibold !important;
+        font-size: 0.75rem !important;
+        line-height: 1rem !important;
         margin: 0 0 0.5rem 0 !important;
         
         strong {
@@ -65,8 +65,18 @@
     .rwp-platform-icon-label {
         @apply blk-flex blk-items-center blk-gap-2;
         
-        .rwp-platform-name {
+        .platform-info {
+            @apply blk-flex blk-flex-col blk-gap-0;
+        }
+        
+        .rwp-platform-name,
+        .platform-name {
             @apply blk-text-sm blk-text-gray-600 blk-font-medium blk-select-none;
+            @apply blk-transition-colors blk-duration-200;
+        }
+        
+        .platform-char-limit {
+            @apply blk-text-xs blk-text-gray-500 blk-font-normal blk-select-none;
             @apply blk-transition-colors blk-duration-200;
         }
     }

@@ -476,7 +476,7 @@
 
 			// Create current count display
 			const currentCountDiv = document.createElement( 'div' );
-			currentCountDiv.className = 'current-count';
+			currentCountDiv.className = 'rwp-current-count';
 			currentCountDiv.setAttribute( 'data-current-count', '' );
 			currentCountDiv.textContent = '0';
 			counterContainer.appendChild( currentCountDiv );
@@ -494,11 +494,11 @@
 				platformCounter.setAttribute( 'data-limit', limit );
 
 				platformCounter.innerHTML = `
-                    <span class="platform-icon ${ platform }" aria-hidden="true"></span>
-                    <span class="platform-name-sr">${
+                    <span class="rwp-platform-icon ${ platform }" aria-hidden="true"></span>
+                    <span class="rwp-platform-name">${
 						platform.charAt( 0 ).toUpperCase() + platform.slice( 1 )
 					}</span>
-                    <span class="character-limit">${ limit }</span>
+                    <span class="rwp-character-limit">${ limit }</span>
                     <span class="over-limit-badge" style="display: none;">Over limit!</span>
                 `;
 
@@ -692,16 +692,16 @@
 
 			captions.forEach( ( caption, index ) => {
 				const captionElement = document.createElement( 'div' );
-				captionElement.className = 'caption-option';
+				captionElement.className = 'rwp-content-version';
 				captionElement.innerHTML = `
-                    <div class="caption-text">${ this.escapeHtml(
+                    <div class="rwp-version-text">${ this.escapeHtml(
 						caption.text
 					) }</div>
-                    <div class="caption-actions">
-                        <span class="character-count">${
+                    <div class="rwp-version-meta">
+                        <span class="rwp-character-count">${
 							caption.character_count
 						} chars</span>
-                        <button class="use-caption-btn" data-caption-index="${ index }">
+                        <button class="rwp-button--secondary" data-caption-index="${ index }">
                             Use This
                         </button>
                     </div>
@@ -827,18 +827,18 @@
 
 			templates.forEach( ( template ) => {
 				const templateElement = document.createElement( 'div' );
-				templateElement.className = 'template-card';
+				templateElement.className = 'rwp-template-card';
 				templateElement.innerHTML = `
-                    <div class="template-name">${ this.escapeHtml(
+                    <div class="rwp-template-name">${ this.escapeHtml(
 						template.name
 					) }</div>
-                    <div class="template-category">${ this.escapeHtml(
+                    <div class="rwp-template-category">${ this.escapeHtml(
 						template.category
 					) }</div>
-                    <div class="template-preview">${ this.escapeHtml(
+                    <div class="rwp-template-description">${ this.escapeHtml(
 						template.template.substring( 0, 100 )
 					) }...</div>
-                    <button class="use-template-btn" data-template-id="${
+                    <button class="rwp-button--secondary" data-template-id="${
 						template.id
 					}">
                         Use Template
@@ -881,18 +881,18 @@
 
 			templates.forEach( ( template ) => {
 				const templateElement = document.createElement( 'div' );
-				templateElement.className = 'template-card';
+				templateElement.className = 'rwp-template-card';
 				templateElement.innerHTML = `
-                    <div class="template-name">${ this.escapeHtml(
+                    <div class="rwp-template-name">${ this.escapeHtml(
 						template.name
 					) }</div>
-                    <div class="template-category">${ this.escapeHtml(
+                    <div class="rwp-template-category">${ this.escapeHtml(
 						template.category
 					) }</div>
-                    <div class="template-preview">${ this.escapeHtml(
+                    <div class="rwp-template-description">${ this.escapeHtml(
 						template.template.substring( 0, 100 )
 					) }...</div>
-                    <button class="use-template-btn" data-template-id="${
+                    <button class="rwp-button--secondary" data-template-id="${
 						template.id
 					}">
                         Use Template
@@ -959,17 +959,17 @@
 
 				// Apply color to current count based on most restrictive limit
 				if ( hasOverLimit ) {
-					currentCountElement.className = 'current-count over-limit';
+					currentCountElement.className = 'rwp-current-count rwp-count-error';
 					currentCountElement.style.color = '#ef4444';
 					currentCountElement.style.backgroundColor = '#fef2f2';
 					currentCountElement.style.borderColor = '#fecaca';
 				} else if ( hasWarning ) {
-					currentCountElement.className = 'current-count warning';
+					currentCountElement.className = 'rwp-current-count rwp-count-warning';
 					currentCountElement.style.color = '#f59e0b';
 					currentCountElement.style.backgroundColor = '#fffbeb';
 					currentCountElement.style.borderColor = '#fed7aa';
 				} else {
-					currentCountElement.className = 'current-count';
+					currentCountElement.className = 'rwp-current-count';
 					currentCountElement.style.color = '';
 					currentCountElement.style.backgroundColor = '';
 					currentCountElement.style.borderColor = '';
@@ -1269,7 +1269,7 @@
 
 			favorites.forEach( ( favorite ) => {
 				const favoriteElement = document.createElement( 'div' );
-				favoriteElement.className = 'favorite-item';
+				favoriteElement.className = 'rwp-favorite-item';
 				favoriteElement.innerHTML = `
                     <div class="favorite-text">${ this.escapeHtml(
 						favorite.caption
@@ -1468,7 +1468,7 @@
 			const notification = document.createElement( 'div' );
 			notification.className = 'caption-writer-success';
 			notification.innerHTML = `
-                <div class="success-message">${ this.escapeHtml(
+                <div class="rwp-success-notification">${ this.escapeHtml(
 					message
 				) }</div>
             `;

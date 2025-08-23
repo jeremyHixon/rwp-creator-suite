@@ -38,12 +38,12 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
 <div <?php echo wp_kses_post( $wrapper_attributes ); ?>>
     <div class="caption-writer-app">
         <div class="caption-writer-header">
-            <div class="platform-selection" role="group" aria-labelledby="platform-selection-heading">
-                <h3 id="platform-selection-heading" class="platform-label">
+            <div class="rwp-platform-selection" role="group" aria-labelledby="platform-selection-heading">
+                <h3 id="platform-selection-heading" class="rwp-platform-label">
                     <strong><?php esc_html_e( 'Target Platforms:', 'rwp-creator-suite' ); ?></strong> 
-                    <span class="platform-description">(<?php esc_html_e( 'Helps keep track of the character count limits', 'rwp-creator-suite' ); ?>)</span>
+                    <span class="rwp-platform-description">(<?php esc_html_e( 'Helps keep track of the character count limits', 'rwp-creator-suite' ); ?>)</span>
                 </h3>
-                <div class="platform-checkboxes">
+                <div class="rwp-platform-checkboxes">
                     <?php
                     $available_platforms = RWP_Creator_Suite_Caption_Admin_Settings::get_platforms_config();
                     foreach ( $available_platforms as $platform_config ) :
@@ -53,7 +53,7 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                         $checked = in_array( $platform_key, $platforms );
                         $character_limit = $platform_config['character_limit'] ?? 0;
                     ?>
-                        <label class="platform-checkbox">
+                        <label class="rwp-platform-checkbox">
                             <input 
                                 type="checkbox" 
                                 value="<?php echo esc_attr( $platform_key ); ?>"
@@ -61,9 +61,9 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                                 data-platform-checkbox="<?php echo esc_attr( $platform_key ); ?>"
                                 aria-describedby="platform-<?php echo esc_attr( $platform_key ); ?>-desc"
                             >
-                            <div class="platform-icon-label">
-                                <span class="platform-icon <?php echo esc_attr( $icon_class ); ?>" aria-hidden="true"></span>
-                                <span class="platform-name"><?php echo esc_html( $platform_label ); ?></span>
+                            <div class="rwp-platform-icon-label">
+                                <span class="rwp-platform-icon <?php echo esc_attr( $icon_class ); ?>" aria-hidden="true"></span>
+                                <span class="rwp-platform-name"><?php echo esc_html( $platform_label ); ?></span>
                             </div>
                             <span id="platform-<?php echo esc_attr( $platform_key ); ?>-desc" class="sr-only">
                                 <?php printf(
@@ -92,23 +92,23 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
         <!-- AI Generator Tab -->
         <div class="tab-content" data-content="generator">
             <div class="ai-generator-section ai-generator-logged-in" style="display: none;">
-                    <div class="input-section">
-                        <label for="<?php echo esc_attr( $unique_id . '-description' ); ?>">
+                    <div class="rwp-form-group">
+                        <label class="rwp-form-label" for="<?php echo esc_attr( $unique_id . '-description' ); ?>">
                             <?php esc_html_e( 'Describe your content:', 'rwp-creator-suite' ); ?>
                         </label>
                         <textarea 
                             id="<?php echo esc_attr( $unique_id . '-description' ); ?>"
-                            class="content-description"
+                            class="rwp-content-input"
                             placeholder="<?php esc_attr_e( 'e.g., Photo of a golden retriever in a field of flowers', 'rwp-creator-suite' ); ?>"
                             rows="3"
                             data-description
                         ></textarea>
                         
-                        <div class="tone-selector">
-                            <label for="<?php echo esc_attr( $unique_id . '-tone' ); ?>">
+                        <div class="rwp-form-group">
+                            <label class="rwp-form-label" for="<?php echo esc_attr( $unique_id . '-tone' ); ?>">
                                 <?php esc_html_e( 'Tone:', 'rwp-creator-suite' ); ?>
                             </label>
-                            <select id="<?php echo esc_attr( $unique_id . '-tone' ); ?>" data-tone>
+                            <select id="<?php echo esc_attr( $unique_id . '-tone' ); ?>" class="rwp-tone-select" data-tone>
                                 <?php
                                 $roles_config = RWP_Creator_Suite_Caption_Admin_Settings::get_roles_config();
                                 foreach ( $roles_config as $role ) :
@@ -122,13 +122,8 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                             </select>
                         </div>
                         
-                        <button class="enhanced-btn primary large" data-generate data-variant="primary" data-size="large">
-                            <span class="btn-content">
-                                <span class="btn-text"><?php esc_html_e( 'Generate Captions', 'rwp-creator-suite' ); ?></span>
-                                <span class="loading-spinner" style="display: none;">
-                                    <div class="spinner-ring"></div>
-                                </span>
-                            </span>
+                        <button class="rwp-button--primary rwp-generate-button" data-generate>
+                            <?php esc_html_e( 'Generate Captions', 'rwp-creator-suite' ); ?>
                         </button>
                         
                         <div class="quota-info" data-quota-display style="display: none;">
@@ -136,39 +131,39 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                         </div>
                     </div>
                     
-                    <div class="generated-captions-container" data-captions style="display: none;">
+                    <div class="rwp-results-container" data-captions style="display: none;">
                         <div class="captions-list"></div>
                     </div>
                 </div>
             
             <!-- Guest Teaser for AI Generator -->
-            <div class="ai-generator-guest-teaser">
-                    <div class="guest-teaser-content">
-                        <div class="guest-teaser-icon">🤖</div>
-                        <div class="guest-teaser-title"><?php esc_html_e( 'AI Caption Generator', 'rwp-creator-suite' ); ?></div>
+            <div class="rwp-guest-teaser">
+                    <div class="rwp-guest-teaser-content">
+                        <div class="rwp-caption-teaser-icon">🤖</div>
+                        <div class="rwp-guest-teaser-title"><?php esc_html_e( 'AI Caption Generator', 'rwp-creator-suite' ); ?></div>
                         <p><?php esc_html_e( 'Unlock the power of AI to generate engaging captions for your content. Get multiple caption options in different tones tailored to your platform.', 'rwp-creator-suite' ); ?></p>
                         
-                        <div class="guest-teaser-benefits">
-                            <div class="guest-benefit-item">
-                                <div class="guest-benefit-icon">✨</div>
+                        <div class="rwp-caption-benefits">
+                            <div class="rwp-caption-benefit-item">
+                                <div class="rwp-caption-benefit-icon">✨</div>
                                 <?php esc_html_e( 'Generate multiple caption variations instantly', 'rwp-creator-suite' ); ?>
                             </div>
-                            <div class="guest-benefit-item">
-                                <div class="guest-benefit-icon">🎯</div>
+                            <div class="rwp-caption-benefit-item">
+                                <div class="rwp-caption-benefit-icon">🎯</div>
                                 <?php esc_html_e( 'Choose from different tones and styles', 'rwp-creator-suite' ); ?>
                             </div>
-                            <div class="guest-benefit-item">
-                                <div class="guest-benefit-icon">📱</div>
+                            <div class="rwp-caption-benefit-item">
+                                <div class="rwp-caption-benefit-icon">📱</div>
                                 <?php esc_html_e( 'Optimized for each social media platform', 'rwp-creator-suite' ); ?>
                             </div>
-                            <div class="guest-benefit-item">
-                                <div class="guest-benefit-icon">💾</div>
+                            <div class="rwp-caption-benefit-item">
+                                <div class="rwp-caption-benefit-icon">💾</div>
                                 <?php esc_html_e( 'Save favorites and create custom templates', 'rwp-creator-suite' ); ?>
                             </div>
                         </div>
                         
                         <div class="guest-teaser-cta">
-                            <a href="<?php echo esc_url( wp_registration_url() ); ?>" class="guest-cta-button">
+                            <a href="<?php echo esc_url( wp_registration_url() ); ?>" class="rwp-guest-cta-button">
                                 <?php esc_html_e( 'Get Free Access', 'rwp-creator-suite' ); ?>
                             </a>
                             <p class="guest-login-note">
@@ -211,19 +206,19 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
         
         <!-- Caption Output -->
         <div class="caption-output-section">
-            <label for="<?php echo esc_attr( $unique_id . '-final-caption' ); ?>">
+            <label class="rwp-form-label" for="<?php echo esc_attr( $unique_id . '-final-caption' ); ?>">
                 <?php esc_html_e( 'Final Caption:', 'rwp-creator-suite' ); ?>
             </label>
             <textarea 
                 id="<?php echo esc_attr( $unique_id . '-final-caption' ); ?>"
-                class="final-caption"
+                class="rwp-content-input"
                 placeholder="<?php esc_attr_e( 'Your caption will appear here...', 'rwp-creator-suite' ); ?>"
                 rows="8"
                 data-final-caption
             ><?php echo esc_textarea( $final_caption ); ?></textarea>
             
-            <div class="character-counter" data-multi-platform-counter>
-                <div class="current-count" data-current-count>0</div>
+            <div class="rwp-character-counter" data-multi-platform-counter>
+                <div class="rwp-current-count" data-current-count>0</div>
                 <div class="platform-limits">
                     <?php 
                     $available_platforms_config = RWP_Creator_Suite_Caption_Admin_Settings::get_platforms_config();
@@ -242,20 +237,20 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
                         $platform_label = $platform_config['label'];
                     ?>
                         <div class="platform-limit-item" data-platform="<?php echo esc_attr( $platform ); ?>" data-limit="<?php echo esc_attr( $limit ); ?>">
-                            <span class="platform-icon <?php echo esc_attr( $icon_class ); ?>" aria-hidden="true"></span>
-                            <span class="platform-name-sr"><?php echo esc_html( $platform_label ); ?></span>
-                            <span class="character-limit"><?php echo esc_html( $limit ); ?></span>
+                            <span class="rwp-platform-icon <?php echo esc_attr( $icon_class ); ?>" aria-hidden="true"></span>
+                            <span class="rwp-platform-name"><?php echo esc_html( $platform_label ); ?></span>
+                            <span class="rwp-character-limit"><?php echo esc_html( $limit ); ?></span>
                             <span class="over-limit-badge" style="display: none;">Over limit!</span>
                         </div>
                     <?php endforeach; ?>
                 </div>
             </div>
             
-            <div class="output-actions">
-                <button class="btn-secondary" data-copy>
+            <div class="rwp-form-actions">
+                <button class="rwp-button--secondary rwp-copy-button" data-copy>
                     <?php esc_html_e( 'Copy Caption', 'rwp-creator-suite' ); ?>
                 </button>
-                <button class="btn-secondary" data-save-favorite style="display: none;">
+                <button class="rwp-button--secondary" data-save-favorite style="display: none;">
                     <?php esc_html_e( 'Save to Favorites', 'rwp-creator-suite' ); ?>
                 </button>
                 <p class="login-prompt">
@@ -272,13 +267,13 @@ $wrapper_attributes = get_block_wrapper_attributes( array(
         </div>
         
         <!-- Loading and error states -->
-        <div class="caption-writer-loading" data-loading style="display: none;">
+        <div class="rwp-loading-container" data-loading style="display: none;">
             <div class="loading-spinner"></div>
             <p><?php esc_html_e( 'Generating captions...', 'rwp-creator-suite' ); ?></p>
         </div>
         
-        <div class="caption-writer-error" data-error style="display: none;">
-            <div class="error-message"></div>
+        <div class="rwp-error-message" data-error style="display: none;">
+            <div class="rwp-error-content"></div>
         </div>
     </div>
 </div>

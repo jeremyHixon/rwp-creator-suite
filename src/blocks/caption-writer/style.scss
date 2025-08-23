@@ -3,6 +3,27 @@
 @import '../shared/styles/mixins.scss';
 
 .wp-block-rwp-creator-suite-caption-writer {
+    // Complete style isolation to prevent theme interference
+    all: initial;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    isolation: isolate;
+    container-type: inline-size;
+    
+    // Re-enable inheritance for children
+    * {
+        all: unset;
+        display: revert;
+        box-sizing: border-box;
+    }
+    
+    // Light theme custom properties
+    --blk-primary: #3b82f6;      /* Clean blue */
+    --blk-secondary: #64748b;    /* Muted gray */
+    --blk-accent: #10b981;       /* Subtle green */
+    --blk-neutral: #f8fafc;      /* Light background */
+    --blk-base-100: #ffffff;     /* Pure white */
+    --blk-base-content: #1f2937; /* Dark text */
+    
     @apply blk-my-8 blk-font-sans;
 
     .rwp-caption-writer-container {
@@ -26,26 +47,11 @@
         }
     }
 
-    // Form Styles
-    .rwp-caption-form {
-        @apply blk-bg-gray-50 blk-rounded-xl blk-p-8 blk-mb-6;
-        @apply blk-border blk-border-gray-200;
-        
-        @media (max-width: 640px) {
-            @apply blk-p-5;
-        }
-    }
-
     // Include shared form input styles
     @include form-input-styles();
 
     // Include shared platform selection styles
     @include platform-selection-styles();
-
-    // Form Actions
-    .rwp-form-actions {
-        @apply blk-mt-8;
-    }
 
     // Include primary button styles
     @include primary-button-styles('rwp-generate-button');
@@ -63,6 +69,9 @@
 
     // Include shared results container styles
     @include results-container-styles();
+
+    // Include secondary button styles for copy buttons
+    @include secondary-button-styles('rwp-copy-button');
 
     // Template Selection (unique to caption-writer)
     .rwp-template-selection {
@@ -102,8 +111,8 @@
         }
     }
 
-    // Caption Results
-    .rwp-caption-result {
+    // Caption Results - using shared platform result patterns
+    .rwp-platform-result {
         @apply blk-mb-4 blk-border blk-border-gray-200 blk-rounded-lg blk-p-5;
         @apply blk-transition-all blk-duration-200 blk-bg-gray-50;
 
@@ -124,11 +133,11 @@
             }
         }
 
-        .rwp-caption-versions {
+        .rwp-content-versions {
             @apply blk-flex blk-flex-col blk-gap-4;
         }
 
-        .rwp-caption-version {
+        .rwp-content-version {
             @apply blk-bg-white blk-border blk-border-gray-200 blk-rounded-lg blk-p-5;
             @apply blk-transition-all blk-duration-200 blk-relative;
 
@@ -146,28 +155,15 @@
                 @apply blk-py-1 blk-px-2 blk-rounded-md blk-font-medium;
             }
         }
-
-        // Include secondary button styles for copy buttons
-        @include secondary-button-styles('rwp-copy-button');
-
-        .rwp-copy-button {
-            &.rwp-copied {
-                @apply blk-bg-green-600 blk-text-white blk-border-green-600;
-                
-                &:hover {
-                    @apply blk-bg-green-700;
-                }
-            }
-        }
     }
 
-    // Error Message
-    .rwp-error-message {
-        @apply blk-bg-red-50 blk-border blk-border-red-300 blk-rounded-md;
-        @apply blk-p-4 blk-my-6 blk-text-center;
-
-        .rwp-error-content {
-            @apply blk-text-red-700 blk-text-sm blk-font-medium;
+    .rwp-copy-button {
+        &.rwp-copied {
+            @apply blk-bg-green-600 blk-text-white blk-border-green-600;
+            
+            &:hover {
+                @apply blk-bg-green-700;
+            }
         }
     }
 
@@ -180,11 +176,7 @@
     // Include shared guest/upgrade styles
     @include guest-upgrade-styles();
 
-    // Caption Writer specific guest teaser
-    .rwp-caption-guest-teaser {
-        @extend .rwp-guest-teaser;
-    }
-
+    // Caption Writer specific guest teaser styles
     .rwp-caption-teaser-icon {
         @apply blk-text-5xl blk-mb-4 blk-block;
     }
@@ -221,20 +213,6 @@
     @keyframes slideInRight {
         from { transform: translateX(100%); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
-    }
-
-    // Guest attempts counter (similar to content-repurposer)
-    .rwp-guest-attempts-counter {
-        @apply blk-text-center blk-mb-6 blk-py-3 blk-px-4 blk-bg-blue-100;
-        @apply blk-rounded-lg blk-border blk-border-blue-300;
-    }
-
-    .rwp-attempts-remaining {
-        @apply blk-text-sm blk-font-semibold blk-text-blue-800;
-    }
-
-    .rwp-attempts-count {
-        @apply blk-text-xl blk-font-bold blk-text-blue-600;
     }
 
     // Include shared accessibility styles

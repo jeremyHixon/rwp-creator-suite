@@ -76,14 +76,16 @@ $block_id = uniqid( 'rwp-content-repurposer-' );
                             >
                             <div class="platform-icon-label">
                                 <span class="platform-icon <?php echo esc_attr( $icon_class ); ?>" aria-hidden="true"></span>
-                                <span class="platform-name"><?php echo esc_html( $platform_label ); ?></span>
+                                <div class="platform-info">
+                                    <span class="platform-name"><?php echo esc_html( $platform_label ); ?></span>
+                                    <span class="platform-char-limit">
+                                        <?php printf(
+                                            esc_html__( 'Character limit: %d characters', 'rwp-creator-suite' ),
+                                            $character_limit
+                                        ); ?>
+                                    </span>
+                                </div>
                             </div>
-                            <span id="platform-<?php echo esc_attr( $platform_key ); ?>-desc" class="sr-only">
-                                <?php printf(
-                                    esc_html__( 'Character limit: %d characters', 'rwp-creator-suite' ),
-                                    $character_limit
-                                ); ?>
-                            </span>
                         </label>
                     <?php endforeach; ?>
                 </div>

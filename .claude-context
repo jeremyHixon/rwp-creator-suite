@@ -1,5 +1,5 @@
 # Task
-Read ALL the developer guidelines in .guidelines. Read ALL the contents of the Claude development context template in .claude-context. Read ALL the contents of the new CSS class naming standards file in .src/blocks/shared/styles/class-naming-standards.md. Suggest places where these new standards can be added in the developer guidelines files and Claude development context template to ENSURE they are adhered to in future development projects.
+On the content-repurposer block (src/blocks/content-repurposer) make the h3, "Target Platforms: (Helps keep track of the character count limits)", smaller and fix the plaform labels (code block exmaple below in triple-backticks) seen here: /Users/jhixon/Desktop/content-repurposer-label.jpg
 
 # Project Context
 
